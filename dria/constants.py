@@ -12,7 +12,7 @@ RETURN_DEADLINE: Final[int] = 86400  # 24 hours in seconds
 MONITORING_INTERVAL: Final[int] = 5  # 2 seconds
 TASK_DEADLINE: Final[int] = 300
 FETCH_INTERVAL: Final[int] = 1
-FETCH_DEADLINE: Final[int] = 100
+FETCH_DEADLINE: Final[int] = 300
 
 MAX_RETRIES_FOR_AVAILABILITY: Final[int] = 10
 
