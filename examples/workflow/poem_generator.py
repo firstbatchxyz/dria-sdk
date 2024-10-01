@@ -26,9 +26,8 @@ dria = Dria(rpc_token=os.environ["DRIA_RPC_TOKEN"])
 
 
 async def generate_poem(prompt: str) -> List[TaskResult]:
-    a = poem(prompt)
     task = Task(
-        workflow=json.loads(a),
+        workflow=poem(prompt),
         models=[
             Model.GPT4O,
             Model.LLAMA3_1_8B_FP16,

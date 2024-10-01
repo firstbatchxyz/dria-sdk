@@ -19,7 +19,4 @@ def poem(input_text: str):
     # Set the return value of your workflow
     builder.set_return_value("poem")
 
-    # Build your workflow
-    workflow = builder.build()
-
-    return workflow.model_dump_json(indent=2, exclude_unset=True, exclude_none=True)
+    return builder.build_to_dict()
