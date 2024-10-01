@@ -31,7 +31,7 @@ class Dria:
     and managing background processes for monitoring and polling.
     """
 
-    DEADLINE_MULTIPLIER: int = 5
+    DEADLINE_MULTIPLIER: int = 10
 
     def __init__(self, rpc_token: Optional[str] = None):
         """
@@ -40,12 +40,50 @@ class Dria:
         Args:
             rpc_token (str): Authentication token for RPCClient.
         """
-        self.rpc = RPCClient(auth_token=rpc_token or os.environ["DRIA_RPC_TOKEN"])
+        self.rpc = RPCClient(auth_token=rpc_token or os.environ.get("DRIA_RPC_TOKEN"))
         self.storage = Storage()
         self.task_manager = TaskManager(self.storage, self.rpc)
         self.kv = KeyValueQueue()
         self.background_tasks: Optional[asyncio.Task] = None
         self.blacklist: Dict[str, Dict[str, int]] = {}
+
+        cache_dir = os.path.join(os.path.dirname(__file__), '.cache')
+        os.makedirs(cache_dir, exist_ok=True)
+
+        self.blacklist_file = os.path.join(cache_dir, '.blacklist')
+        self._load_blacklist()
+
+    def _load_blacklist(self):
+        """Load the blacklist from file or create a new one if it doesn't exist."""
+        try:
+            with open(self.blacklist_file, 'r') as f:
+                self.blacklist = {}
+                for line in f:
+                    key, value = line.strip().split('|')
+                    self.blacklist[key] = eval(value)
+        except FileNotFoundError:
+            self.blacklist = {}
+            self._save_blacklist()
+
+    def _save_blacklist(self):
+        """Save the current blacklist to file."""
+        with open(self.blacklist_file, 'w') as f:
+            for key, value in self.blacklist.items():
+                f.write(f"{key}|{value}\n")
+
+    def _remove_from_blacklist(self, address: str) -> None:
+        """
+        Remove an address from the blacklist and save the updated blacklist.
+
+        Args:
+            address (str): The address to remove from the blacklist.
+        """
+        if address in self.blacklist:
+            del self.blacklist[address]
+            self._save_blacklist()
+            logger.info(f"Address {address} removed from blacklist.")
+        else:
+            logger.debug(f"Address {address} not found in blacklist.")
 
     async def initialize(self) -> None:
         """Initialize background tasks for monitoring and polling."""
@@ -111,6 +149,8 @@ class Dria:
             logger.info(
                 f"Address {node} added to blacklist with deadline at {node_entry['deadline']}."
             )
+
+        self._save_blacklist()
 
     async def fetch(
             self,
@@ -291,11 +331,12 @@ class Dria:
                 if self._is_task_valid(task, current_time):
                     processed_result, address = get_truthful_nodes(task, result)
                     if not processed_result:
+                        logger.info("Task result is not valid, retrying with another node...")
                         asyncio.create_task(self.push(task))
                         continue
                     else:
                         if address in self.blacklist:
-                            del self.blacklist[address]
+                            self._remove_from_blacklist(address)
                     pipeline_id = task.pipeline_id or ""
                     self.kv.push(f"{pipeline_id}:{identifier}", processed_result)
             except (json.JSONDecodeError, KeyError, TypeError, ValueError) as e:
