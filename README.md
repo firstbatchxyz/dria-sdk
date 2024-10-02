@@ -58,7 +58,6 @@ Here's an example of creating a simple workflow for generating a poem:
 
 ```python
 import asyncio
-import json
 
 from dria.client import Dria
 from dria.models import Task, TaskResult
@@ -69,7 +68,7 @@ dria = Dria()
 
 async def generate_poem(prompt: str) -> list[TaskResult]:
     task = Task(
-        workflow=json.loads(poem(prompt)),
+        workflow=poem(prompt),
         models=[Model.QWEN2_5_7B_FP16]
     )
     await dria.push(task)

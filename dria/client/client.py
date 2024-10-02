@@ -19,7 +19,7 @@ from dria.models import Task, TaskResult
 from dria.models.exceptions import TaskPublishError
 from dria.request import RPCClient
 from dria.utils import logger
-from dria.utils.ec import get_truthful_nodes, generate_eth_key
+from dria.utils.ec import get_truthful_nodes, generate_task_keys
 from dria.utils.task_utils import TaskManager
 
 
@@ -117,9 +117,7 @@ class Dria:
         Raises:
             TaskPublishError: If there's an error during task publication.
         """
-        eth_key = generate_eth_key()
-        task.public_key = eth_key.public_key.to_hex()
-        task.private_key = eth_key.to_hex()
+        task.private_key, task.public_key = generate_task_keys()
         try:
             success, nodes = await self.task_manager.push_task(task, self.blacklist)
             if success:

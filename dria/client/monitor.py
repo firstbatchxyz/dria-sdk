@@ -12,7 +12,6 @@ from dria.models import NodeModel
 from dria.request import RPCClient
 from dria.utils import (
     recover_public_key,
-    sign_address,
     base64_to_json,
     uncompressed_public_key, str_to_base64,
 )
@@ -28,20 +27,6 @@ class Monitor:
     def __init__(self, storage: Storage, rpc: RPCClient):
         self.task_manager = TaskManager(storage, rpc)
         self.rpc = rpc
-
-    @staticmethod
-    def _sign_message(private_key: str, message: str) -> bytes:
-        """
-        Sign a message using the provided private key.
-
-        Args:
-            private_key (str): The private key to use for signing.
-            message (str): The message to sign.
-
-        Returns:
-            bytes: The signature of the message.
-        """
-        return sign_address(private_key, message)
 
     async def run(self):
         """

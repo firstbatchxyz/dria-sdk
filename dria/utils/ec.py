@@ -1,4 +1,3 @@
-from dria.utils.logging import logger
 from typing import Tuple, List, Dict
 
 import coincurve
@@ -7,6 +6,7 @@ from ecies import decrypt
 from ecies.utils import generate_eth_key
 
 from dria.models import Task
+from dria.utils.logging import logger
 
 
 def uncompressed_public_key(public_key: str) -> bytes:
@@ -67,30 +67,6 @@ def recover_public_key(signature: bytes, message_digest: bytes) -> str:
         raise ValueError(f"Failed to recover public key: {e}") from e
 
 
-def sign_address(private_key: str, message: str) -> bytes:
-    """
-    Signs a message with a private key.
-
-    Args:
-        private_key (str): The private key to sign the message with.
-        message (str): The message to sign.
-
-    Returns:
-        bytes: The signature of the message.
-
-    Raises:
-        ValueError: If the private key is invalid or other cryptographic errors occur.
-    """
-    try:
-        private_key_bytes = bytes.fromhex(private_key)
-        private_key = coincurve.PrivateKey(private_key_bytes)
-        message_bytes = message.encode("utf-8")
-        return private_key.sign_recoverable(message_bytes)
-    except Exception as e:
-        logger.error(f"Error signing address: {e}", exc_info=True)
-        raise ValueError(f"Failed to sign address: {e}") from e
-
-
 def decrypt_message(private_key: str, encrypted_message: bytes) -> str:
     """
     Decrypt an encrypted message using the provided private key.
@@ -136,7 +112,7 @@ def publickey_to_address(public_key: bytes) -> str:
         raise ValueError(f"Failed to convert public key to address: {e}") from e
 
 
-def get_truthful_nodes(task: Task, topic_result: Dict) -> str:
+def get_truthful_nodes(task: Task, topic_result: Dict) -> tuple[str, str]:
     """
     Get truthful nodes from topic results.
 

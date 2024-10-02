@@ -22,7 +22,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 # Initialize Dria client
-dria = Dria(rpc_token=os.environ["DRIA_RPC_TOKEN"])
+dria = Dria()
 
 
 async def generate_poem(prompt: str) -> List[TaskResult]:
@@ -47,7 +47,7 @@ async def main():
     node_count = 1
 
     logger.info(f"Generating {node_count} poem(s) based on the prompt: '{prompt}'")
-    tasks = [generate_poem(prompt) for _ in range(5)]
+    tasks = [generate_poem(prompt) for _ in range(1)]
     results = await asyncio.gather(*tasks)
     results = [item for sublist in results for item in sublist]  # Flatten the list of results
 
