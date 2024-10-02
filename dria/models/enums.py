@@ -25,7 +25,6 @@ class Model(Enum):
     PHI3_5_MINI_FP16 = "phi3.5:3.8b-mini-instruct-fp16"
     GEMMA2_9B = "gemma2:9b-instruct-q8_0"
     GEMMA2_9B_FP16 = "gemma2:9b-instruct-fp16"
-    LLAMA3_1_8B = "llama3.1:latest"
     LLAMA3_1_8BQ8 = "llama3.1:8b-instruct-q8_0"
     LLAMA3_1_8B_FP16 = "llama3.1:8b-instruct-fp16"
     LLAMA3_1_70B = "llama3.1:70b-instruct-q4_0"

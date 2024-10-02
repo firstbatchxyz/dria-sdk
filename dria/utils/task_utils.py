@@ -7,6 +7,7 @@ import string
 import time
 from typing import List, Tuple, Any, Dict, Union, Optional
 
+from dria.models.enums import Model
 from fastbloom_rs import BloomFilter
 
 from dria.constants import MONITORING_INTERVAL, INPUT_CONTENT_TOPIC, TASK_DEADLINE
@@ -161,7 +162,16 @@ class TaskManager:
         logger.debug(f"Currently available nodes: {available_nodes}")
 
         if not available_nodes:
-            logger.debug(f"No available nodes for models {using_models}. Waiting for nodes.")
+            logger.info(f"No available nodes for models {using_models}")
+            log_str = ""
+            for model in Model:
+                node_count = len(self.get_available_nodes(model.value))
+                if node_count > 0:
+                    log_str += f"\n{model.name}: {node_count} nodes"
+            if log_str:
+                logger.debug(f"Current network state:{log_str}")
+            else:
+                logger.debug("No active nodes in the network")
             await asyncio.sleep(MONITORING_INTERVAL)
             return await self.create_filter(using_models, blacklist, retry + 1)
 
