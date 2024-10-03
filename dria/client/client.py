@@ -3,7 +3,7 @@ import base64
 import json
 import os
 import time
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Union
 
 from dria.client.monitor import Monitor
 from dria.constants import (
@@ -102,7 +102,11 @@ class Dria:
     async def _run_monitoring(self) -> None:
         """Run the monitoring process to track task statuses."""
         monitor = Monitor(self.storage, self.rpc)
-        await monitor.run()
+        while True:
+            try:
+                await monitor.run()
+            except Exception:
+                logger.error("Error in monitoring", exc_info=True)
 
     async def push(self, task: Task) -> bool:
         """
@@ -153,7 +157,7 @@ class Dria:
     async def fetch(
             self,
             pipeline_id: Optional[str] = None,
-            task_id: Optional[str] = None,
+            task_id: Union[Optional[str], Optional[List[str]]] = None,
             min_outputs: int = 1
     ) -> List[TaskResult]:
         """
@@ -161,7 +165,7 @@ class Dria:
 
         Args:
             pipeline_id (Optional[str]): The ID of the pipeline.
-            task_id (Optional[str]): The ID of the task.
+            task_id (Union[Optional[str], Optional[List[str]]]): The ID of the task.
             min_outputs (int): The minimum number of outputs to fetch.
 
         Returns:
@@ -191,32 +195,44 @@ class Dria:
                 await asyncio.sleep(FETCH_INTERVAL)
 
         return results
-
     def _fetch_results(
             self,
             pipeline_id: Optional[str],
-            task_id: Optional[str]
+            task_id: Union[Optional[str], Optional[List[str]]]
     ) -> List[TaskResult]:
         """
         Helper method to fetch results based on pipeline_id and/or task_id.
 
         Args:
             pipeline_id (Optional[str]): The ID of the pipeline.
-            task_id (Optional[str]): The ID of the task.
+            task_id (Union[Optional[str], Optional[List[str]]]): The ID or list of IDs of the task(s).
 
         Returns:
             List[TaskResult]: A list of fetched results.
         """
         new_results: List[TaskResult] = []
-        if pipeline_id and task_id:
-            key = f"{pipeline_id}:{task_id}"
-            value = self.kv.pop(key)
-            if value:
-                new_results.append(self._create_task_result(task_id, value))
-        elif pipeline_id:
-            new_results = self._fetch_pipeline_results(pipeline_id)
+
+        if pipeline_id:
+            if task_id:
+                if isinstance(task_id, str):
+                    key = f"{pipeline_id}:{task_id}"
+                    value = self.kv.pop(key)
+                    if value:
+                        new_results.append(self._create_task_result(task_id, value))
+                elif isinstance(task_id, list):
+                    for tid in task_id:
+                        key = f"{pipeline_id}:{tid}"
+                        value = self.kv.pop(key)
+                        if value:
+                            new_results.append(self._create_task_result(tid, value))
+            else:
+                new_results = self._fetch_pipeline_results(pipeline_id)
         elif task_id:
-            new_results = self._fetch_task_results(task_id)
+            if isinstance(task_id, str):
+                new_results = self._fetch_task_results(task_id)
+            elif isinstance(task_id, list):
+                for tid in task_id:
+                    new_results.extend(self._fetch_task_results(tid))
 
         return new_results
 

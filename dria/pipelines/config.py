@@ -36,7 +36,7 @@ DEFAULT_MODELS: List[Model] = [
     Model.GPT4O,
     Model.O1_MINI,
     Model.O1_PREVIEW,
-    Model.LLAMA3_1_8B_F16,
+    Model.LLAMA3_1_8B_FP16,
     Model.GEMMA2_9B,
     Model.GEMMA2_9B_FP16,
     Model.QWEN2_5_7B_FP16,
