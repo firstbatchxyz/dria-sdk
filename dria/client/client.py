@@ -84,7 +84,11 @@ class Dria:
             logger.info(f"Address {address} removed from blacklist.")
         else:
             logger.debug(f"Address {address} not found in blacklist.")
-
+                
+    def flush_blacklist(self):
+        """Flush the blacklist to file."""
+        self._save_blacklist()
+        
     async def initialize(self) -> None:
         """Initialize background tasks for monitoring and polling."""
         self.background_tasks = asyncio.create_task(self._start_background_tasks())
@@ -342,6 +346,7 @@ class Dria:
             try:
                 decoded_item = base64.b64decode(item).decode("utf-8")
                 result = json.loads(decoded_item)
+                print(result)
                 identifier = result["taskId"]
                 task_data = self.storage.get_value(identifier)
                 if not task_data:
