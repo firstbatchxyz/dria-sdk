@@ -98,6 +98,8 @@ class Dria:
             )
         except Exception:
             logger.error("Error in background tasks", exc_info=True)
+            await asyncio.sleep(10) # Retry after sleep
+
 
     async def _run_monitoring(self) -> None:
         """Run the monitoring process to track task statuses."""
@@ -121,7 +123,18 @@ class Dria:
         Raises:
             TaskPublishError: If there's an error during task publication.
         """
-        task.private_key, task.public_key = generate_task_keys()
+        max_attempts = 3
+        for attempt in range(max_attempts):
+            task.private_key, task.public_key = generate_task_keys()
+            if len(task.public_key) % 2 == 0:
+                try:
+                    bytes.fromhex(task.public_key[2:])
+                    break  # Successfully generated valid keys
+                except ValueError:
+                    pass  # Continue to next attempt
+        else:
+            logger.error(f"Failed to generate valid task keys after {max_attempts} attempts")
+            return False
         try:
             success, nodes = await self.task_manager.push_task(task, self.blacklist)
             if success:
@@ -274,13 +287,13 @@ class Dria:
                     results.append(self._create_task_result(task_id, value))
         return results
 
-    def _create_task_result(self, task_id: str, value: str) -> TaskResult:
+    def _create_task_result(self, task_id: str, value: dict) -> TaskResult:
         """
         Create a TaskResult object from task_id and value.
 
         Args:
             task_id (str): The ID of the task.
-            value (str): The result value.
+            value (dict): The result value.
 
         Returns:
             TaskResult: A TaskResult object.
@@ -297,8 +310,9 @@ class Dria:
         return TaskResult(
             id=task_id,
             step_name=step_name,
-            result=value,
-            task_input=task_data["workflow"]["external_memory"]
+            result=value["result"],
+            task_input=task_data["workflow"]["external_memory"],
+            model=value["model"]
         )
 
     async def poll(self) -> None:
@@ -352,7 +366,7 @@ class Dria:
                         if address in self.blacklist:
                             self._remove_from_blacklist(address)
                     pipeline_id = task.pipeline_id or ""
-                    self.kv.push(f"{pipeline_id}:{identifier}", processed_result)
+                    self.kv.push(f"{pipeline_id}:{identifier}", {"result": processed_result, "model": result["model"]})
             except (json.JSONDecodeError, KeyError, TypeError, ValueError) as e:
                 logger.error(f"Error processing item: {e}", exc_info=True)
             except Exception as e:

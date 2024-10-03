@@ -1,6 +1,10 @@
 from typing import List, Dict, Any, Optional
+
+from dria_workflows import OpenAIParser, NousParser, LlamaParser
+
 from pydantic import BaseModel, Field
 
+from dria.models import Model
 
 class P2PMessage(BaseModel):
     payload: str
@@ -57,14 +61,39 @@ class TaskResult(BaseModel):
     task_input: Any
     step_name: str
     result: Any
+    model: str
 
     def dict(self) -> Dict[str, Any]:
         return {
             "id": self.id,
             "task_input": self.task_input,
             "step_name": self.step_name,
-            "result": self.result
+            "result": self.result,
+            "model": self.model
         }
+
+    def parse(self):
+        model_parsers = {
+            Model.GPT4O: OpenAIParser(),
+            Model.GPT4O_MINI: OpenAIParser(),
+            Model.GPT4_TURBO: OpenAIParser(),
+            Model.LLAMA3_1_8B_FP16: LlamaParser(),
+            Model.LLAMA3_1_70B: LlamaParser(),
+            Model.LLAMA3_1_70BQ8: LlamaParser(),
+            Model.LLAMA3_2_1B: LlamaParser(),
+            Model.LLAMA3_2_3B: LlamaParser(),
+            Model.LLAMA3_1_8BQ8: LlamaParser(),
+            Model.NOUS_THETA: NousParser(),
+        }
+
+        parser = model_parsers.get(Model(self.model))
+        if parser:
+            return parser.parse(self.result)
+        else:
+            raise ValueError(f"Model {self.model} not supported function calling")
+
+
+
 
 class TaskInput(BaseModel):
     class Config:
