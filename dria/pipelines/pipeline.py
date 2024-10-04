@@ -116,7 +116,7 @@ class Pipeline:
                     self._handle_deadline_exceeded()
                     return
 
-                results: List[TaskResult] = await self.client.fetch(self.pipeline_id)
+                results: List[TaskResult] = await self.client.fetch(pipeline=self)
                 for result in results:
                     step = self.get_step(result.step_name)
                     if not step:

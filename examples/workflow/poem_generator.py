@@ -7,13 +7,10 @@ It showcases the asynchronous workflow for task creation, execution, and result 
 """
 
 import asyncio
-import json
 import logging
-import os
-from typing import List
 
 from dria.client import Dria
-from dria.models import Task, TaskResult
+from dria.models import Task
 from dria.models.enums import Model
 from dria.workflows.lib.poem_generator import poem
 
@@ -37,7 +34,7 @@ async def generate_poem(prompt: str):
         ]
     )
     await dria.push(task)
-    return task.id
+    return task
 
 
 async def main():
@@ -48,7 +45,7 @@ async def main():
 
     logger.info(f"Generating {node_count} poem(s) based on the prompt: '{prompt}'")
     tasks = [await generate_poem(prompt) for _ in range(3)]
-    results = await dria.fetch(task_id=tasks, min_outputs=3)
+    results = await dria.fetch(task=tasks)
     print(results)
 
     for i, result in enumerate(results, 1):

@@ -3,7 +3,7 @@ import base64
 import json
 import os
 import time
-from typing import List, Optional, Dict, Union
+from typing import Any, List, Optional, Dict, Union
 
 from dria.client.monitor import Monitor
 from dria.constants import (
@@ -11,11 +11,11 @@ from dria.constants import (
     RETURN_DEADLINE,
     MONITORING_INTERVAL,
     FETCH_INTERVAL,
-    FETCH_DEADLINE,
 )
 from dria.db.mq import KeyValueQueue
 from dria.db.storage import Storage
 from dria.models import Task, TaskResult
+from dria.models.enums import FunctionCallingModels, OllamaModels, OpenAIModels
 from dria.models.exceptions import TaskPublishError
 from dria.request import RPCClient
 from dria.utils import logger
@@ -84,11 +84,12 @@ class Dria:
             logger.info(f"Address {address} removed from blacklist.")
         else:
             logger.debug(f"Address {address} not found in blacklist.")
-                
+
     def flush_blacklist(self):
         """Flush the blacklist to file."""
+        self.blacklist = {}
         self._save_blacklist()
-        
+
     async def initialize(self) -> None:
         """Initialize background tasks for monitoring and polling."""
         self.background_tasks = asyncio.create_task(self._start_background_tasks())
@@ -102,8 +103,7 @@ class Dria:
             )
         except Exception:
             logger.error("Error in background tasks", exc_info=True)
-            await asyncio.sleep(10) # Retry after sleep
-
+            await asyncio.sleep(10)  # Retry after sleep
 
     async def _run_monitoring(self) -> None:
         """Run the monitoring process to track task statuses."""
@@ -127,18 +127,14 @@ class Dria:
         Raises:
             TaskPublishError: If there's an error during task publication.
         """
-        max_attempts = 3
+        self._check_function_calling_models(task)
+
+        max_attempts = 20
         for attempt in range(max_attempts):
             task.private_key, task.public_key = generate_task_keys()
-            if len(task.public_key) % 2 == 0:
-                try:
-                    bytes.fromhex(task.public_key[2:])
-                    break  # Successfully generated valid keys
-                except ValueError:
-                    pass  # Continue to next attempt
-        else:
-            logger.error(f"Failed to generate valid task keys after {max_attempts} attempts")
-            return False
+            if task.public_key.startswith("0x0"):  # It should not start with 0 for encoding reasons
+                continue
+            break
         try:
             success, nodes = await self.task_manager.push_task(task, self.blacklist)
             if success:
@@ -173,37 +169,61 @@ class Dria:
 
     async def fetch(
             self,
-            pipeline_id: Optional[str] = None,
-            task_id: Union[Optional[str], Optional[List[str]]] = None,
-            min_outputs: int = 1
+            pipeline: Optional[Any] = None,
+            task: Union[Optional[Task], Optional[List[Task]]] = None,
+            min_outputs: Optional[int] = None,
+            timeout: int = 300
     ) -> List[TaskResult]:
         """
-        Fetch task results from storage based on pipeline_id and/or task_id.
+        Fetch task results from storage based on pipeline and/or task.
 
         Args:
-            pipeline_id (Optional[str]): The ID of the pipeline.
-            task_id (Union[Optional[str], Optional[List[str]]]): The ID of the task.
+            pipeline (Optional[Pipeline]): The pipeline.
+            task (Union[Optional[Task], Optional[List[Task]]]): The task.
             min_outputs (int): The minimum number of outputs to fetch.
+            timeout (int): Timeout of fetch process
 
         Returns:
             List[TaskResult]: A list of fetched results.
 
         Raises:
-            ValueError: If both pipeline_id and task_id are None.
+            ValueError: If both pipeline and task are None.
         """
-        if not pipeline_id and not task_id:
-            raise ValueError("At least one of pipeline_id or task_id must be provided.")
+        if not pipeline and not task:
+            raise ValueError("At least one of pipeline or task must be provided.")
 
         results: List[TaskResult] = []
         start_time = time.time()
 
+        if min_outputs is None:
+            if isinstance(task, list):
+                min_outputs = len(task)
+                if min_outputs > len(task) and isinstance(task, list):
+                    logger.warning(f"min_outputs is greater than the number of task. Setting min_outputs to {len(task)}")
+                    min_outputs = len(task)
+            else:
+                min_outputs = 1
+                if min_outputs > 1:
+                    logger.warning(f"min_outputs is greater than the number of task. Setting min_outputs to 1")
+                    min_outputs = 1
+
         while len(results) < min_outputs:
             elapsed_time = time.time() - start_time
-            if elapsed_time > FETCH_DEADLINE:
+            if elapsed_time > timeout:
                 logger.warning(
-                    f"Unable to fetch {min_outputs} outputs within {FETCH_DEADLINE} seconds."
+                    f"Unable to fetch {min_outputs} outputs within {timeout} seconds."
                 )
                 break
+            pipeline_id = pipeline.pipeline_id if pipeline and hasattr(pipeline, 'pipeline_id') else None
+
+            if task is None:
+                task_id = None
+            elif isinstance(task, Task):
+                task_id = task.id
+            elif isinstance(task, list):
+                task_id = [t.id for t in task]
+            else:
+                raise ValueError("Invalid task type. Expected None, Task, or List[Task].")
 
             new_results = self._fetch_results(pipeline_id, task_id)
             results.extend(new_results)
@@ -212,6 +232,7 @@ class Dria:
                 await asyncio.sleep(FETCH_INTERVAL)
 
         return results
+
     def _fetch_results(
             self,
             pipeline_id: Optional[str],
@@ -346,7 +367,9 @@ class Dria:
             try:
                 decoded_item = base64.b64decode(item).decode("utf-8")
                 result = json.loads(decoded_item)
-                print(result)
+                if "error" in result.keys():
+                    logger.error(f"Error in result: {result['error']}")
+                    continue
                 identifier = result["taskId"]
                 task_data = self.storage.get_value(identifier)
                 if not task_data:
@@ -363,7 +386,7 @@ class Dria:
 
                 if self._is_task_valid(task, current_time):
                     processed_result, address = get_truthful_nodes(task, result)
-                    if not processed_result:
+                    if processed_result is None:
                         logger.info("Task result is not valid, retrying with another node...")
                         asyncio.create_task(self.push(task))
                         continue
@@ -419,3 +442,39 @@ class Dria:
                 logger.error(f"Error parsing task metadata for task_id {task_id}: {e}")
                 raise ValueError(f"Invalid task metadata for task id: {task_id}") from e
         raise ValueError(f"Task metadata not found for task id: {task_id}")
+
+    @staticmethod
+    def _check_function_calling_models(task: Task) -> None:
+        """
+        Check if the task is using function calling models and validate the models.
+
+        Args:
+            task (Task): The task to check and validate.
+
+        Raises:
+            ValueError: If no supported function calling models are found for the task.
+        """
+        has_function_calling = any(t.get("operator") == "function_calling" for t in task.workflow.get("tasks", []))
+        supported_models = set(model.value for model in FunctionCallingModels)
+
+        model_list = []
+        for model in task.models:
+            if model == "openai":
+                model_list.extend(model.value for model in OpenAIModels)
+            elif model == "ollama":
+                model_list.extend(model.value for model in OllamaModels)
+            else:
+                model_list.append(model)
+        if has_function_calling:
+            filtered_models = [model for model in model_list if model in supported_models]
+
+            for model in model_list:
+                if model not in supported_models:
+                    logger.warning(f"Model '{model}' is not supported for function calling and will be removed.")
+
+            task.models = filtered_models
+
+            if not filtered_models:
+                supported_model_names = [model.name for model in FunctionCallingModels]
+                raise ValueError(f"No supported function calling models found for task. "
+                                 f"Supported models: {', '.join(supported_model_names)}")

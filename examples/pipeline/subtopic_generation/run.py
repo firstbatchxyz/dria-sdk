@@ -1,6 +1,5 @@
 import asyncio
 import logging
-import os
 
 from dria.client import Dria
 from pipeline import create_subtopic_pipeline
@@ -12,7 +11,6 @@ dria = Dria()
 
 
 async def main():
-
     topic = "Artificial Intelligence"
     logger.info(f"Creating pipeline for topic: {topic}")
     await dria.initialize()
