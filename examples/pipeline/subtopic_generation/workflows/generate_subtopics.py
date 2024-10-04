@@ -22,7 +22,7 @@ def generate_subtopics(
     """
     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-    builder = WorkflowBuilder(memory=input_data)
+    builder = WorkflowBuilder(**input_data)
     builder.set_max_time(max_time)
     builder.set_max_steps(max_steps)
     builder.set_max_tokens(max_tokens)
