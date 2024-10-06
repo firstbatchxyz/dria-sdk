@@ -49,7 +49,7 @@ class TaskManager:
             bool: True if the message was published successfully, False otherwise
         """
         try:
-            success = await self.rpc.push_content_topic(data=str_to_base64(task), content_topic=content_topic)
+            success = self.rpc.push_content_topic(data=str_to_base64(task), content_topic=content_topic)
             return success
         except Exception as e:
             raise TaskPublishError(f"Failed to publish task: {e}") from e

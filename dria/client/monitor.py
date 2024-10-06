@@ -41,7 +41,9 @@ class Monitor:
                     await asyncio.sleep(MONITORING_INTERVAL)
                     await self._check_heartbeat(uuid_)
             except Exception as e:
-                raise Exception(f"Error during heartbeat process: {e}")
+                logger.error(f"Error during heartbeat process: {e}")
+                await asyncio.sleep(MONITORING_INTERVAL)
+                raise Exception(e)
 
     async def _send_heartbeat(self, payload: str) -> bool:
         """
@@ -57,7 +59,7 @@ class Monitor:
             logger.warning("RPC client not initialized, skipping heartbeat sending.")
             return False
 
-        status = await self.rpc.push_content_topic(
+        status = self.rpc.push_content_topic(
             str_to_base64(payload), HEARTBEAT_TOPIC
         )
         if not status:
@@ -80,7 +82,7 @@ class Monitor:
             logger.warning("RPC client or Task Manager not initialized, skipping heartbeat checking.")
             return False
 
-        topic = await self.rpc.get_content_topic(HEARTBEAT_OUTPUT_TOPIC)
+        topic = self.rpc.get_content_topic(HEARTBEAT_OUTPUT_TOPIC)
         if topic:
             try:
                 nodes_as_address = self._decrypt_nodes(

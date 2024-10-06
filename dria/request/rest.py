@@ -1,6 +1,6 @@
 from typing import List, Union
 
-import httpx
+import requests
 
 from dria import constants
 from dria.models.exceptions import RPCContentTopicError, RPCConnectionError, RPCAuthenticationError
@@ -13,17 +13,29 @@ class RPCClient:
 
     Args:
         auth_token (str): The authentication token for the RPC client.
-
     """
 
     def __init__(self, auth_token: str):
         if not auth_token:
-            raise ValueError("RPC token is required for Dria RPC."
-                             "Please set the DRIA_RPC_TOKEN environment variable.")
+            raise ValueError(
+                "RPC token is required for Dria RPC."
+                "Please set the DRIA_RPC_TOKEN environment variable."
+            )
         self.base_url = constants.RPC_BASE_URL
         self.auth_token = auth_token
+        self.session = requests.Session()
+        self.session.headers.update({
+            "x-api-key": self.auth_token,
+            "Accept": "application/json",
+        })
 
-    async def health_check(self) -> bool:
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.session.close()
+
+    def health_check(self) -> bool:
         """
         Perform a health check on the node.
 
@@ -31,15 +43,13 @@ class RPCClient:
         :raises RPCConnectionError: If there is a connection error with the RPC server.
         """
         try:
-            async with httpx.AsyncClient(
-                    headers={"x-api-key": self.auth_token, "Accept": "application/json"}) as client:
-                response = await client.get(f"{self.base_url}/health")
-                text = response.text
+            response = self.session.get(f"{self.base_url}/health")
+            text = response.text
             return text == "Node is healthy"
-        except httpx.RequestError as e:
+        except requests.RequestException as e:
             raise RPCConnectionError(f"Health check failed: {str(e)}")
 
-    async def get_content_topic(self, content_topic: str) -> List[str]:
+    def get_content_topic(self, content_topic: str) -> List[str]:
         """
         Get content topic.
 
@@ -50,57 +60,57 @@ class RPCClient:
         :raises RPCConnectionError: If there is a connection error with the RPC server.
         """
         try:
-            async with httpx.AsyncClient(
-                    headers={"x-api-key": self.auth_token, "Accept": "application/json"}) as client:
-                response = await client.get(f"{self.base_url}/rpc/{content_topic}")
+            response = self.session.get(f"{self.base_url}/rpc/{content_topic}")
 
-                if response.status_code == 401:
-                    raise RPCAuthenticationError()
+            if response.status_code == 401:
+                raise RPCAuthenticationError()
 
-                response.raise_for_status()
-                res_json = response.json()
+            response.raise_for_status()
+            res_json = response.json()
             return res_json["data"]["results"]
-        except httpx.HTTPStatusError as e:
+        except requests.HTTPError as e:
             if e.response.status_code == 401:
                 raise RPCAuthenticationError()
             logger.error(f"Failed to get content topic {content_topic}: {e}")
-            raise RPCContentTopicError(f"Failed to get content topic", content_topic)
-        except httpx.RequestError as e:
+            raise RPCContentTopicError("Failed to get content topic", content_topic)
+        except requests.RequestException as e:
             logger.error(f"Failed to get content topic {content_topic}: {e}")
             return []
+        except Exception as e:
+            logger.info(f"Failed to get content topic {content_topic}: {e}")
+            raise e
 
-    async def push_content_topic(self, data: Union[str, bytes], content_topic: str) -> bool:
+    def push_content_topic(self, data: Union[str, bytes], content_topic: str) -> bool:
         """
         Push content to a topic.
 
         :param data: The data to push.
         :param content_topic: The content topic to push to.
-        :return: A success message.
+        :return: True if successful, False otherwise.
         :raises RPCContentTopicError: If there is an error pushing content to the topic.
         :raises RPCAuthenticationError: If there is an authentication error.
         :raises RPCConnectionError: If there is a connection error with the RPC server.
         """
         try:
             logger.debug("Pushing content to topic: %s", content_topic)
-            async with httpx.AsyncClient(
-                    headers={"x-api-key": self.auth_token, "Accept": "application/json"}) as client:
-                response = await client.post(
-                    f"{self.base_url}/rpc/{content_topic}",
-                    json={"value": {
-                        "payload": data,
-                    }},
-                    headers={"Content-Type": "application/json"},
-                )
+            response = self.session.post(
+                f"{self.base_url}/rpc/{content_topic}",
+                json={"value": {"payload": data}},
+                headers={"Content-Type": "application/json"},
+            )
 
-                if response.status_code == 401:
-                    raise RPCAuthenticationError()
+            if response.status_code == 401:
+                raise RPCAuthenticationError()
 
-                response.raise_for_status()
+            response.raise_for_status()
             return True
-        except httpx.HTTPStatusError as e:
+        except requests.HTTPError as e:
             if e.response.status_code == 401:
                 raise RPCAuthenticationError()
             logger.error(f"Failed to push content topic {content_topic}: {e}")
-            raise RPCContentTopicError(f"Failed to push content topic", content_topic)
-        except httpx.RequestError as e:
+            raise RPCContentTopicError("Failed to push content topic", content_topic)
+        except requests.RequestException as e:
             raise RPCConnectionError(f"Connection error: {str(e)}")
+        except Exception as e:
+            logger.error(f"Failed to push content topic {content_topic}: {e}")
+            raise e
