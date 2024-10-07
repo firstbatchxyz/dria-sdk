@@ -8,9 +8,9 @@ from dria.utils.task_utils import parse_json
 
 def scatter_callback(step: Step) -> List[TaskInput]:
     """
-    Scatter callback for 1-to-N operations.
+    Scatter callback for N-to-N operations.
 
-    This callback takes a single input and distributes it to multiple outputs.
+    This callback takes an array of inputs and distributes it to multiple outputs.
 
     Args:
         step (Step): The Step object containing input and output data.

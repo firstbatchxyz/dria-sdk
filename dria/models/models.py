@@ -102,15 +102,13 @@ class TaskResult(BaseModel):
             raise ValueError(f"Model {self.model} not supported function calling")
 
 
-
-
 class TaskInput(BaseModel):
     class Config:
         extra = "allow"
 
-    def __init__(self, **data: Any):
-        super().__init__(**data)
-        for key, value in data.items():
+    def __init__(self, **kwargs: Any):
+        super().__init__(**kwargs)
+        for key, value in kwargs.items():
             if key not in self.__fields__:
                 self.__fields__[key] = Field(default=value)
                 setattr(self, key, value)
