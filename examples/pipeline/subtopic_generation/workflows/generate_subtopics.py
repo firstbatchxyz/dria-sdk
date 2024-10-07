@@ -1,48 +1,47 @@
 import logging
+from dria.models import Task, Model, TaskInput
+from typing import List, Optional, Any
+from dria_workflows import WorkflowBuilder, Operator, Write, Edge, Read, GetAll, Workflow, ConditionBuilder, Expression
+import json
+import re
+import random
+from typing import Dict, List
+from dria.pipelines import Step
+from dria.pipelines import Step, StepTemplate
 
-from dria_workflows import WorkflowBuilder, Operator, Write, Edge, Workflow, GetAll
 
+class GenerateSubtopics(StepTemplate):
+    def create_workflow(
+            self,
+            topics: List[str]
+    ) -> Workflow:
+        """Generate subtopics for a given topic.
 
-def generate_subtopics(
-        input_data: dict,
-        max_time: int = 300,
-        max_steps: int = 20,
-        max_tokens: int = 750,
-) -> Workflow:
-    """Generate subtopics for a given topic.
+        Args:
+            topics (list): The input data for the workflow.
+        Returns:
+            Workflow: The built workflow for subtopic generation.
+        """
+        logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-    Args:
-        input_data (dict): The input data for the workflow.
-        max_time (int, optional): The maximum time to run the workflow. Defaults to 300.
-        max_steps (int, optional): The maximum number of steps to run the workflow. Defaults to 20.
-        max_tokens (int, optional): The maximum number of tokens to run the workflow. Defaults to 750.
+        builder = WorkflowBuilder(topics=topics)
 
-    Returns:
-        Workflow: The built workflow for subtopic generation.
-    """
-    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+        # Step A: GenerateSubtopics
+        builder.generative_step(
+            id="generate_subtopics",
+            path="workflows/prompts/generate_subtopics.md",
+            operator=Operator.GENERATION,
+            inputs=[
+                GetAll.new(key="topics", required=True),
+            ],
+            outputs=[Write.new("subtopics")]
+        )
 
-    builder = WorkflowBuilder(**input_data)
-    builder.set_max_time(max_time)
-    builder.set_max_steps(max_steps)
-    builder.set_max_tokens(max_tokens)
+        flow = [
+            Edge(source="generate_subtopics", target="_end")
+        ]
+        builder.flow(flow)
+        builder.set_return_value("subtopics")
+        workflow = builder.build()
 
-    # Step A: GenerateSubtopics
-    builder.generative_step(
-        id="generate_subtopics",
-        path="workflows/prompts/generate_subtopics.md",
-        operator=Operator.GENERATION,
-        inputs=[
-            GetAll.new(key="topics", required=True),
-        ],
-        outputs=[Write.new("subtopics")]
-    )
-
-    flow = [
-        Edge(source="generate_subtopics", target="_end")
-    ]
-    builder.flow(flow)
-    builder.set_return_value("subtopics")
-    workflow = builder.build()
-
-    return workflow
+        return workflow

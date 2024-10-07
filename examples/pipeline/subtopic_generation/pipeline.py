@@ -1,27 +1,38 @@
+from typing import List
+
 from dria.client import Dria
 from dria.models import Model, TaskInput
-from dria.pipelines import PipelineConfig, StepConfig, PipelineBuilder, StepBuilder
-from workflows import generate_entries, generate_subtopics
+from dria.pipelines import PipelineConfig, StepConfig, PipelineBuilder, StepBuilder, Pipeline
+from workflows import GenerateSubtopics, GenerateEntries
+import logging
 
 
-async def create_subtopic_pipeline(dria: Dria, topic, config: PipelineConfig = PipelineConfig(), max_depth=1):
-    pipeline = PipelineBuilder(config, dria)
-    depth = 0
 
-    # handles single topic output
-    subtopics = StepBuilder(input=TaskInput(topics=[topic]), config=StepConfig(models=[Model.QWEN2_5_7B_FP16,
-                                                                                       Model.GPT4O]),
-                            workflow=generate_subtopics).broadcast().build()
-    pipeline.add_step(subtopics)
 
-    while depth < max_depth:
-        # handles multiple topics
-        subtopics = StepBuilder(workflow=generate_subtopics,
-                                config=StepConfig(models=[Model.QWEN2_5_7B_FP16, Model.GPT4O])).scatter().build()
-        pipeline.add_step(subtopics)
-        depth += 1
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-    # entry generation
-    entries = StepBuilder(workflow=generate_entries, config=StepConfig(min_compute=0.8)).build()
-    pipeline.add_step(entries)
-    return pipeline.build()
+
+class SubTopicPipeline:
+    """
+    A pipeline for generating subtopics.
+
+    It is a simple pipeline that generates subtopics based on a given topic.
+    Pipeline would create subtopics based on a given topic.
+    """
+    def __init__(self, dria: Dria, config: PipelineConfig):
+        self.pipeline_config: PipelineConfig = config or PipelineConfig()
+        self.pipeline = PipelineBuilder(self.pipeline_config, dria)
+
+    def build(self, topics: List[str], max_depth=2) -> Pipeline:
+        self.pipeline.input(topics=topics)
+        for i in range(max_depth):
+            self.pipeline << GenerateSubtopics().scatter()
+        self.pipeline << GenerateEntries().aggregate()
+        return self.pipeline.build()
+
+
+if __name__ == "__main__":
+    _dria = Dria(rpc_token="asd")
+    pipeline = SubTopicPipeline(_dria, PipelineConfig())
+    pipeline.build(topics=["Artificial Intelligence"], max_depth=2)
