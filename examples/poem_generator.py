@@ -15,7 +15,9 @@ from dria.models.enums import Model
 from dria.workflows.lib.poem_generator import poem
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
 logger = logging.getLogger(__name__)
 
 # Initialize Dria client
@@ -31,7 +33,7 @@ async def generate_poem(prompt: str):
             Model.GEMMA2_9B,
             Model.GEMMA2_9B_FP16,
             Model.QWEN2_5_7B_FP16,
-        ]
+        ],
     )
     await dria.push(task)
     return task

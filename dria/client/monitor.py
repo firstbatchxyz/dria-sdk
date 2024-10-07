@@ -13,7 +13,8 @@ from dria.request import RPCClient
 from dria.utils import (
     recover_public_key,
     base64_to_json,
-    uncompressed_public_key, str_to_base64,
+    uncompressed_public_key,
+    str_to_base64,
 )
 from dria.utils.logging import logger
 from dria.utils.task_utils import TaskManager
@@ -35,7 +36,9 @@ class Monitor:
         while True:
             try:
                 uuid_ = self.task_manager.generate_random_string()
-                deadline = int((datetime.now() + timedelta(seconds=60)).timestamp() * 1e9)
+                deadline = int(
+                    (datetime.now() + timedelta(seconds=60)).timestamp() * 1e9
+                )
                 payload = json.dumps({"uuid": uuid_, "deadline": deadline})
                 if await self._send_heartbeat(payload):
                     await asyncio.sleep(MONITORING_INTERVAL)
@@ -77,7 +80,9 @@ class Monitor:
             bool: True if a response is received, False otherwise.
         """
         if not self.rpc or not self.task_manager:
-            logger.warning("RPC client or Task Manager not initialized, skipping heartbeat checking.")
+            logger.warning(
+                "RPC client or Task Manager not initialized, skipping heartbeat checking."
+            )
             return False
 
         topic = await self.rpc.get_content_topic(HEARTBEAT_OUTPUT_TOPIC)
@@ -120,9 +125,16 @@ class Monitor:
                 if metadata["uuid"] != msg:
                     continue
 
-                public_key = recover_public_key(bytes.fromhex(signature), metadata_json.encode())
+                public_key = recover_public_key(
+                    bytes.fromhex(signature), metadata_json.encode()
+                )
                 public_key = uncompressed_public_key(public_key)
-                address = keccak.new(digest_bits=256).update(public_key[1:]).digest()[-20:].hex()
+                address = (
+                    keccak.new(digest_bits=256)
+                    .update(public_key[1:])
+                    .digest()[-20:]
+                    .hex()
+                )
                 for model_id, model_name in metadata["models"]:
                     node_addresses[model_name].append(address)
                     node_addresses[model_id].append(address)

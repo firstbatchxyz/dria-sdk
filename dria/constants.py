@@ -25,6 +25,13 @@ JINA_TOKEN: Final[str] = os.getenv("JINA_TOKEN")
 
 LOG_LEVEL: Final[str] = os.getenv("LOG_LEVEL")
 
-if not all([INPUT_CONTENT_TOPIC, OUTPUT_CONTENT_TOPIC, RPC_BASE_URL,
-            HEARTBEAT_TOPIC, HEARTBEAT_OUTPUT_TOPIC]):
+if not all(
+    [
+        INPUT_CONTENT_TOPIC,
+        OUTPUT_CONTENT_TOPIC,
+        RPC_BASE_URL,
+        HEARTBEAT_TOPIC,
+        HEARTBEAT_OUTPUT_TOPIC,
+    ]
+):
     raise ValueError("One or more required constants are not set")

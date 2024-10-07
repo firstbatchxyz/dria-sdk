@@ -8,14 +8,14 @@ def configure_logging(level=constants.LOG_LEVEL):
     root_logger = logging.getLogger("dria")
     root_logger.setLevel(level or "INFO")
 
-    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+    formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
 
     console_handler = logging.StreamHandler(sys.stdout)
     console_handler.setFormatter(formatter)
     root_logger.addHandler(console_handler)
 
     # Suppress logs from specific libraries
-    logging.getLogger('httpx').setLevel(logging.WARNING)
+    logging.getLogger("httpx").setLevel(logging.WARNING)
     # Prevent propagation to avoid duplicate logs
     root_logger.propagate = False
 

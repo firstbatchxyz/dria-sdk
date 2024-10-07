@@ -10,5 +10,5 @@ __all__ = [
     "Pipeline",
     "PipelineConfig",
     "StepBuilder",
-    "PipelineBuilder"
+    "PipelineBuilder",
 ]

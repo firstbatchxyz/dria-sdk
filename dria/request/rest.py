@@ -3,7 +3,11 @@ from typing import List, Union
 import httpx
 
 from dria import constants
-from dria.models.exceptions import RPCContentTopicError, RPCConnectionError, RPCAuthenticationError
+from dria.models.exceptions import (
+    RPCContentTopicError,
+    RPCConnectionError,
+    RPCAuthenticationError,
+)
 from dria.utils.logging import logger
 
 
@@ -18,8 +22,10 @@ class RPCClient:
 
     def __init__(self, auth_token: str):
         if not auth_token:
-            raise ValueError("RPC token is required for Dria RPC."
-                             "Please set the DRIA_RPC_TOKEN environment variable.")
+            raise ValueError(
+                "RPC token is required for Dria RPC."
+                "Please set the DRIA_RPC_TOKEN environment variable."
+            )
         self.base_url = constants.RPC_BASE_URL
         self.auth_token = auth_token
 
@@ -32,7 +38,8 @@ class RPCClient:
         """
         try:
             async with httpx.AsyncClient(
-                    headers={"x-api-key": self.auth_token, "Accept": "application/json"}) as client:
+                headers={"x-api-key": self.auth_token, "Accept": "application/json"}
+            ) as client:
                 response = await client.get(f"{self.base_url}/health")
                 text = response.text
             return text == "Node is healthy"
@@ -51,7 +58,8 @@ class RPCClient:
         """
         try:
             async with httpx.AsyncClient(
-                    headers={"x-api-key": self.auth_token, "Accept": "application/json"}) as client:
+                headers={"x-api-key": self.auth_token, "Accept": "application/json"}
+            ) as client:
                 response = await client.get(f"{self.base_url}/rpc/{content_topic}")
 
                 if response.status_code == 401:
@@ -69,7 +77,9 @@ class RPCClient:
             logger.error(f"Failed to get content topic {content_topic}: {e}")
             return []
 
-    async def push_content_topic(self, data: Union[str, bytes], content_topic: str) -> bool:
+    async def push_content_topic(
+        self, data: Union[str, bytes], content_topic: str
+    ) -> bool:
         """
         Push content to a topic.
 
@@ -83,12 +93,15 @@ class RPCClient:
         try:
             logger.debug("Pushing content to topic: %s", content_topic)
             async with httpx.AsyncClient(
-                    headers={"x-api-key": self.auth_token, "Accept": "application/json"}) as client:
+                headers={"x-api-key": self.auth_token, "Accept": "application/json"}
+            ) as client:
                 response = await client.post(
                     f"{self.base_url}/rpc/{content_topic}",
-                    json={"value": {
-                        "payload": data,
-                    }},
+                    json={
+                        "value": {
+                            "payload": data,
+                        }
+                    },
                     headers={"Content-Type": "application/json"},
                 )
 

@@ -68,7 +68,9 @@ class Storage:
             if field is None:
                 current_value = list(set(current_value) - set(values))
             else:
-                current_value[field] = list(set(current_value.get(field, [])) - set(values))
+                current_value[field] = list(
+                    set(current_value.get(field, [])) - set(values)
+                )
             self.set_value(key, json.dumps(current_value))
         else:
             raise ValueError(f"Key '{key}' does not exist in the local dictionary.")
@@ -85,6 +87,7 @@ class Storage:
         Get all keys matching the pattern.
         """
         import re
+
         regex = re.compile(pattern.replace("*", ".*"))
         return [key for key in self.data.keys() if regex.match(key)]
 

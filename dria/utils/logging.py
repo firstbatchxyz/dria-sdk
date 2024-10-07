@@ -8,4 +8,4 @@ configure_logging()
 logger = logging.getLogger(__name__)
 
 # Export the logger
-__all__ = ['logger']
+__all__ = ["logger"]

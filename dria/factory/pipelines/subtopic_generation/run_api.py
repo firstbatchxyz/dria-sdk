@@ -11,7 +11,9 @@ from dria.pipelines.pipeline import PipelineConfig, Pipeline
 from pipeline import create_subtopic_pipeline
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
 logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Dria SDK Example")
@@ -25,17 +27,23 @@ async def startup_event():
 
 
 class PipelineRequest(BaseModel):
-    input_text: str = Field(..., description="The input text for the pipeline to process")
+    input_text: str = Field(
+        ..., description="The input text for the pipeline to process"
+    )
 
 
 class PipelineResponse(BaseModel):
-    pipeline_id: str = Field(..., description="Unique identifier for the created pipeline")
+    pipeline_id: str = Field(
+        ..., description="Unique identifier for the created pipeline"
+    )
 
 
 class PipelineStatus(BaseModel):
     status: str = Field(..., description="Current status of the pipeline")
     state: str = Field(None, description="Current state of the pipeline if running")
-    result: Dict[str, Any] = Field(None, description="Result of the pipeline if completed")
+    result: Dict[str, Any] = Field(
+        None, description="Result of the pipeline if completed"
+    )
 
 
 # Create a pipeline configuration
@@ -47,7 +55,9 @@ pipelines: Dict[str, Pipeline] = {}
 @app.post("/run_pipeline", response_model=PipelineResponse, status_code=202)
 async def run_pipeline(request: PipelineRequest, background_tasks: BackgroundTasks):
     try:
-        pipeline = await create_subtopic_pipeline(dria, request.input_text, pipeline_config)
+        pipeline = await create_subtopic_pipeline(
+            dria, request.input_text, pipeline_config
+        )
         pipelines[pipeline.pipeline_id] = pipeline
         background_tasks.add_task(pipeline.execute)
         logger.info(f"Pipeline {pipeline.pipeline_id} created and started")

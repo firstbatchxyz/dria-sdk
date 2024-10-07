@@ -35,7 +35,9 @@ class TaskManager:
         Returns:
             str: Random string
         """
-        return ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(length))
+        return "".join(
+            secrets.choice(string.ascii_letters + string.digits) for _ in range(length)
+        )
 
     async def publish_message(self, task: str, content_topic: str) -> bool:
         """
@@ -49,12 +51,16 @@ class TaskManager:
             bool: True if the message was published successfully, False otherwise
         """
         try:
-            success = await self.rpc.push_content_topic(data=str_to_base64(task), content_topic=content_topic)
+            success = await self.rpc.push_content_topic(
+                data=str_to_base64(task), content_topic=content_topic
+            )
             return success
         except Exception as e:
             raise TaskPublishError(f"Failed to publish task: {e}") from e
 
-    async def prepare_task(self, task: Task, blacklist: Dict[str, Dict[str, int]]) -> tuple[dict[str, Any], Task]:
+    async def prepare_task(
+        self, task: Task, blacklist: Dict[str, Dict[str, int]]
+    ) -> tuple[dict[str, Any], Task]:
         """
         Prepare a task for publishing.
 
@@ -80,16 +86,20 @@ class TaskManager:
             workflow=task.workflow,
             model=task.models,
         ).dict()
-        return TaskModel(
-            taskId=task_id,
-            filter=task_filter,
-            input=task_input,
-            deadline=deadline,
-            publicKey=task.public_key.lstrip("0x")
-        ).dict(), task
+        return (
+            TaskModel(
+                taskId=task_id,
+                filter=task_filter,
+                input=task_input,
+                deadline=deadline,
+                publicKey=task.public_key.lstrip("0x"),
+            ).dict(),
+            task,
+        )
 
-    async def push_task(self, task: Task, blacklist: Dict[str, Dict[str, int]]) -> tuple[bool, Union[
-        Optional[List[str]]]]:
+    async def push_task(
+        self, task: Task, blacklist: Dict[str, Dict[str, int]]
+    ) -> tuple[bool, Union[Optional[List[str]]]]:
         """
         Push a task to the content topic.
 
@@ -103,7 +113,9 @@ class TaskManager:
         task_model, task = await self.prepare_task(task, blacklist)
         task_model_str = json.dumps(task_model, ensure_ascii=False)
         if await self.publish_message(task_model_str, INPUT_CONTENT_TOPIC):
-            self.storage.set_value(f"{task.id}", json.dumps(task.dict(), ensure_ascii=False))
+            self.storage.set_value(
+                f"{task.id}", json.dumps(task.dict(), ensure_ascii=False)
+            )
             return True, task.nodes
         return False, None
 
@@ -125,10 +137,10 @@ class TaskManager:
             return []
 
     async def create_filter(
-            self,
-            using_models: List[str],
-            blacklist: Dict[str, Dict[str, int]],
-            retry: int = 0
+        self,
+        using_models: List[str],
+        blacklist: Dict[str, Dict[str, int]],
+        retry: int = 0,
     ) -> Tuple[List[str], dict]:
         """
         Create a filter for a given task.
@@ -154,7 +166,8 @@ class TaskManager:
         for model in using_models:
             available_nodes_for_model = self.get_available_nodes(model)
             filtered_nodes = [
-                node for node in available_nodes_for_model
+                node
+                for node in available_nodes_for_model
                 if int(time.time()) > blacklist.get(node, {"deadline": 0})["deadline"]
             ]
             available_nodes.update(filtered_nodes)
@@ -179,10 +192,13 @@ class TaskManager:
 
         for model in using_models:
             try:
-                self.storage.remove_from_list(f"available-nodes-{model}", None, picked_nodes)
+                self.storage.remove_from_list(
+                    f"available-nodes-{model}", None, picked_nodes
+                )
             except ValueError:
                 logger.debug(
-                    f"Node {picked_nodes} not found in available nodes for model {model}. Passing this node for remove request.")
+                    f"Node {picked_nodes} not found in available nodes for model {model}. Passing this node for remove request."
+                )
 
         bf = BloomFilter(len(picked_nodes) * 2 + 1, 0.001)
         for node in picked_nodes:
@@ -203,7 +219,10 @@ class TaskManager:
             bool: True if the nodes were added successfully, False otherwise
         """
         try:
-            self.storage.set_value(f"available-nodes-{model_type}", json.dumps(node_model.nodes, ensure_ascii=False))
+            self.storage.set_value(
+                f"available-nodes-{model_type}",
+                json.dumps(node_model.nodes, ensure_ascii=False),
+            )
             return True
         except Exception as e:
             logger.error(f"Error adding available nodes: {e}")
@@ -221,7 +240,7 @@ def parse_json(text: Union[str, List]) -> Union[list[dict], dict]:
     """
 
     def parse_single_json(t: str) -> Dict:
-        json_content = re.search(r'<JSON>(.*?)</JSON>', t, re.DOTALL)
+        json_content = re.search(r"<JSON>(.*?)</JSON>", t, re.DOTALL)
         if not json_content:
             cleaned_text = t.replace("```json", "").replace("```", "").strip()
             try:
@@ -229,7 +248,7 @@ def parse_json(text: Union[str, List]) -> Union[list[dict], dict]:
             except json.JSONDecodeError:
                 return {}
 
-        json_text = re.sub(r'<[^>]+>', '', json_content.group(1)).strip()
+        json_text = re.sub(r"<[^>]+>", "", json_content.group(1)).strip()
 
         try:
             return json.loads(json_text)

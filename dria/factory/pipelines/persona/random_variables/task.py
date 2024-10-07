@@ -1,0 +1,168 @@
+import logging
+from dria.models import Task, Model, TaskInput
+from typing import List, Optional, Any
+from dria_workflows import (
+    WorkflowBuilder,
+    Operator,
+    Write,
+    Edge,
+    Read,
+    GetAll,
+    Workflow,
+    ConditionBuilder,
+    Expression,
+)
+import json
+import re
+import random
+from typing import Dict, List
+from dria.pipelines import Step
+from dria.pipelines import Step, StepTemplate
+
+logger = logging.getLogger(__name__)
+
+
+class RandomVariable(StepTemplate):
+
+    def create_workflow(
+        self,
+        simulation_description: str,
+    ) -> Workflow:
+        """Generate random variables for simulation
+
+        Args:
+            :param simulation_description: The description of the simulation.
+
+        Returns:
+            dict: The generated random variables.
+        """
+        logging.basicConfig(
+            level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+        )
+
+        builder = WorkflowBuilder(simulation_description=simulation_description)
+
+        # Step A: RandomVarGen
+        builder.generative_step(
+            id="random_var_gen",
+            path="/Users/kayaomers/Documents/firstbatch/dria-sdk/examples/pipeline/persona/random_variables/prompt.md",
+            operator=Operator.GENERATION,
+            inputs=[
+                Read.new(key="simulation_description", required=True),
+                Read.new(key="is_valid", required=False),
+            ],
+            outputs=[Write.new("random_vars")],
+        )
+
+        # Step B: ValidateRandomVars
+        builder.generative_step(
+            id="validate_random_vars",
+            path="/Users/kayaomers/Documents/firstbatch/dria-sdk/examples/pipeline/persona/random_variables/validate.md",
+            operator=Operator.GENERATION,
+            inputs=[
+                Read.new(key="simulation_description", required=True),
+                Read.new(key="random_vars", required=True),
+            ],
+            outputs=[Write.new("is_valid")],
+        )
+
+        flow = [
+            Edge(source="random_var_gen", target="validate_random_vars"),
+            Edge(
+                source="validate_random_vars",
+                target="_end",
+                condition=ConditionBuilder.build(
+                    input=Read.new("random_vars", required=True),
+                    expression=Expression.EQUAL,
+                    expected="Yes",
+                    target_if_not="A",
+                ),
+            ),
+        ]
+        builder.flow(flow)
+        builder.set_return_value("random_vars")
+        return builder.build()
+
+    def callback(self, step: Step) -> List[TaskInput]:
+        """
+        Process the output of the random variable generation step.
+
+        Args:
+            step (Step): The Step object containing input and output data.
+
+        Returns:
+            Dict[str, Any]: A dictionary containing persona traits and simulation description.
+
+        Raises:
+            Exception: If there's an error processing the step output.
+        """
+
+        output = step.output[0].result
+        try:
+            output = self.parse_json(output)
+            inputs = []
+            for _ in range(self.params.num_of_samples):
+                persona_traits = [
+                    f"{var['description']}: {self.sample_variable(var)}".replace(
+                        "'", ""
+                    )
+                    for var in output
+                ]
+                inputs.append(
+                    TaskInput(
+                        persona_traits=persona_traits,
+                        simulation_description=step.all_inputs[
+                            0
+                        ].simulation_description,
+                    )
+                )
+            return inputs
+        except Exception as e:
+            logger.error(f"Error in random_var_callback: {str(e)}")
+            raise
+
+    @staticmethod
+    def parse(result: str) -> Dict:
+        """Parse the JSON text.
+
+        Args:
+            result: The result to parse.
+
+        Returns:
+            dict: JSON output.
+        """
+        json_content = re.search(r"<JSON>(.*?)</JSON>", result, re.DOTALL)
+        if not json_content:
+            return {}
+
+        json_text = re.sub(r"<[^>]+>", "", json_content.group(1)).strip()
+
+        try:
+            return json.loads(json_text)
+        except json.JSONDecodeError:
+            # If parsing fails, return an empty dictionary
+            return {}
+
+    @staticmethod
+    def sample_variable(variable: Dict[str, Any]) -> Any:
+        """Sample a variable from the given dictionary.
+
+        Args:
+            variable (Dict[str, Any]): The variable to sample from.
+
+        Raises:
+            ValueError: If the variable type is not supported.
+
+        Returns:
+            Any: The sampled variable.
+        """
+        var_type = variable["type"]
+        if var_type == "categorical":
+            return random.choice(variable["values"])
+        elif var_type == "numerical":
+            return int(
+                random.uniform(variable["values"]["min"], variable["values"]["max"])
+            )
+        elif var_type == "binary":
+            return random.choice(["True", "False"])
+        raise ValueError(f"Unsupported variable type: {var_type}")

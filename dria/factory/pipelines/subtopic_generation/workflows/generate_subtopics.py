@@ -1,7 +1,17 @@
 import logging
 from dria.models import Task, Model, TaskInput
 from typing import List, Optional, Any
-from dria_workflows import WorkflowBuilder, Operator, Write, Edge, Read, GetAll, Workflow, ConditionBuilder, Expression
+from dria_workflows import (
+    WorkflowBuilder,
+    Operator,
+    Write,
+    Edge,
+    Read,
+    GetAll,
+    Workflow,
+    ConditionBuilder,
+    Expression,
+)
 import json
 import re
 import random
@@ -11,10 +21,7 @@ from dria.pipelines import Step, StepTemplate
 
 
 class GenerateSubtopics(StepTemplate):
-    def create_workflow(
-            self,
-            topics: List[str]
-    ) -> Workflow:
+    def create_workflow(self, topics: List[str]) -> Workflow:
         """Generate subtopics for a given topic.
 
         Args:
@@ -22,7 +29,9 @@ class GenerateSubtopics(StepTemplate):
         Returns:
             Workflow: The built workflow for subtopic generation.
         """
-        logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+        logging.basicConfig(
+            level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+        )
 
         builder = WorkflowBuilder(topics=topics)
 
@@ -34,12 +43,10 @@ class GenerateSubtopics(StepTemplate):
             inputs=[
                 GetAll.new(key="topics", required=True),
             ],
-            outputs=[Write.new("subtopics")]
+            outputs=[Write.new("subtopics")],
         )
 
-        flow = [
-            Edge(source="generate_subtopics", target="_end")
-        ]
+        flow = [Edge(source="generate_subtopics", target="_end")]
         builder.flow(flow)
         builder.set_return_value("subtopics")
         workflow = builder.build()

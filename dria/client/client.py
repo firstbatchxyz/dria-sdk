@@ -47,19 +47,19 @@ class Dria:
         self.background_tasks: Optional[asyncio.Task] = None
         self.blacklist: Dict[str, Dict[str, int]] = {}
 
-        cache_dir = os.path.join(os.path.dirname(__file__), '.cache')
+        cache_dir = os.path.join(os.path.dirname(__file__), ".cache")
         os.makedirs(cache_dir, exist_ok=True)
 
-        self.blacklist_file = os.path.join(cache_dir, '.blacklist')
+        self.blacklist_file = os.path.join(cache_dir, ".blacklist")
         self._load_blacklist()
 
     def _load_blacklist(self):
         """Load the blacklist from file or create a new one if it doesn't exist."""
         try:
-            with open(self.blacklist_file, 'r') as f:
+            with open(self.blacklist_file, "r") as f:
                 self.blacklist = {}
                 for line in f:
-                    key, value = line.strip().split('|')
+                    key, value = line.strip().split("|")
                     self.blacklist[key] = eval(value)
         except FileNotFoundError:
             self.blacklist = {}
@@ -67,7 +67,7 @@ class Dria:
 
     def _save_blacklist(self):
         """Save the current blacklist to file."""
-        with open(self.blacklist_file, 'w') as f:
+        with open(self.blacklist_file, "w") as f:
             for key, value in self.blacklist.items():
                 f.write(f"{key}|{value}\n")
 
@@ -97,10 +97,7 @@ class Dria:
     async def _start_background_tasks(self) -> None:
         """Start and manage background tasks for monitoring and polling."""
         try:
-            await asyncio.gather(
-                self._run_monitoring(),
-                self.poll()
-            )
+            await asyncio.gather(self._run_monitoring(), self.poll())
         except Exception:
             logger.error("Error in background tasks", exc_info=True)
             await asyncio.sleep(10)  # Retry after sleep
@@ -132,14 +129,18 @@ class Dria:
         max_attempts = 20
         for attempt in range(max_attempts):
             task.private_key, task.public_key = generate_task_keys()
-            if task.public_key.startswith("0x0"):  # It should not start with 0 for encoding reasons
+            if task.public_key.startswith(
+                "0x0"
+            ):  # It should not start with 0 for encoding reasons
                 continue
             break
         try:
             success, nodes = await self.task_manager.push_task(task, self.blacklist)
             if success:
                 await self._update_blacklist(nodes)
-                logger.info(f"Task {task.id} successfully published. Step: {task.step_name}")
+                logger.info(
+                    f"Task {task.id} successfully published. Step: {task.step_name}"
+                )
                 return True
             else:
                 logger.error(f"Failed to publish task {task.id}.")
@@ -168,11 +169,11 @@ class Dria:
         self._save_blacklist()
 
     async def fetch(
-            self,
-            pipeline: Optional[Any] = None,
-            task: Union[Optional[Task], Optional[List[Task]]] = None,
-            min_outputs: Optional[int] = None,
-            timeout: int = 300
+        self,
+        pipeline: Optional[Any] = None,
+        task: Union[Optional[Task], Optional[List[Task]]] = None,
+        min_outputs: Optional[int] = None,
+        timeout: int = 300,
     ) -> List[TaskResult]:
         """
         Fetch task results from storage based on pipeline and/or task.
@@ -199,12 +200,16 @@ class Dria:
             if isinstance(task, list):
                 min_outputs = len(task)
                 if min_outputs > len(task) and isinstance(task, list):
-                    logger.warning(f"min_outputs is greater than the number of task. Setting min_outputs to {len(task)}")
+                    logger.warning(
+                        f"min_outputs is greater than the number of task. Setting min_outputs to {len(task)}"
+                    )
                     min_outputs = len(task)
             else:
                 min_outputs = 1
                 if min_outputs > 1:
-                    logger.warning(f"min_outputs is greater than the number of task. Setting min_outputs to 1")
+                    logger.warning(
+                        f"min_outputs is greater than the number of task. Setting min_outputs to 1"
+                    )
                     min_outputs = 1
 
         while len(results) < min_outputs:
@@ -214,7 +219,11 @@ class Dria:
                     f"Unable to fetch {min_outputs} outputs within {timeout} seconds."
                 )
                 break
-            pipeline_id = pipeline.pipeline_id if pipeline and hasattr(pipeline, 'pipeline_id') else None
+            pipeline_id = (
+                pipeline.pipeline_id
+                if pipeline and hasattr(pipeline, "pipeline_id")
+                else None
+            )
 
             if task is None:
                 task_id = None
@@ -223,7 +232,9 @@ class Dria:
             elif isinstance(task, list):
                 task_id = [t.id for t in task]
             else:
-                raise ValueError("Invalid task type. Expected None, Task, or List[Task].")
+                raise ValueError(
+                    "Invalid task type. Expected None, Task, or List[Task]."
+                )
 
             new_results = self._fetch_results(pipeline_id, task_id)
             results.extend(new_results)
@@ -234,9 +245,9 @@ class Dria:
         return results
 
     def _fetch_results(
-            self,
-            pipeline_id: Optional[str],
-            task_id: Union[Optional[str], Optional[List[str]]]
+        self,
+        pipeline_id: Optional[str],
+        task_id: Union[Optional[str], Optional[List[str]]],
     ) -> List[TaskResult]:
         """
         Helper method to fetch results based on pipeline_id and/or task_id.
@@ -337,7 +348,7 @@ class Dria:
             step_name=step_name,
             result=value["result"],
             task_input=task_data["workflow"]["external_memory"],
-            model=value["model"]
+            model=value["model"],
         )
 
     async def poll(self) -> None:
@@ -387,14 +398,19 @@ class Dria:
                 if self._is_task_valid(task, current_time):
                     processed_result, address = get_truthful_nodes(task, result)
                     if processed_result is None:
-                        logger.info("Task result is not valid, retrying with another node...")
+                        logger.info(
+                            "Task result is not valid, retrying with another node..."
+                        )
                         asyncio.create_task(self.push(task))
                         continue
                     else:
                         if address in self.blacklist:
                             self._remove_from_blacklist(address)
                     pipeline_id = task.pipeline_id or ""
-                    self.kv.push(f"{pipeline_id}:{identifier}", {"result": processed_result, "model": result["model"]})
+                    self.kv.push(
+                        f"{pipeline_id}:{identifier}",
+                        {"result": processed_result, "model": result["model"]},
+                    )
             except (json.JSONDecodeError, KeyError, TypeError, ValueError) as e:
                 logger.error(f"Error processing item: {e}", exc_info=True)
             except Exception as e:
@@ -454,7 +470,10 @@ class Dria:
         Raises:
             ValueError: If no supported function calling models are found for the task.
         """
-        has_function_calling = any(t.get("operator") == "function_calling" for t in task.workflow.get("tasks", []))
+        has_function_calling = any(
+            t.get("operator") == "function_calling"
+            for t in task.workflow.get("tasks", [])
+        )
         supported_models = set(model.value for model in FunctionCallingModels)
 
         model_list = []
@@ -466,15 +485,21 @@ class Dria:
             else:
                 model_list.append(model)
         if has_function_calling:
-            filtered_models = [model for model in model_list if model in supported_models]
+            filtered_models = [
+                model for model in model_list if model in supported_models
+            ]
 
             for model in model_list:
                 if model not in supported_models:
-                    logger.warning(f"Model '{model}' is not supported for function calling and will be removed.")
+                    logger.warning(
+                        f"Model '{model}' is not supported for function calling and will be removed."
+                    )
 
             task.models = filtered_models
 
             if not filtered_models:
                 supported_model_names = [model.name for model in FunctionCallingModels]
-                raise ValueError(f"No supported function calling models found for task. "
-                                 f"Supported models: {', '.join(supported_model_names)}")
+                raise ValueError(
+                    f"No supported function calling models found for task. "
+                    f"Supported models: {', '.join(supported_model_names)}"
+                )

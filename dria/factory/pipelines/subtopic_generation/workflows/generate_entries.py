@@ -8,10 +8,7 @@ logger = logging.getLogger(__name__)
 
 class GenerateEntries(StepTemplate):
 
-    def create_workflow(
-            self,
-            topic: str
-    ) -> Workflow:
+    def create_workflow(self, topic: str) -> Workflow:
         """Generate entries for a given topic.
 
         Args:
@@ -20,7 +17,9 @@ class GenerateEntries(StepTemplate):
         Returns:
             Workflow: The built workflow for entry generation.
         """
-        logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+        logging.basicConfig(
+            level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+        )
 
         builder = WorkflowBuilder(topic=topic)
 
@@ -32,12 +31,10 @@ class GenerateEntries(StepTemplate):
             inputs=[
                 Read.new(key="topic", required=True),
             ],
-            outputs=[Write.new("entries")]
+            outputs=[Write.new("entries")],
         )
 
-        flow = [
-            Edge(source="generate_entries", target="_end")
-        ]
+        flow = [Edge(source="generate_entries", target="_end")]
         builder.flow(flow)
         builder.set_return_value("entries")
         workflow = builder.build()

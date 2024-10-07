@@ -126,7 +126,9 @@ def get_truthful_nodes(task: Task, topic_result: Dict) -> tuple[str, str]:
     if isinstance(topic_result["ciphertext"], str):
         topic_result["ciphertext"] = bytes.fromhex(topic_result["ciphertext"])
     result = decrypt_message(task.private_key[2:], topic_result["ciphertext"])
-    public_key = recover_public_key(bytes.fromhex(topic_result["signature"]), (task.id + result).encode())
+    public_key = recover_public_key(
+        bytes.fromhex(topic_result["signature"]), (task.id + result).encode()
+    )
     public_key = uncompressed_public_key(public_key)
     address = publickey_to_address(public_key)
     return result, address

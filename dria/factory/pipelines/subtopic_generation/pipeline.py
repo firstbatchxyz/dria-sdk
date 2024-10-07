@@ -2,15 +2,21 @@ from typing import List
 
 from dria.client import Dria
 from dria.models import Model, TaskInput
-from dria.pipelines import PipelineConfig, StepConfig, PipelineBuilder, StepBuilder, Pipeline
+from dria.pipelines import (
+    PipelineConfig,
+    StepConfig,
+    PipelineBuilder,
+    StepBuilder,
+    Pipeline,
+)
 from workflows import GenerateSubtopics, GenerateEntries
 import logging
 
 
-
-
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
 
 
 class SubTopicPipeline:
@@ -20,6 +26,7 @@ class SubTopicPipeline:
     It is a simple pipeline that generates subtopics based on a given topic.
     Pipeline would create subtopics based on a given topic.
     """
+
     def __init__(self, dria: Dria, config: PipelineConfig):
         self.pipeline_config: PipelineConfig = config or PipelineConfig()
         self.pipeline = PipelineBuilder(self.pipeline_config, dria)
