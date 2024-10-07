@@ -344,7 +344,7 @@ class Dria:
         """Continuously process tasks from the output content topic."""
         while True:
             try:
-                topic_results = self.rpc.get_content_topic(OUTPUT_CONTENT_TOPIC)
+                topic_results = await self.rpc.get_content_topic(OUTPUT_CONTENT_TOPIC)
                 if topic_results:
                     await self._process_results(topic_results)
                 else:

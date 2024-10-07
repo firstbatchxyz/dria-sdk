@@ -59,7 +59,7 @@ class Monitor:
             logger.warning("RPC client not initialized, skipping heartbeat sending.")
             return False
 
-        status = self.rpc.push_content_topic(
+        status = await self.rpc.push_content_topic(
             str_to_base64(payload), HEARTBEAT_TOPIC
         )
         if not status:
@@ -82,7 +82,7 @@ class Monitor:
             logger.warning("RPC client or Task Manager not initialized, skipping heartbeat checking.")
             return False
 
-        topic = self.rpc.get_content_topic(HEARTBEAT_OUTPUT_TOPIC)
+        topic = await self.rpc.get_content_topic(HEARTBEAT_OUTPUT_TOPIC)
         if topic:
             try:
                 nodes_as_address = self._decrypt_nodes(
