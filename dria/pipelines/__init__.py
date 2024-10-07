@@ -1,4 +1,4 @@
-from .builder import StepBuilder, PipelineBuilder
+from .builder import StepTemplate, StepBuilder, PipelineBuilder
 from .config import PipelineConfig, StepConfig
 from .pipeline import Pipeline
 from .step import Step
@@ -6,6 +6,7 @@ from .step import Step
 __all__ = [
     "Step",
     "StepConfig",
+    "StepTemplate",
     "Pipeline",
     "PipelineConfig",
     "StepBuilder",

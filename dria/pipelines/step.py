@@ -1,13 +1,12 @@
-import asyncio
 import json
 from typing import List, Callable, Optional, Union, Dict, Any
 from abc import ABC
-
 from dria.utils.logging import logger
 from dria.pipelines.config import StepConfig
 from dria.client import Dria
 from dria.db.storage import Storage
 from dria.models import Task, CallbackType, TaskInput, TaskResult
+from dria_workflows import Workflow
 
 
 class Step(ABC):
@@ -38,7 +37,7 @@ class Step(ABC):
             self,
             name: str,
             input: Optional[Union[TaskInput, List[TaskInput]]] = None,
-            workflow: Callable = None,
+            workflow: Union[Callable, Workflow] = None,
             config: StepConfig = StepConfig(),
             client: Optional[Dria] = None
     ):

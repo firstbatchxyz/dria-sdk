@@ -1,6 +1,9 @@
 import inspect
-from typing import Dict, List, Callable, Optional, Union
+from types import SimpleNamespace
+from typing import Dict, List, Callable, Optional, Union, Any, get_type_hints
 import uuid
+
+from dria_workflows import Workflow
 
 from dria.client import Dria
 from dria.models import TaskInput, CallbackType
@@ -14,6 +17,128 @@ from dria.pipelines.callbacks import (
     scatter_callback
 )
 from dria.utils.logging import logger
+import random
+import string
+from enum import Enum
+from abc import ABC, abstractmethod
+from pydantic import BaseModel
+
+
+class StepType(str, Enum):
+    FIRST = "first"
+    MIDDLE = "middle"
+    LAST = "last"
+
+
+class StepTemplate(BaseModel, ABC):
+    step_type: StepType = StepType.FIRST
+    workflow: Optional[Workflow] = None
+    params: SimpleNamespace = SimpleNamespace()
+
+    class Config:
+        arbitrary_types_allowed = True
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self._map_io(**kwargs)
+
+    def get_params(self) -> dict:
+        return vars(self.params)
+
+    def _generate_dummy_inputs(self, func: Callable) -> Dict[str, Any]:
+        dummy_inputs = {}
+        type_hints = get_type_hints(func)
+        signature = inspect.signature(func)
+
+        for param_name, param in signature.parameters.items():
+            if param_name in ['self', 'kwargs']:
+                continue
+            param_type = type_hints.get(param_name, Any)
+            dummy_inputs[param_name] = self._create_dummy_data(param_type)
+
+        return dummy_inputs
+
+    def _create_dummy_data(self, param_type):
+        if param_type == str:
+            return ''.join(random.choices(string.ascii_letters, k=10))
+        elif param_type == int:
+            return random.randint(0, 100)
+        elif param_type == float:
+            return random.uniform(0, 100)
+        elif param_type == bool:
+            return random.choice([True, False])
+        elif param_type == List[str]:
+            return [''.join(random.choices(string.ascii_letters, k=5)) for _ in range(3)]
+        elif param_type == List[int]:
+            return [random.randint(0, 100) for _ in range(3)]
+        elif param_type == Dict[str, Any]:
+            return {f'key_{i}': self._create_dummy_data(str) for i in range(3)}
+        else:
+            return None
+
+    def _map_io(self, **kwargs):
+
+        self.params.inputs = []
+        if not kwargs or len(kwargs) == 0:
+            kwargs = self._generate_dummy_inputs(self.create_workflow)
+
+        task_input = TaskInput(**kwargs)
+        self.params.task_input = task_input
+        for k, v in kwargs.items():
+            setattr(self.params, k, v)
+            self.params.inputs.append(k)
+
+        self.workflow = self.create_workflow(**kwargs)
+
+        if not self.workflow.return_value:
+            raise ValueError("Workflow must have a return value.")
+
+        self.params.output = self.workflow.return_value.input.key
+        self.params.output_type = self.workflow.return_value.input.type
+        self.params.output_json = self.workflow.return_value.to_json
+
+    def broadcast(self, n: int) -> 'StepTemplate':
+        """
+
+        Args:
+            n: broadcast to N nodes
+
+        Returns:
+
+        """
+        self.params.callback = broadcast_callback
+        self.params.callback_params = {"n": n}
+        return self
+
+    def scatter(self) -> 'StepTemplate':
+        """
+        Scatter N outputs to N nodes
+        Returns:
+
+        """
+        self.params.callback = scatter_callback
+        return self
+
+    def aggregate(self) -> 'StepTemplate':
+        """
+        Aggregate N outputs to 1 node
+        Returns:
+
+        """
+        self.params.callback = aggregation_callback
+        return self
+
+    @abstractmethod
+    def create_workflow(self, **kwargs) -> 'Workflow':
+        pass
+
+    def callback(self, step: 'Step') -> Union[List[TaskInput], TaskInput]:
+        return default_callback(step)
+
+    @staticmethod
+    @abstractmethod
+    def parse(result) -> Any:
+        pass
 
 
 class StepBuilder:
@@ -25,11 +150,11 @@ class StepBuilder:
     """
 
     def __init__(
-        self,
-        name: Optional[str] = None,
-        input: Optional[Union[TaskInput, List[TaskInput]]] = None,
-        workflow: Optional[Callable] = None,
-        config: StepConfig = StepConfig()
+            self,
+            name: Optional[str] = None,
+            input: Optional[Union[TaskInput, List[TaskInput]]] = None,
+            workflow: Optional[Union[Callable, Workflow]] = None,
+            config: StepConfig = StepConfig()
     ):
         """
         Initialize a new StepBuilder instance.
@@ -109,7 +234,8 @@ class StepBuilder:
         Returns:
             StepBuilder: Self instance for method chaining.
         """
-        if not callable(callback) or not any(param.annotation == Step for param in inspect.signature(callback).parameters.values()):
+        if not callable(callback) or not any(
+                param.annotation == Step for param in inspect.signature(callback).parameters.values()):
             raise ValueError("Custom callback must be callable and have a parameter of type Step")
         self.step.callback = callback
         self.step.callback_type = CallbackType.CUSTOM
@@ -165,8 +291,10 @@ class PipelineBuilder:
             dria_client (Dria): The Dria client instance.
         """
         self.steps: List[Step] = []
+        self.templates: List[StepTemplate] = []
         self.config = config
         self.dria_client = dria_client
+        self.pipeline_input: Optional[TaskInput] = None
         logger.info("Initialized PipelineBuilder")
 
     def _check_unique_step_names(self):
@@ -182,7 +310,11 @@ class PipelineBuilder:
                 raise ValueError(f"Duplicate step name found: {step.name}. Each step must have a unique name.")
             step_names.add(step.name)
 
-    def add_step(self, step: Step) -> 'PipelineBuilder':
+    def input(self, **kwargs) -> 'PipelineBuilder':
+        self.pipeline_input = TaskInput(**kwargs)
+        return self
+
+    def _add_step(self, step: Step) -> 'PipelineBuilder':
         """
         Add a step to the pipeline.
 
@@ -196,7 +328,11 @@ class PipelineBuilder:
             ValueError: If the step configuration is invalid.
         """
         try:
-            workflow = step.workflow({})
+            # Check if step.workflow is callable
+            if not callable(step.workflow):
+                workflow = step.workflow
+            else:
+                workflow = step.workflow({})
             step_inputs = [p.name for task in workflow.tasks for p in task.inputs]
             step_outputs = [p.key for task in workflow.tasks for p in task.outputs]
             previous_step = self.steps[-1] if self.steps else None
@@ -214,6 +350,27 @@ class PipelineBuilder:
         except Exception as e:
             logger.error(f"Error adding step {step.name}: {str(e)}")
             raise
+        return self
+
+    def __lshift__(self, other: StepTemplate):
+        """
+        Add a step to the pipeline using the given StepTemplate.
+        Args:
+            other:
+
+        Returns:
+
+        """
+        _step = StepBuilder(name=other.__class__.__name__,
+                            config=StepConfig(),
+                            input=other.params.task_input,
+                            workflow=other.workflow)
+
+        if hasattr(other, 'callback'):
+            _step = _step.custom(other.callback)
+
+        self._add_step(_step.build())
+        self.templates.append(other)
         return self
 
     def build(self) -> Pipeline:
