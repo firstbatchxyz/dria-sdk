@@ -159,7 +159,7 @@ class Dria:
         for node in nodes:
             node_entry = self.blacklist.get(node, {"count": 0})
             node_entry["count"] += 1
-            wait_time = self.DEADLINE_MULTIPLIER * 60 * (2 ** (node_entry["count"] - 1))
+            wait_time = self.DEADLINE_MULTIPLIER * 60 * (4 ** (node_entry["count"] - 1))
             node_entry["deadline"] = current_time + wait_time
             self.blacklist[node] = node_entry
             logger.info(
@@ -378,9 +378,7 @@ class Dria:
             try:
                 decoded_item = base64.b64decode(item).decode("utf-8")
                 result = json.loads(decoded_item)
-                if "error" in result.keys():
-                    logger.error(f"Error in result: {result['error']}")
-                    continue
+
                 identifier = result["taskId"]
                 task_data = self.storage.get_value(identifier)
                 if not task_data:
@@ -395,12 +393,17 @@ class Dria:
                     logger.error(f"Error validating task data: {e}", exc_info=True)
                     continue
 
+                if "error" in result.keys():
+                    logger.info(f"Error in result: {result['error']}. Task retrying..")
+                    asyncio.create_task(self.push(task))
+                    continue
+
                 if self._is_task_valid(task, current_time):
                     processed_result, address = get_truthful_nodes(task, result)
-                    if processed_result is None:
-                        logger.info(
-                            "Task result is not valid, retrying with another node..."
-                        )
+
+                    if processed_result == "":
+                        logger.info("Task result is not valid, retrying with another node...")
+                        
                         asyncio.create_task(self.push(task))
                         continue
                     else:

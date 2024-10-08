@@ -44,7 +44,9 @@ class Monitor:
                     await asyncio.sleep(MONITORING_INTERVAL)
                     await self._check_heartbeat(uuid_)
             except Exception as e:
-                raise Exception(f"Error during heartbeat process: {e}")
+                logger.error(f"Error during heartbeat process: {e}")
+                await asyncio.sleep(MONITORING_INTERVAL)
+                raise Exception(e)
 
     async def _send_heartbeat(self, payload: str) -> bool:
         """
