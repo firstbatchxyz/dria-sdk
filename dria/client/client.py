@@ -111,6 +111,15 @@ class Dria:
             except Exception:
                 logger.error("Error in monitoring", exc_info=True)
 
+    def run_cleanup(self) -> None:
+        """Run the cleanup process to remove expired tasks and pipelines."""
+        if self.background_tasks and not self.background_tasks.done():
+            self.background_tasks.cancel()
+            try:
+                self.background_tasks
+            except asyncio.CancelledError:
+                pass
+
     async def push(self, task: Task) -> bool:
         """
         Process and publish a single task.
@@ -403,7 +412,7 @@ class Dria:
 
                     if processed_result == "":
                         logger.info("Task result is not valid, retrying with another node...")
-                        
+
                         asyncio.create_task(self.push(task))
                         continue
                     else:
