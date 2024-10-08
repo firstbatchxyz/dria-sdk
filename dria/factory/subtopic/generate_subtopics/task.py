@@ -38,5 +38,16 @@ class GenerateSubtopics(StepTemplate):
         return workflow
 
     def callback(self, step: "Step") -> Union[List[TaskInput], TaskInput]:
-        return [TaskInput(**{"sub": parse_json(o.result)}) for o in step.output]
+        """
+        Only to use as the last callback
+        Args:
+            step:
+
+        Returns:
+
+        """
+        # flatten list of lists
+        outputs = [parse_json(o.result) for o in step.output]
+        flattened = [item for sublist in outputs for item in sublist]
+        return TaskInput(**{"subtopics": flattened})
 
