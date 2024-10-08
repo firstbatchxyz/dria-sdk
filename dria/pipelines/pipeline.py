@@ -141,7 +141,7 @@ class Pipeline:
             except Exception as e:
                 self._update_status(PipelineStatus.FAILED)
                 self._update_state(PipelineStatus.FAILED.value)
-                raise Exception({"error": "Error polling results", "exception": e})
+                self._update_error_reason(e)
 
             await asyncio.sleep(self.config.retry_interval)
 
@@ -188,6 +188,10 @@ class Pipeline:
         """Update the pipelines status in storage."""
         self.storage.set_value(f"{self.pipeline_id}_status", status.value)
 
+    def _update_error_reason(self, e: Exception) -> None:
+        """Update the pipelines error reason in storage."""
+        self.storage.set_value(f"{self.pipeline_id}_error_reason", e)
+
     def _save_output(self, output: Optional[Union[str, Dict]] = None) -> None:
         """Save the pipelines output to storage."""
         if output:
@@ -214,6 +218,10 @@ class Pipeline:
         output = self.storage.get_value(f"{self.pipeline_id}_output")
         status = self.storage.get_value(f"{self.pipeline_id}_status")
         state = self.storage.get_value(f"{self.pipeline_id}_state")
+
+        if status == PipelineStatus.FAILED.value:
+            error_reason = self.storage.get_value(f"{self.pipeline_id}_error_reason")
+            raise Exception(f"Pipeline execution failed: {error_reason}")
 
         if not status or not state:
             raise ValueError("Pipeline not found")
