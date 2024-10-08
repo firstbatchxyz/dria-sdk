@@ -10,6 +10,7 @@ from .improving_text_embeddings import (
 )
 from .llm_as_a_judge import evaluate_prediction
 from .self_instruct import self_instruct
+from .simple import simple_workflow
 
 __all__ = [
     "evolve_complexity",
@@ -24,4 +25,5 @@ __all__ = [
     "generate_semantic_triple",
     "evaluate_prediction",
     "self_instruct",
+    "simple_workflow"
 ]
