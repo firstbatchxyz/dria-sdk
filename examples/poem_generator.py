@@ -12,7 +12,7 @@ import logging
 from dria.client import Dria
 from dria.models import Task
 from dria.models.enums import Model
-from dria.workflows.lib.poem_generator import poem
+from dria.factory.workflows.simple.task import simple_workflow
 
 # Configure logging
 logging.basicConfig(
@@ -26,13 +26,9 @@ dria = Dria()
 
 async def generate_poem(prompt: str):
     task = Task(
-        workflow=poem(prompt),
+        workflow=simple_workflow(prompt).model_dump(),
         models=[
-            Model.GPT4O,
-            Model.LLAMA3_1_8B_FP16,
-            Model.GEMMA2_9B,
-            Model.GEMMA2_9B_FP16,
-            Model.QWEN2_5_7B_FP16,
+            Model.OLLAMA
         ],
     )
     await dria.push(task)
@@ -46,7 +42,7 @@ async def main():
     node_count = 1
 
     logger.info(f"Generating {node_count} poem(s) based on the prompt: '{prompt}'")
-    tasks = [await generate_poem(prompt) for _ in range(3)]
+    tasks = [await generate_poem(prompt) for _ in range(1)]
     results = await dria.fetch(task=tasks)
     print(results)
 

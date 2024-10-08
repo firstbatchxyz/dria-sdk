@@ -139,9 +139,8 @@ class Pipeline:
                     await self._run_next_step(step, self.steps.index(step) + 1)
 
             except Exception as e:
-                self._update_status(PipelineStatus.FAILED)
-                self._update_state(PipelineStatus.FAILED.value)
-                raise Exception({"error": "Error polling results", "exception": e})
+                await self._graceful_shutdown(e)
+
 
             await asyncio.sleep(self.config.retry_interval)
 
@@ -188,6 +187,18 @@ class Pipeline:
         """Update the pipelines status in storage."""
         self.storage.set_value(f"{self.pipeline_id}_status", status.value)
 
+    def _update_error_reason(self, e: Exception) -> None:
+        """Update the pipelines error reason in storage."""
+        self.storage.set_value(f"{self.pipeline_id}_error_reason", e)
+
+    async def _graceful_shutdown(self, e: Exception) -> None:
+        """Gracefully shutdown the pipelines."""
+        self.logger.info("Error in executing the pipeline. Gracefully shutting down.")
+        self._update_status(PipelineStatus.FAILED)
+        self._update_state(PipelineStatus.FAILED.value)
+        self._update_error_reason(e)
+        await self.client.run_cleanup()
+
     def _save_output(self, output: Optional[Union[str, Dict]] = None) -> None:
         """Save the pipelines output to storage."""
         if output:
@@ -214,6 +225,10 @@ class Pipeline:
         output = self.storage.get_value(f"{self.pipeline_id}_output")
         status = self.storage.get_value(f"{self.pipeline_id}_status")
         state = self.storage.get_value(f"{self.pipeline_id}_state")
+
+        if status == PipelineStatus.FAILED.value:
+            error_reason = self.storage.get_value(f"{self.pipeline_id}_error_reason")
+            raise Exception(f"Pipeline execution failed: {error_reason}")
 
         if not status or not state:
             raise ValueError("Pipeline not found")

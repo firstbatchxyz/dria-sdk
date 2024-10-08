@@ -49,6 +49,7 @@ class Model(Enum):
     # Providers
     OLLAMA = "ollama"
     OPENAI = "openai"
+    CODER = "coder"
 
     @classmethod
     def default(cls):
@@ -104,6 +105,8 @@ class OllamaModels(Enum):
     QWEN2_5_7B = Model.QWEN2_5_7B.value
     QWEN2_5_7B_FP16 = Model.QWEN2_5_7B_FP16.value
     QWEN2_5_32B_FP16 = Model.QWEN2_5_32B_FP16.value
+    MIXTRAL_8_7B = Model.MIXTRAL_8_7B.value
+
+class CoderModels(Enum):
     QWEN2_5_CODER_1_5B = Model.QWEN2_5_CODER_1_5B.value
     DEEPSEEK_CODER_6_7B = Model.DEEPSEEK_CODER_6_7B.value
-    MIXTRAL_8_7B = Model.MIXTRAL_8_7B.value
