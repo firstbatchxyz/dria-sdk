@@ -5,7 +5,7 @@ subtopics for the given topics.
 
 ## Input
 
-- Topic list: {{topics}}
+- Topic list: {{topic}}
 
 ## Instructions
 

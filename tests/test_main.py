@@ -38,6 +38,6 @@ if __name__ == "__main__":
     load_dotenv()
 
     cfg = PipelineConfig()
-    pipe = SubTopicPipeline(dria, cfg).build(topics=["Artificial Intelligence"], max_depth=2)
+    pipe = SubTopicPipeline(dria, cfg).build(topic="Artificial Intelligence", max_depth=2)
 
     asyncio.run(main(pipe))

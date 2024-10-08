@@ -5,14 +5,15 @@ from typing import List, Union
 from dria.models import TaskInput
 from dria.pipelines import StepTemplate, Step
 from dria.factory.utilities import get_abs_path
+from dria.utils.task_utils import parse_json
 
 
 class GenerateSubtopics(StepTemplate):
-    def create_workflow(self, topics: List[str]) -> Workflow:
+    def create_workflow(self, topic: str) -> Workflow:
         """Generate subtopics for a given topic.
 
         Args:
-            topics (list): The input data for the workflow.
+            topic (list): The input data for the workflow.
         Returns:
             Workflow: The built workflow for subtopic generation.
         """
@@ -20,16 +21,13 @@ class GenerateSubtopics(StepTemplate):
             level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
         )
 
-        builder = WorkflowBuilder(topics=topics)
+        builder = WorkflowBuilder(topic=topic)
 
         # Step A: GenerateSubtopics
         builder.generative_step(
             id="generate_subtopics",
             path=get_abs_path("prompt.md"),
             operator=Operator.GENERATION,
-            inputs=[
-                GetAll.new(key="topics", required=True),
-            ],
             outputs=[Write.new("subtopics")],
         )
 
@@ -37,5 +35,8 @@ class GenerateSubtopics(StepTemplate):
         builder.flow(flow)
         builder.set_return_value("subtopics")
         workflow = builder.build()
-
         return workflow
+
+    def callback(self, step: "Step") -> Union[List[TaskInput], TaskInput]:
+        return [TaskInput(**{"sub": parse_json(o.result)}) for o in step.output]
+

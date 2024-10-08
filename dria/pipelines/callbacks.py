@@ -112,7 +112,7 @@ def default_callback(step: Step) -> TaskInput:
     Raises:
         ValueError: If there's an error during processing.
     """
-    output_ = step.output[0].result
+    output_ = [o.result for o in step.output]
     try:
         return TaskInput(result=output_)
     except Exception as e:
