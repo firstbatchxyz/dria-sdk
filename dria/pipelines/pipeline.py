@@ -15,15 +15,15 @@ from dria.utils import logger
 
 class Pipeline:
     """
-    Manages a sequence of steps for processing data in a pipeline.
+    Manages a sequence of steps for processing data in a pipelines.
 
     Attributes:
-        pipeline_id (str): Unique identifier for the pipeline.
-        steps (List[Step]): Ordered list of Step objects in the pipeline.
-        logger: Logger for the pipeline.
+        pipeline_id (str): Unique identifier for the pipelines.
+        steps (List[Step]): Ordered list of Step objects in the pipelines.
+        logger: Logger for the pipelines.
         storage (Storage): Storage object for persisting data.
-        config (PipelineConfig): Configuration for the pipeline.
-        output (Dict[str, Any]): The final output of the pipeline.
+        config (PipelineConfig): Configuration for the pipelines.
+        output (Dict[str, Any]): The final output of the pipelines.
         proceed_steps (List[str]): List of steps that are ready to proceed.
         client (Dria): Client for interacting with the Dria system.
     """
@@ -39,24 +39,24 @@ class Pipeline:
         self.config = config
 
     def add_step(self, step: Step) -> None:
-        """Add a step to the pipeline."""
+        """Add a step to the pipelines."""
         step.add_pipeline_params(self.pipeline_id, self.storage, self.client)
         self.steps.append(step)
         self.logger.info(f"Added step: {step.name}")
 
     def get_step(self, name: str) -> Optional[Step]:
-        """Get a step from the pipeline by name."""
+        """Get a step from the pipelines by name."""
         return next((step for step in self.steps if step.name == name), None)
 
     async def execute(self) -> str:
         """
-        Execute the entire pipeline and return the pipeline ID.
+        Execute the entire pipelines and return the pipelines ID.
 
         Returns:
-            str: The unique identifier of the executed pipeline.
+            str: The unique identifier of the executed pipelines.
 
         Raises:
-            ValueError: If the pipeline has no steps.
+            ValueError: If the pipelines has no steps.
         """
         if not self.steps:
             raise ValueError("Pipeline has no steps.")
@@ -65,7 +65,7 @@ class Pipeline:
         self._update_state(first_step.name)
         self._update_status(PipelineStatus.RUNNING)
         self.logger.info(
-            f"Executing pipeline '{self.pipeline_id}' starting with step '{first_step.name}'."
+            f"Executing pipelines '{self.pipeline_id}' starting with step '{first_step.name}'."
         )
 
         await self.run(first_step.name)
@@ -75,7 +75,7 @@ class Pipeline:
 
     async def run(self, step_name: str) -> None:
         """
-        Run a specific step in the pipeline.
+        Run a specific step in the pipelines.
 
         Args:
             step_name (str): The name of the step to run.
@@ -85,7 +85,7 @@ class Pipeline:
         """
         step = self.get_step(step_name)
         if not step:
-            raise ValueError(f"Step '{step_name}' not found in the pipeline.")
+            raise ValueError(f"Step '{step_name}' not found in the pipelines.")
 
         self.logger.info(f"Running step: {step.name}")
         try:
@@ -96,7 +96,7 @@ class Pipeline:
             raise
 
     async def _run_next_step(self, current_step: Step, next_step_index: int) -> None:
-        """Run the next step in the pipeline."""
+        """Run the next step in the pipelines."""
         if next_step_index >= len(self.steps):
             self.logger.info("No more steps to execute.")
             return
@@ -160,11 +160,11 @@ class Pipeline:
         return True
 
     def _is_final_step(self, step: Step) -> bool:
-        """Check if the step is the final step in the pipeline."""
+        """Check if the step is the final step in the pipelines."""
         return step == self.steps[-1]
 
     def _finalize_pipeline(self, final_step: Step) -> None:
-        """Finalize the pipeline execution."""
+        """Finalize the pipelines execution."""
         self.output = final_step.callback(final_step)
         self._save_output()
         self.logger.info("Pipeline execution completed successfully.")
@@ -177,19 +177,19 @@ class Pipeline:
         self._update_status(PipelineStatus.FAILED)
         self._update_state(PipelineStatus.FAILED.value)
         self.logger.warning(
-            f"Terminating pipeline execution due to deadline exceeded. Current pipeline deadline {self.config.pipeline_timeout}"
+            f"Terminating pipelines execution due to deadline exceeded. Current pipelines deadline {self.config.pipeline_timeout}"
         )
 
     def _update_state(self, state: str) -> None:
-        """Update the pipeline state in storage."""
+        """Update the pipelines state in storage."""
         self.storage.set_value(f"{self.pipeline_id}_state", state)
 
     def _update_status(self, status: PipelineStatus) -> None:
-        """Update the pipeline status in storage."""
+        """Update the pipelines status in storage."""
         self.storage.set_value(f"{self.pipeline_id}_status", status.value)
 
     def _save_output(self, output: Optional[Union[str, Dict]] = None) -> None:
-        """Save the pipeline output to storage."""
+        """Save the pipelines output to storage."""
         if output:
             self.output = output
         if isinstance(self.output, TaskInput):
@@ -203,13 +203,13 @@ class Pipeline:
 
     def poll(self) -> Tuple[str, str, Optional[Dict[str, Any]]]:
         """
-        Poll for pipeline results.
+        Poll for pipelines results.
 
         Returns:
             Tuple[str, str, Optional[Dict[str, Any]]]: Pipeline state, status, and output (if completed).
 
         Raises:
-            ValueError: If the pipeline is not found.
+            ValueError: If the pipelines is not found.
         """
         output = self.storage.get_value(f"{self.pipeline_id}_output")
         status = self.storage.get_value(f"{self.pipeline_id}_status")

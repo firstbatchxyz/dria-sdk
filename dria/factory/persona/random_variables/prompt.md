@@ -135,8 +135,8 @@ of employees working for the merchant\",
 </JSON>
 
 <simulation>
-{simulation_description}
+{{simulation_description}}
 </simulation>
 
-<feedback>{is_valid}</feedback> Do not add comment like with //, only
+<feedback>{{is_valid}}</feedback> Do not add comment like with //, only
 output. Each value must be at least one field. Do not return empty field.

@@ -90,7 +90,7 @@ For more complex scenarios, you can use the `PipelineBuilder` to create multi-st
 ```python
 from dria.client import Dria
 from dria.models import Model, TaskInput
-from dria.pipelines import PipelineConfig, StepConfig, PipelineBuilder, StepBuilder
+from dria.pipeline import PipelineConfig, StepConfig, PipelineBuilder, StepBuilder
 from workflows import generate_entries, generate_subtopics
 
 
@@ -126,24 +126,29 @@ You can use the Dria SDK on the API level to create your own workflows and pipel
 from fastapi import FastAPI, HTTPException, BackgroundTasks
 from pydantic import BaseModel, Field
 from dria.client import Dria
-from dria.pipelines.pipeline import PipelineConfig, Pipeline
+from dria.pipeline.pipeline import PipelineConfig, Pipeline
 from pipeline import create_subtopic_pipeline
 
 app = FastAPI(title="Dria SDK Example")
 dria = Dria()
 
+
 @app.on_event("startup")
 async def startup_event():
     await dria.initialize()
 
+
 class PipelineRequest(BaseModel):
-    input_text: str = Field(..., description="The input text for the pipeline to process")
+    input_text: str = Field(..., description="The input text for the pipelines to process")
+
 
 class PipelineResponse(BaseModel):
-    pipeline_id: str = Field(..., description="Unique identifier for the created pipeline")
+    pipeline_id: str = Field(..., description="Unique identifier for the created pipelines")
+
 
 pipeline_config = PipelineConfig(retry_interval=5)
 pipelines = {}
+
 
 @app.post("/run_pipeline", response_model=PipelineResponse)
 async def run_pipeline(request: PipelineRequest, background_tasks: BackgroundTasks):
@@ -152,17 +157,18 @@ async def run_pipeline(request: PipelineRequest, background_tasks: BackgroundTas
     background_tasks.add_task(pipeline.execute)
     return PipelineResponse(pipeline_id=pipeline.pipeline_id)
 
+
 @app.get("/pipeline_status/{pipeline_id}")
 async def get_pipeline_status(pipeline_id: str):
     if pipeline_id not in pipelines:
         raise HTTPException(status_code=404, detail="Pipeline not found")
-    
+
     pipeline = pipelines[pipeline_id]
     state, status, result = pipeline.poll()
-    
+
     if result is not None:
         del pipelines[pipeline_id]
-    
+
     return {"status": status, "state": state, "result": result}
 
 # Usage example:

@@ -1,13 +1,13 @@
 import logging
-from dria.models import Task, Model, TaskInput
-from typing import List, Optional, Any
+from dria.models import TaskInput
+from dria.factory.utilities import get_abs_path
+from typing import Any
 from dria_workflows import (
     WorkflowBuilder,
     Operator,
     Write,
     Edge,
     Read,
-    GetAll,
     Workflow,
     ConditionBuilder,
     Expression,
@@ -16,7 +16,6 @@ import json
 import re
 import random
 from typing import Dict, List
-from dria.pipelines import Step
 from dria.pipelines import Step, StepTemplate
 
 logger = logging.getLogger(__name__)
@@ -36,16 +35,12 @@ class RandomVariable(StepTemplate):
         Returns:
             dict: The generated random variables.
         """
-        logging.basicConfig(
-            level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
-        )
-
         builder = WorkflowBuilder(simulation_description=simulation_description)
 
         # Step A: RandomVarGen
         builder.generative_step(
             id="random_var_gen",
-            path="/Users/kayaomers/Documents/firstbatch/dria-sdk/examples/pipeline/persona/random_variables/prompt.md",
+            path=get_abs_path("prompt.md"),
             operator=Operator.GENERATION,
             inputs=[
                 Read.new(key="simulation_description", required=True),
@@ -57,7 +52,7 @@ class RandomVariable(StepTemplate):
         # Step B: ValidateRandomVars
         builder.generative_step(
             id="validate_random_vars",
-            path="/Users/kayaomers/Documents/firstbatch/dria-sdk/examples/pipeline/persona/random_variables/validate.md",
+            path=get_abs_path("validate.md"),
             operator=Operator.GENERATION,
             inputs=[
                 Read.new(key="simulation_description", required=True),

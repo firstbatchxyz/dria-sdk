@@ -11,9 +11,9 @@ from dria_workflows import Workflow
 
 class Step(ABC):
     """
-    An abstract base class representing a step in a pipeline.
+    An abstract base class representing a step in a pipelines.
 
-    This class encapsulates the logic for executing a single step within a larger pipeline,
+    This class encapsulates the logic for executing a single step within a larger pipelines,
     including input processing, workflow execution, and task management.
 
     Attributes:
@@ -22,13 +22,13 @@ class Step(ABC):
         workflow (Callable): The function to be executed for this step.
         config (StepConfig): Configuration settings for this step.
         client (Optional[Dria]): The Dria instance for API interactions.
-        pipeline_id (Optional[str]): The ID of the pipeline this step belongs to.
+        pipeline_id (Optional[str]): The ID of the pipelines this step belongs to.
         storage (Optional[Storage]): The storage instance for persisting data.
         all_inputs (List[TaskInput]): A list of all inputs processed by this step.
         output (List[TaskResult]): The output(s) of this step.
         callback (Optional[Callable]): An optional callback function.
         callback_type (Optional[CallbackType]): The type of the callback.
-        next_step_input (Optional[Any]): Input for the next step in the pipeline.
+        next_step_input (Optional[Any]): Input for the next step in the pipelines.
         input_keys (Optional[List[str]]): Expected keys for the input data.
         callback_params (Dict): Additional parameters for the callback function.
     """
@@ -86,10 +86,10 @@ class Step(ABC):
         self, pipeline_id: str, storage: Storage, client: Dria
     ) -> None:
         """
-        Assign pipeline parameters to the step.
+        Assign pipelines parameters to the step.
 
         Args:
-            pipeline_id (str): The ID of the pipeline.
+            pipeline_id (str): The ID of the pipelines.
             storage (Storage): The storage instance for data persistence.
             client (Dria): The Dria instance for API interactions.
         """

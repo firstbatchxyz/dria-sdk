@@ -176,10 +176,10 @@ class Dria:
         timeout: int = 300,
     ) -> List[TaskResult]:
         """
-        Fetch task results from storage based on pipeline and/or task.
+        Fetch task results from storage based on pipelines and/or task.
 
         Args:
-            pipeline (Optional[Pipeline]): The pipeline.
+            pipeline (Optional[Pipeline]): The pipelines.
             task (Union[Optional[Task], Optional[List[Task]]]): The task.
             min_outputs (int): The minimum number of outputs to fetch.
             timeout (int): Timeout of fetch process
@@ -188,10 +188,10 @@ class Dria:
             List[TaskResult]: A list of fetched results.
 
         Raises:
-            ValueError: If both pipeline and task are None.
+            ValueError: If both pipelines and task are None.
         """
         if not pipeline and not task:
-            raise ValueError("At least one of pipeline or task must be provided.")
+            raise ValueError("At least one of pipelines or task must be provided.")
 
         results: List[TaskResult] = []
         start_time = time.time()
@@ -253,7 +253,7 @@ class Dria:
         Helper method to fetch results based on pipeline_id and/or task_id.
 
         Args:
-            pipeline_id (Optional[str]): The ID of the pipeline.
+            pipeline_id (Optional[str]): The ID of the pipelines.
             task_id (Union[Optional[str], Optional[List[str]]]): The ID or list of IDs of the task(s).
 
         Returns:
@@ -287,10 +287,10 @@ class Dria:
 
     def _fetch_pipeline_results(self, pipeline_id: str) -> List[TaskResult]:
         """
-        Fetch results for a specific pipeline.
+        Fetch results for a specific pipelines.
 
         Args:
-            pipeline_id (str): The ID of the pipeline.
+            pipeline_id (str): The ID of the pipelines.
 
         Returns:
             List[TaskResult]: A list of fetched results.

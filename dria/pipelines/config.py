@@ -7,11 +7,11 @@ from dria.models.enums import Model
 
 class PipelineConfig(BaseModel):
     """
-    Configuration settings for initializing and running a pipeline.
+    Configuration settings for initializing and running a pipelines.
 
     Attributes:
         retry_interval (int): Time interval between retry attempts, in seconds.
-        pipeline_timeout (int): Maximum allowed duration for the entire pipeline execution, in seconds.
+        pipeline_timeout (int): Maximum allowed duration for the entire pipelines execution, in seconds.
     """
 
     retry_interval: int = Field(
@@ -21,7 +21,7 @@ class PipelineConfig(BaseModel):
     )
     pipeline_timeout: int = Field(
         default=300,
-        description="Maximum allowed duration for the entire pipeline execution, in seconds",
+        description="Maximum allowed duration for the entire pipelines execution, in seconds",
         ge=1,
     )
 
@@ -47,7 +47,7 @@ DEFAULT_MODELS: List[Model] = [
 
 class StepConfig(BaseModel):
     """
-    Configuration settings for an individual step within the pipeline.
+    Configuration settings for an individual step within the pipelines.
 
     Attributes:
         models (List[Model]): List of AI models to be used in this step.
@@ -93,7 +93,7 @@ class StepConfig(BaseModel):
             validate_assignment (bool): Enables validation when assigning values to fields.
         """
 
-        allow_population_by_field_name = True
+        populate_by_name = True
         validate_assignment = True
 
     @field_validator("models")

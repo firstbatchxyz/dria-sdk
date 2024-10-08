@@ -175,7 +175,7 @@ class StepTemplate(BaseModel, ABC):
 
 class StepBuilder:
     """
-    A builder class for creating and configuring pipeline steps.
+    A builder class for creating and configuring pipelines steps.
 
     This class provides a fluent interface for step creation and configuration,
     allowing for easy setup of step properties such as callbacks and configurations.
@@ -273,7 +273,7 @@ class PipelineBuilder:
     """
     A builder class for creating and configuring pipelines.
 
-    This class provides methods to add steps to a pipeline and build the final Pipeline instance.
+    This class provides methods to add steps to a pipelines and build the final Pipeline instance.
     """
 
     def __init__(self, config: PipelineConfig, dria_client: Dria):
@@ -281,7 +281,7 @@ class PipelineBuilder:
         Initialize a new PipelineBuilder instance.
 
         Args:
-            config (PipelineConfig): The configuration for the pipeline.
+            config (PipelineConfig): The configuration for the pipelines.
             dria_client (Dria): The Dria client instance.
         """
         self.steps: List[Step] = []
@@ -293,7 +293,7 @@ class PipelineBuilder:
 
     def _check_unique_step_names(self):
         """
-        Check if all step names in the pipeline are unique.
+        Check if all step names in the pipelines are unique.
 
         Raises:
             ValueError: If duplicate step names are found.
@@ -337,10 +337,10 @@ class PipelineBuilder:
 
     def _add_step(self, step: Step) -> "PipelineBuilder":
         """
-        Add a step to the pipeline.
+        Add a step to the pipelines.
 
         Args:
-            step (Step): Step to add to the pipeline.
+            step (Step): Step to add to the pipelines.
 
         Returns:
             PipelineBuilder: Self instance for method chaining.
@@ -382,7 +382,7 @@ class PipelineBuilder:
 
     def __lshift__(self, other: StepTemplate):
         """
-        Add a step to the pipeline using the given StepTemplate.
+        Add a step to the pipelines using the given StepTemplate.
         Args:
             other:
 
@@ -393,7 +393,7 @@ class PipelineBuilder:
             self._validate_input_types(other)
 
         _step = StepBuilder(
-            name=other.__class__.__name__,
+            name=other.__class__.__name__ + f".{len(self.steps)}",
             config=StepConfig(),
             input=other.params.task_input,
             workflow=other.workflow,
@@ -411,7 +411,7 @@ class PipelineBuilder:
             Pipeline: The fully configured Pipeline instance.
 
         Raises:
-            Exception: If there's an error during pipeline building.
+            Exception: If there's an error during pipelines building.
         """
         try:
             pipeline = Pipeline(client=self.dria_client, config=self.config)
@@ -422,8 +422,8 @@ class PipelineBuilder:
 
             for step in self.steps:
                 pipeline.add_step(step)
-            logger.info("Built pipeline successfully")
+            logger.info("Built pipelines successfully")
             return pipeline
         except Exception as e:
-            logger.error(f"Error building pipeline: {str(e)}")
+            logger.error(f"Error building pipelines: {str(e)}")
             raise

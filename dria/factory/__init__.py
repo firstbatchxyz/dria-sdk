@@ -1,4 +1,6 @@
 from .workflows import *
+from .persona import *
+from .subtopic import *
 
 __all__ = [
     "evolve_complexity",
@@ -13,4 +15,6 @@ __all__ = [
     "generate_semantic_triple",
     "evaluate_prediction",
     "self_instruct",
+    "PersonaPipeline",
+    "SubTopicPipeline",
 ]
