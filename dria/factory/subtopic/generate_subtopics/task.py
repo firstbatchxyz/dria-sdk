@@ -1,7 +1,9 @@
 import logging
 from dria_workflows import WorkflowBuilder, Operator, Write, Edge, GetAll, Workflow
-from typing import List
-from dria.pipelines import StepTemplate
+from typing import List, Union
+
+from dria.models import TaskInput
+from dria.pipelines import StepTemplate, Step
 from dria.factory.utilities import get_abs_path
 
 

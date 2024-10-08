@@ -241,19 +241,19 @@ def parse_json(text: Union[str, List]) -> Union[list[dict], dict]:
 
     def parse_single_json(t: str) -> Dict:
         json_content = re.search(r"<JSON>(.*?)</JSON>", t, re.DOTALL)
-        if not json_content:
-            cleaned_text = t.replace("```json", "").replace("```", "").strip()
+        if json_content:
+            json_text = re.sub(r"<[^>]+>", "", json_content.group(1)).strip()
             try:
-                return json.loads(cleaned_text)
+                return json.loads(json_text)
             except json.JSONDecodeError:
                 return {}
 
-        json_text = re.sub(r"<[^>]+>", "", json_content.group(1)).strip()
-
-        try:
-            return json.loads(json_text)
-        except json.JSONDecodeError:
-            return {}
+        json_block = re.search(r"```json(.*?)```", t, re.DOTALL)
+        if json_block:
+            try:
+                return json.loads(json_block.group(1).strip())
+            except json.JSONDecodeError:
+                return {}
 
     if isinstance(text, list):
         return [parse_single_json(item) for item in text]

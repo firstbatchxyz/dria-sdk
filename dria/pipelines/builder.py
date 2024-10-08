@@ -101,6 +101,7 @@ class StepTemplate(BaseModel, ABC):
         self.params.output = self.workflow.return_value.input.key
         self.params.output_type = self.workflow.return_value.input.type
         self.params.output_json = self.workflow.return_value.to_json
+        self.params.callback = default_callback
         self.params.callback_type = CallbackType.DEFAULT
 
     def broadcast(self, n: int) -> "StepTemplate":
@@ -397,7 +398,7 @@ class PipelineBuilder:
             config=StepConfig(),
             input=other.params.task_input,
             workflow=other.workflow,
-        ).add_callback(other.callback, other.params.callback_type)
+        ).add_callback(other.params.callback, other.params.callback_type)
 
         self._add_step(_step.build())
         self.templates.append(other)

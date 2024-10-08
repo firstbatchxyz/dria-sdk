@@ -6,6 +6,7 @@ from dria.pipelines import (
     Pipeline,
 )
 from .generate_subtopics.task import GenerateSubtopics
+from dria.models import Model
 import logging
 
 
@@ -32,12 +33,12 @@ class SubTopicPipeline:
             raise ValueError("Max depth must be greater than 0")
         self.pipeline.input(topics=topics)
         for i in range(max_depth - 1):
-            self.pipeline << GenerateSubtopics().scatter()
-        self.pipeline << GenerateSubtopics()
+            self.pipeline << GenerateSubtopics().set_models([Model.LLAMA3_1_8B_FP16, Model.QWEN2_5_7B_FP16]).scatter()
+        self.pipeline << GenerateSubtopics().set_models([Model.LLAMA3_1_8B_FP16, Model.QWEN2_5_7B_FP16])
         return self.pipeline.build()
 
 
 if __name__ == "__main__":
     _dria = Dria(rpc_token="asd")
     pipeline = SubTopicPipeline(_dria, PipelineConfig())
-    pipeline.build(topics=["Artificial Intelligence"], max_depth=2)
+    pipeline.build(topics=["Artificial Intelligence"], max_depth=1)
