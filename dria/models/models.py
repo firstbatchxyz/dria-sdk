@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field
 
 from dria.models import Model
 
+
 class P2PMessage(BaseModel):
     payload: str
     topic: str
@@ -52,7 +53,7 @@ class Task(BaseModel):
             "private_key": self.private_key,
             "deadline": self.deadline,
             "nodes": self.nodes,
-            "step_name": self.step_name
+            "step_name": self.step_name,
         }
 
 
@@ -69,7 +70,7 @@ class TaskResult(BaseModel):
             "task_input": self.task_input,
             "step_name": self.step_name,
             "result": self.result,
-            "model": self.model
+            "model": self.model,
         }
 
     def parse(self):

@@ -14,7 +14,7 @@ from dria.pipelines.callbacks import (
     aggregation_callback,
     broadcast_callback,
     default_callback,
-    scatter_callback
+    scatter_callback,
 )
 from dria.utils.logging import logger
 import random
@@ -54,7 +54,7 @@ class StepTemplate(BaseModel, ABC):
         signature = inspect.signature(func)
 
         for param_name, _ in signature.parameters.items():
-            if param_name in ['self', 'kwargs']:
+            if param_name in ["self", "kwargs"]:
                 continue
             param_type = type_hints.get(param_name, Any)
             dummy_inputs[param_name] = self._create_dummy_data(param_type)
@@ -63,7 +63,7 @@ class StepTemplate(BaseModel, ABC):
 
     def _create_dummy_data(self, param_type):
         if param_type == str:
-            return ''.join(random.choices(string.ascii_letters, k=10))
+            return "".join(random.choices(string.ascii_letters, k=10))
         elif param_type == int:
             return random.randint(0, 100)
         elif param_type == float:
@@ -71,11 +71,13 @@ class StepTemplate(BaseModel, ABC):
         elif param_type == bool:
             return random.choice([True, False])
         elif param_type == List[str]:
-            return [''.join(random.choices(string.ascii_letters, k=5)) for _ in range(3)]
+            return [
+                "".join(random.choices(string.ascii_letters, k=5)) for _ in range(3)
+            ]
         elif param_type == List[int]:
             return [random.randint(0, 100) for _ in range(3)]
         elif param_type == Dict[str, Any]:
-            return {f'key_{i}': self._create_dummy_data(str) for i in range(3)}
+            return {f"key_{i}": self._create_dummy_data(str) for i in range(3)}
         else:
             return None
 
@@ -101,7 +103,7 @@ class StepTemplate(BaseModel, ABC):
         self.params.output_json = self.workflow.return_value.to_json
         self.params.callback_type = CallbackType.DEFAULT
 
-    def broadcast(self, n: int) -> 'StepTemplate':
+    def broadcast(self, n: int) -> "StepTemplate":
         """
 
         Args:
@@ -115,7 +117,7 @@ class StepTemplate(BaseModel, ABC):
         self.params.callback_type = CallbackType.BROADCAST
         return self
 
-    def scatter(self) -> 'StepTemplate':
+    def scatter(self) -> "StepTemplate":
         """
         Scatter N outputs to N nodes
         Returns:
@@ -125,7 +127,7 @@ class StepTemplate(BaseModel, ABC):
         self.params.callback_type = CallbackType.SCATTER
         return self
 
-    def aggregate(self) -> 'StepTemplate':
+    def aggregate(self) -> "StepTemplate":
         """
         Aggregate N outputs to 1 node
         Returns:
@@ -136,16 +138,21 @@ class StepTemplate(BaseModel, ABC):
         return self
 
     @abstractmethod
-    def create_workflow(self, **kwargs) -> 'Workflow':
+    def create_workflow(self, **kwargs) -> "Workflow":
         pass
 
-    def set_models(self, models: Optional[List[Model]] = None) -> 'StepTemplate':
+    def set_models(self, models: Optional[List[Model]] = None) -> "StepTemplate":
         if models:
             self.config.models = models
         return self
 
-    def set_workflow_params(self, min_compute: Optional[int] = None, max_time: Optional[int] = None,
-                            max_steps: Optional[int] = None, max_tokens: Optional[int] = None) -> 'StepTemplate':
+    def set_workflow_params(
+        self,
+        min_compute: Optional[int] = None,
+        max_time: Optional[int] = None,
+        max_steps: Optional[int] = None,
+        max_tokens: Optional[int] = None,
+    ) -> "StepTemplate":
         if min_compute:
             self.config.min_compute = min_compute
         if max_time:
@@ -156,7 +163,7 @@ class StepTemplate(BaseModel, ABC):
             self.config.max_tokens = max_tokens
         return self
 
-    def callback(self, step: 'Step') -> Union[List[TaskInput], TaskInput]:
+    def callback(self, step: "Step") -> Union[List[TaskInput], TaskInput]:
         if self.__class__.callback is not StepTemplate.callback:
             return self.__class__.callback(self, step)
         return default_callback(step)
@@ -175,11 +182,11 @@ class StepBuilder:
     """
 
     def __init__(
-            self,
-            name: Optional[str] = None,
-            input: Optional[Union[TaskInput, List[TaskInput]]] = None,
-            workflow: Optional[Union[Callable, Workflow]] = None,
-            config: StepConfig = StepConfig()
+        self,
+        name: Optional[str] = None,
+        input: Optional[Union[TaskInput, List[TaskInput]]] = None,
+        workflow: Optional[Union[Callable, Workflow]] = None,
+        config: StepConfig = StepConfig(),
     ):
         """
         Initialize a new StepBuilder instance.
@@ -194,12 +201,16 @@ class StepBuilder:
             name=name or str(uuid.uuid4()),
             input=input,
             workflow=workflow,
-            config=config
+            config=config,
         )
         logger.debug(f"Created StepBuilder with name: {self.step.name}")
 
-    def add_callback(self, callback: Callable, callback_type: CallbackType,
-                     params: Optional[Dict] = None) -> 'StepBuilder':
+    def add_callback(
+        self,
+        callback: Callable,
+        callback_type: CallbackType,
+        params: Optional[Dict] = None,
+    ) -> "StepBuilder":
         """
         Set a custom callback for the step.
 
@@ -214,8 +225,10 @@ class StepBuilder:
         if not callable(callback):
             raise ValueError("Custom callback must be callable")
 
-        if not any(param.annotation in [Step, 'Step'] for param in
-                   inspect.signature(callback).parameters.values()):
+        if not any(
+            param.annotation in [Step, "Step"]
+            for param in inspect.signature(callback).parameters.values()
+        ):
             raise ValueError("Custom callback must have a parameter of type Step")
 
         self.step.callback = callback
@@ -224,7 +237,7 @@ class StepBuilder:
         logger.debug(f"Set custom callback for step: {self.step.name}")
         return self
 
-    def set_config(self, config: StepConfig) -> 'StepBuilder':
+    def set_config(self, config: StepConfig) -> "StepBuilder":
         """
         Set the configuration for the step.
 
@@ -288,32 +301,41 @@ class PipelineBuilder:
         step_names = set()
         for step in self.steps:
             if step.name in step_names:
-                raise ValueError(f"Duplicate step name found: {step.name}. Each step must have a unique name.")
+                raise ValueError(
+                    f"Duplicate step name found: {step.name}. Each step must have a unique name."
+                )
             step_names.add(step.name)
 
     def input(self, **kwargs):
         self.pipeline_input = kwargs
         return self
-    
+
     def _validate_input_types(self, step_template: StepTemplate):
         if not self.pipeline_input:
-            raise ValueError("Pipeline input not set. Use .input() method before adding steps.")
+            raise ValueError(
+                "Pipeline input not set. Use .input() method before adding steps."
+            )
 
         expected_types = get_type_hints(step_template.create_workflow)
-        input_model = create_model('InputModel', **{k: (v, ...) for k, v in expected_types.items() if k != 'return'})
+        input_model = create_model(
+            "InputModel",
+            **{k: (v, ...) for k, v in expected_types.items() if k != "return"},
+        )
 
         try:
             input_model(**self.pipeline_input)
         except ValidationError as e:
             error_messages = []
             for error in e.errors():
-                if error['type'] == 'value_error.missing':
+                if error["type"] == "value_error.missing":
                     error_messages.append(f"Missing input field: {error['loc'][0]}")
                 else:
-                    error_messages.append(f"Invalid input for field '{error['loc'][0]}': {error['msg']}")
+                    error_messages.append(
+                        f"Invalid input for field '{error['loc'][0]}': {error['msg']}"
+                    )
             raise ValueError("\n".join(error_messages))
 
-    def _add_step(self, step: Step) -> 'PipelineBuilder':
+    def _add_step(self, step: Step) -> "PipelineBuilder":
         """
         Add a step to the pipeline.
 
@@ -335,14 +357,22 @@ class PipelineBuilder:
             step_inputs = [p.name for task in workflow.tasks for p in task.inputs]
             step_outputs = [p.key for task in workflow.tasks for p in task.outputs]
             previous_step = self.steps[-1] if self.steps else None
-            step.input_keys = list(set([key for key in step_inputs if key not in step_outputs]))
+            step.input_keys = list(
+                set([key for key in step_inputs if key not in step_outputs])
+            )
             if previous_step:
                 previous_step.next_step_input = step.input_keys
 
-            if step.callback_type in (CallbackType.BROADCAST, CallbackType.AGGREGATE, CallbackType.SCATTER):
+            if step.callback_type in (
+                CallbackType.BROADCAST,
+                CallbackType.AGGREGATE,
+                CallbackType.SCATTER,
+            ):
                 if len(step.input_keys) > 1:
-                    raise ValueError("Broadcast and Aggregate callbacks only support a single input for this step. "
-                                     "If you want to use multiple inputs, use a custom callback.")
+                    raise ValueError(
+                        "Broadcast and Aggregate callbacks only support a single input for this step. "
+                        "If you want to use multiple inputs, use a custom callback."
+                    )
 
             self.steps.append(step)
         except Exception as e:
@@ -362,10 +392,12 @@ class PipelineBuilder:
         if len(self.steps) == 0:
             self._validate_input_types(other)
 
-        _step = StepBuilder(name=other.__class__.__name__,
-                            config=StepConfig(),
-                            input=other.params.task_input,
-                            workflow=other.workflow).add_callback(other.callback, other.params.callback_type)
+        _step = StepBuilder(
+            name=other.__class__.__name__,
+            config=StepConfig(),
+            input=other.params.task_input,
+            workflow=other.workflow,
+        ).add_callback(other.callback, other.params.callback_type)
 
         self._add_step(_step.build())
         self.templates.append(other)

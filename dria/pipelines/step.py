@@ -34,12 +34,12 @@ class Step(ABC):
     """
 
     def __init__(
-            self,
-            name: str,
-            input: Optional[Union[TaskInput, List[TaskInput]]] = None,
-            workflow: Union[Callable, Workflow] = None,
-            config: StepConfig = StepConfig(),
-            client: Optional[Dria] = None
+        self,
+        name: str,
+        input: Optional[Union[TaskInput, List[TaskInput]]] = None,
+        workflow: Union[Callable, Workflow] = None,
+        config: StepConfig = StepConfig(),
+        client: Optional[Dria] = None,
     ):
         self.logger = logger
         self.name = name
@@ -82,7 +82,9 @@ class Step(ABC):
             self.logger.error(f"Error executing step '{self.name}': {e}", exc_info=True)
             raise RuntimeError(f"Failed to execute step '{self.name}': {e}") from e
 
-    def add_pipeline_params(self, pipeline_id: str, storage: Storage, client: Dria) -> None:
+    def add_pipeline_params(
+        self, pipeline_id: str, storage: Storage, client: Dria
+    ) -> None:
         """
         Assign pipeline parameters to the step.
 
@@ -94,7 +96,9 @@ class Step(ABC):
         self.pipeline_id = pipeline_id
         self.storage = storage
         self.client = client
-        self.logger.debug(f"Pipeline parameters added to step '{self.name}': pipeline_id={pipeline_id}")
+        self.logger.debug(
+            f"Pipeline parameters added to step '{self.name}': pipeline_id={pipeline_id}"
+        )
 
     async def _push_task(self, workflow_data: Dict) -> Task:
         """
@@ -116,7 +120,7 @@ class Step(ABC):
             workflow=workflow_data,
             models=[model.value for model in self.config.models],
             step_name=self.name,
-            pipeline_id=self.pipeline_id
+            pipeline_id=self.pipeline_id,
         )
 
         success = await self.client.push(task)
@@ -127,7 +131,9 @@ class Step(ABC):
             raise RuntimeError(f"Storage is not initialized for step '{self.name}'.")
 
         self.storage.set_value(task.id, json.dumps(task.dict(), ensure_ascii=False))
-        self.logger.debug(f"Task pushed and stored for step '{self.name}': task_id={task.id}")
+        self.logger.debug(
+            f"Task pushed and stored for step '{self.name}': task_id={task.id}"
+        )
         return task
 
     def _validate_and_run_workflow(self, task_input: TaskInput) -> Dict:
@@ -158,11 +164,17 @@ class Step(ABC):
                 input_dict,
                 max_tokens=self.config.max_tokens,
                 max_time=self.config.max_time,
-                max_steps=self.config.max_steps
+                max_steps=self.config.max_steps,
             )
             result = workflow_result.model_dump(warnings=False)
-            self.logger.debug(f"Workflow executed successfully for step '{self.name}': {result}")
+            self.logger.debug(
+                f"Workflow executed successfully for step '{self.name}': {result}"
+            )
             return result
         except Exception as e:
-            self.logger.error(f"Workflow execution failed for step '{self.name}': {e}", exc_info=True)
-            raise ValueError(f"Workflow execution failed for step '{self.name}': {e}") from e
+            self.logger.error(
+                f"Workflow execution failed for step '{self.name}': {e}", exc_info=True
+            )
+            raise ValueError(
+                f"Workflow execution failed for step '{self.name}': {e}"
+            ) from e

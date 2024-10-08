@@ -64,7 +64,9 @@ class Pipeline:
         first_step = self.steps[0]
         self._update_state(first_step.name)
         self._update_status(PipelineStatus.RUNNING)
-        self.logger.info(f"Executing pipeline '{self.pipeline_id}' starting with step '{first_step.name}'.")
+        self.logger.info(
+            f"Executing pipeline '{self.pipeline_id}' starting with step '{first_step.name}'."
+        )
 
         await self.run(first_step.name)
         asyncio.create_task(self._poll())
@@ -103,7 +105,9 @@ class Pipeline:
         input_data = current_step.callback(current_step)
         self._update_state(next_step.name)
 
-        next_step.input = [input_data] if isinstance(input_data, TaskInput) else input_data
+        next_step.input = (
+            [input_data] if isinstance(input_data, TaskInput) else input_data
+        )
         self.logger.info(f"Executing next step: {next_step.name}")
         await self.run(next_step.name)
 
@@ -120,7 +124,9 @@ class Pipeline:
                 for result in results:
                     step = self.get_step(result.step_name)
                     if not step:
-                        self.logger.warning(f"Received result for unknown step '{result.step_name}'.")
+                        self.logger.warning(
+                            f"Received result for unknown step '{result.step_name}'."
+                        )
                         continue
 
                     step.output.append(result)
@@ -145,7 +151,9 @@ class Pipeline:
             self.proceed_steps.append(step.name)
             return True
         required_results = int(len(step.all_inputs) * step.config.min_compute)
-        self.logger.info(f"Required Output: {required_results}, processed output: {len(step.output)}")
+        self.logger.info(
+            f"Required Output: {required_results}, processed output: {len(step.output)}"
+        )
         if len(step.output) < int(required_results) or step.name in self.proceed_steps:
             return False
         self.proceed_steps.append(step.name)
@@ -163,10 +171,14 @@ class Pipeline:
 
     def _handle_deadline_exceeded(self) -> None:
         """Handle the deadline exceeded error."""
-        self.logger.error(f"Pipeline '{self.pipeline_id}' exceeded the deadline of {self.config.pipeline_timeout} seconds.")
+        self.logger.error(
+            f"Pipeline '{self.pipeline_id}' exceeded the deadline of {self.config.pipeline_timeout} seconds."
+        )
         self._update_status(PipelineStatus.FAILED)
         self._update_state(PipelineStatus.FAILED.value)
-        self.logger.warning(f"Terminating pipeline execution due to deadline exceeded. Current pipeline deadline {self.config.pipeline_timeout}")
+        self.logger.warning(
+            f"Terminating pipeline execution due to deadline exceeded. Current pipeline deadline {self.config.pipeline_timeout}"
+        )
 
     def _update_state(self, state: str) -> None:
         """Update the pipeline state in storage."""

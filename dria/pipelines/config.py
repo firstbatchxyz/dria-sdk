@@ -13,6 +13,7 @@ class PipelineConfig(BaseModel):
         retry_interval (int): Time interval between retry attempts, in seconds.
         pipeline_timeout (int): Maximum allowed duration for the entire pipeline execution, in seconds.
     """
+
     retry_interval: int = Field(
         default=2,
         description="Time interval between retry attempts, in seconds",
@@ -24,7 +25,7 @@ class PipelineConfig(BaseModel):
         ge=1,
     )
 
-    @field_validator('retry_interval', 'pipeline_timeout')
+    @field_validator("retry_interval", "pipeline_timeout")
     def validate_positive_values(cls, value, field):
         if value < 0:
             raise ValueError(f"{field.name} must be a non-negative integer")
@@ -40,7 +41,7 @@ DEFAULT_MODELS: List[Model] = [
     Model.GEMMA2_9B,
     Model.GEMMA2_9B_FP16,
     Model.QWEN2_5_7B_FP16,
-    Model.QWEN2_5_32B_FP16
+    Model.QWEN2_5_32B_FP16,
 ]
 
 
@@ -55,6 +56,7 @@ class StepConfig(BaseModel):
         max_steps (int): Maximum number of sub-steps or iterations allowed within this step.
         max_tokens (int): Maximum number of tokens allowed to be processed in this step.
     """
+
     models: List[Model] = Field(
         default=DEFAULT_MODELS,
         description="List of AI models to be used in this step",
@@ -90,13 +92,18 @@ class StepConfig(BaseModel):
             allow_population_by_field_name (bool): Allows populating model fields by their names.
             validate_assignment (bool): Enables validation when assigning values to fields.
         """
+
         allow_population_by_field_name = True
         validate_assignment = True
 
-    @field_validator('models')
+    @field_validator("models")
     def validate_models(cls, models):
         if not isinstance(models, list):
-            raise ValueError("The 'models' field must be a list of Model enum instances")
+            raise ValueError(
+                "The 'models' field must be a list of Model enum instances"
+            )
         if not all(isinstance(model, Model) for model in models):
-            raise ValueError("All items in the 'models' field must be instances of the Model enum")
+            raise ValueError(
+                "All items in the 'models' field must be instances of the Model enum"
+            )
         return models

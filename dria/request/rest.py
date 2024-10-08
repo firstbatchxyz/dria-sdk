@@ -3,7 +3,11 @@ from typing import List, Union
 import aiohttp
 
 from dria import constants
-from dria.models.exceptions import RPCContentTopicError, RPCConnectionError, RPCAuthenticationError
+from dria.models.exceptions import (
+    RPCContentTopicError,
+    RPCConnectionError,
+    RPCAuthenticationError,
+)
 from dria.utils.logging import logger
 
 
@@ -73,7 +77,9 @@ class RPCClient:
             logger.error(f"Failed to get content topic {content_topic}: {e}")
             raise
 
-    async def push_content_topic(self, data: Union[str, bytes], content_topic: str) -> bool:
+    async def push_content_topic(
+        self, data: Union[str, bytes], content_topic: str
+    ) -> bool:
         """
         Push content to a topic.
 
