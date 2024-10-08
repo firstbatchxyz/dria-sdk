@@ -1,4 +1,5 @@
 import json
+import logging
 from typing import List
 
 from dria.models.models import TaskInput
@@ -25,6 +26,7 @@ def scatter_callback(step: Step) -> List[TaskInput]:
     output_ = step.output[0].result
 
     try:
+        logging.info(f"_____Output: {output_}")
         parsed_output = parse_json(output_)
     except json.JSONDecodeError:
         raise ValueError(f"Invalid JSON output: {output_}")
