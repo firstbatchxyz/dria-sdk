@@ -101,7 +101,7 @@ class StepTemplate(BaseModel, ABC):
         self.params.output = self.workflow.return_value.input.key
         self.params.output_type = self.workflow.return_value.input.type
         self.params.output_json = self.workflow.return_value.to_json
-        self.params.callback = default_callback
+        self.params.callback = self.callback
         self.params.callback_type = CallbackType.DEFAULT
 
     def broadcast(self, n: int) -> "StepTemplate":
@@ -136,6 +136,16 @@ class StepTemplate(BaseModel, ABC):
         """
         self.params.callback = aggregation_callback
         self.params.callback_type = CallbackType.AGGREGATE
+        return self
+
+    def custom(self) -> "StepTemplate":
+        """
+        Custom callback
+        Returns:
+
+        """
+        self.params.callback = self.callback
+        self.params.callback_type = CallbackType.CUSTOM
         return self
 
     @abstractmethod
@@ -390,13 +400,15 @@ class PipelineBuilder:
         Returns:
 
         """
+        task_input = None
         if len(self.steps) == 0:
             self._validate_input_types(other)
+            task_input = TaskInput(**self.pipeline_input)
 
         _step = StepBuilder(
             name=other.__class__.__name__ + f".{len(self.steps)}",
-            config=StepConfig(),
-            input=other.params.task_input,
+            config=other.config,
+            input=task_input,
             workflow=other.workflow,
         ).add_callback(other.params.callback, other.params.callback_type)
 

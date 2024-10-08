@@ -28,17 +28,17 @@ class SubTopicPipeline:
         self.pipeline_config: PipelineConfig = config or PipelineConfig()
         self.pipeline = PipelineBuilder(self.pipeline_config, dria)
 
-    def build(self, topics: List[str], max_depth=2) -> Pipeline:
+    def build(self, topic: str, max_depth=2) -> Pipeline:
         if max_depth < 1:
             raise ValueError("Max depth must be greater than 0")
-        self.pipeline.input(topics=topics)
+        self.pipeline.input(topic=topic)
         for i in range(max_depth - 1):
-            self.pipeline << GenerateSubtopics().set_models([Model.LLAMA3_1_8B_FP16, Model.QWEN2_5_7B_FP16]).scatter()
-        self.pipeline << GenerateSubtopics().set_models([Model.LLAMA3_1_8B_FP16, Model.QWEN2_5_7B_FP16])
+            self.pipeline << GenerateSubtopics().set_models([Model.GPT4_TURBO, Model.GEMMA2_9B_FP16]).scatter()
+        self.pipeline << GenerateSubtopics().set_models([Model.GPT4_TURBO, Model.GEMMA2_9B_FP16])
         return self.pipeline.build()
 
 
 if __name__ == "__main__":
     _dria = Dria(rpc_token="asd")
     pipeline = SubTopicPipeline(_dria, PipelineConfig())
-    pipeline.build(topics=["Artificial Intelligence"], max_depth=1)
+    pipeline.build(topic="Artificial Intelligence", max_depth=1)

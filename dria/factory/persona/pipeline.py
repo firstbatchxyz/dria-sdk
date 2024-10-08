@@ -7,6 +7,7 @@ from .random_variables.task import RandomVariable
 
 logger = logging.getLogger(__name__)
 
+
 class PersonaPipeline:
     """
     A pipelines for generating personas.
