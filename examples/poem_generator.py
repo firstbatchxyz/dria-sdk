@@ -42,7 +42,7 @@ async def main():
     node_count = 1
 
     logger.info(f"Generating {node_count} poem(s) based on the prompt: '{prompt}'")
-    tasks = await asyncio.gather(*[generate_poem(prompt) for _ in range(100)])
+    tasks = [await generate_poem(prompt) for _ in range(1)]
     results = await dria.fetch(task=tasks)
     print(results)
 
