@@ -14,4 +14,3 @@ __all__ = [
     "evaluate_prediction",
     "self_instruct",
 ]
-

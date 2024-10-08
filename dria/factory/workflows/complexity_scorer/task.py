@@ -33,7 +33,9 @@ def score_complexity(instructions: List[str]) -> Workflow:
     instruction_list = [f"[{i+1}] {instr}" for i, instr in enumerate(instructions)]
     builder = WorkflowBuilder(instruction_list=instruction_list)
     builder.generative_step(
-        path=get_abs_path("score.md"), operator=Operator.GENERATION, outputs=[Write.new("scores")]
+        path=get_abs_path("score.md"),
+        operator=Operator.GENERATION,
+        outputs=[Write.new("scores")],
     )
     flow = [Edge(source="0", target="_end")]
     builder.flow(flow)

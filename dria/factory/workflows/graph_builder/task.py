@@ -20,7 +20,9 @@ def generate_graph(context: str) -> Workflow:
 
     # Add a generative step using the prompt
     builder.generative_step(
-        path=get_abs_path("prompt.md"), operator=Operator.GENERATION, outputs=[Write.new("graph")]
+        path=get_abs_path("prompt.md"),
+        operator=Operator.GENERATION,
+        outputs=[Write.new("graph")],
     )
 
     flow = [Edge(source="0", target="_end")]

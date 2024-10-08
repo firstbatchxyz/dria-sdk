@@ -56,7 +56,9 @@ def generate_text_matching_example(
 
     # Add a generative step using the prompt stored in 'text_matching_example.md'
     builder.generative_step(
-        path=get_abs_path("text_matching_example.md"),  # The prompt file containing the provided prompt
+        path=get_abs_path(
+            "text_matching_example.md"
+        ),  # The prompt file containing the provided prompt
         operator=Operator.GENERATION,
         outputs=[Write.new("text_matching_example")],
     )
