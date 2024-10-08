@@ -1,12 +1,17 @@
-from dria.factory import score_complexity, evolve_complexity, generate_semantic_triple
-
+from dria.factory import (
+    score_complexity,
+    evolve_complexity,
+    generate_semantic_triple,
+    PersonaPipeline,
+    SubTopicPipeline,
+)
+from dria.client import Dria
+from dria.pipelines import PipelineConfig
 
 if __name__ == "__main__":
-    workflow = generate_semantic_triple(
-        unit="sentence", language="en", high_score=5, low_score=1, difficulty="college"
-    )
-    print(
-        workflow.model_dump_json(
-            exclude_none=True, exclude_unset=True, by_alias=True, indent=2
-        )
+
+    dria = Dria(rpc_token="token")
+    cfg = PipelineConfig()
+    pipe = SubTopicPipeline(dria, cfg).build(
+        topics=["Artificial Intelligence"], max_depth=2
     )

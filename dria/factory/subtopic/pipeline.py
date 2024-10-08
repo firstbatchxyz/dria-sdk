@@ -1,15 +1,11 @@
 from typing import List
-
 from dria.client import Dria
-from dria.models import Model, TaskInput
 from dria.pipelines import (
     PipelineConfig,
-    StepConfig,
     PipelineBuilder,
-    StepBuilder,
     Pipeline,
 )
-from workflows import GenerateSubtopics, GenerateEntries
+from .generate_subtopics.task import GenerateSubtopics
 import logging
 
 
@@ -21,9 +17,9 @@ logging.basicConfig(
 
 class SubTopicPipeline:
     """
-    A pipeline for generating subtopics.
+    A pipelines for generating subtopics.
 
-    It is a simple pipeline that generates subtopics based on a given topic.
+    It is a simple pipelines that generates subtopics based on a given topic.
     Pipeline would create subtopics based on a given topic.
     """
 
@@ -32,10 +28,12 @@ class SubTopicPipeline:
         self.pipeline = PipelineBuilder(self.pipeline_config, dria)
 
     def build(self, topics: List[str], max_depth=2) -> Pipeline:
+        if max_depth < 1:
+            raise ValueError("Max depth must be greater than 0")
         self.pipeline.input(topics=topics)
-        for i in range(max_depth):
+        for i in range(max_depth - 1):
             self.pipeline << GenerateSubtopics().scatter()
-        self.pipeline << GenerateEntries().aggregate()
+        self.pipeline << GenerateSubtopics()
         return self.pipeline.build()
 
 

@@ -1,23 +1,8 @@
 import logging
-from dria.models import Task, Model, TaskInput
-from typing import List, Optional, Any
-from dria_workflows import (
-    WorkflowBuilder,
-    Operator,
-    Write,
-    Edge,
-    Read,
-    GetAll,
-    Workflow,
-    ConditionBuilder,
-    Expression,
-)
-import json
-import re
-import random
-from typing import Dict, List
-from dria.pipelines import Step
-from dria.pipelines import Step, StepTemplate
+from dria_workflows import WorkflowBuilder, Operator, Write, Edge, GetAll, Workflow
+from typing import List
+from dria.pipelines import StepTemplate
+from dria.factory.utilities import get_abs_path
 
 
 class GenerateSubtopics(StepTemplate):
@@ -38,7 +23,7 @@ class GenerateSubtopics(StepTemplate):
         # Step A: GenerateSubtopics
         builder.generative_step(
             id="generate_subtopics",
-            path="workflows/prompts/generate_subtopics.md",
+            path=get_abs_path("prompt.md"),
             operator=Operator.GENERATION,
             inputs=[
                 GetAll.new(key="topics", required=True),

@@ -1,6 +1,5 @@
-import logging
-from dria.models import Task, Model, TaskInput
-from typing import List, Optional
+from dria.models import TaskInput
+from dria.factory.utilities import get_abs_path
 from dria_workflows import (
     WorkflowBuilder,
     Operator,
@@ -13,9 +12,8 @@ from dria_workflows import (
 import json
 
 import logging
-from typing import Dict, List
-from dria.pipelines import Step
-from dria.pipelines import StepTemplate
+from typing import List
+from dria.pipelines import Step, StepTemplate
 
 
 logger = logging.getLogger(__name__)
@@ -44,7 +42,7 @@ class BackStory(StepTemplate):
         # Step A: GenerateBackstory
         builder.generative_step(
             id="generate_backstory",
-            path="/Users/kayaomers/Documents/firstbatch/dria-sdk/examples/pipeline/persona/backstory/prompt.md",
+            path=get_abs_path("prompt.md"),
             operator=Operator.GENERATION,
             inputs=[
                 Read.new(key="simulation_description", required=True),

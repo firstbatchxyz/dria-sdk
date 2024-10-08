@@ -1,13 +1,9 @@
 import logging
-from typing import Any, List
-
 from dria.client import Dria
-from dria.models import Model
-from dria.models.models import TaskInput
-from dria.pipelines import PipelineConfig, StepConfig
-from dria.pipelines.builder import PipelineBuilder, StepBuilder, Pipeline
-from examples.pipeline.persona.backstory.task import BackStory
-from examples.pipeline.persona.random_variables.task import RandomVariable
+from dria.pipelines import Pipeline, PipelineConfig
+from dria.pipelines.builder import PipelineBuilder
+from .backstory.task import BackStory
+from .random_variables.task import RandomVariable
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(
@@ -17,9 +13,9 @@ logging.basicConfig(
 
 class PersonaPipeline:
     """
-    A pipeline for generating personas.
+    A pipelines for generating personas.
 
-    It is a simple pipeline that generates personas based on a simulation description.
+    It is a simple pipelines that generates personas based on a simulation description.
     Pipeline would create random variables that fit into the simulation description.
     Then it would generate a backstory for each sample.
     Number of samples can be specified to determine the number of personas to be generated.
