@@ -22,7 +22,7 @@ class RPCClient:
     def __init__(self, auth_token: str):
         if not auth_token:
             raise ValueError(
-                "RPC token is required for Dria RPC."
+                "RPC token is required for Dria RPC. "
                 "Please set the DRIA_RPC_TOKEN environment variable."
             )
         self.base_url = constants.RPC_BASE_URL
@@ -31,6 +31,19 @@ class RPCClient:
             "x-api-key": self.auth_token,
             "Accept": "application/json",
         }
+        self.session = None
+
+    async def initialize(self):
+        if self.session is None:
+            self.session = aiohttp.ClientSession(
+                headers=self.headers,
+            )
+        return self
+
+    async def close(self):
+        if self.session:
+            await self.session.close()
+            self.session = None
 
     async def health_check(self) -> bool:
         """
@@ -40,7 +53,7 @@ class RPCClient:
         :raises RPCConnectionError: If there is a connection error with the RPC server.
         """
         try:
-            async with aiohttp.ClientSession(headers=self.headers).get(f"{self.base_url}/health") as response:
+            async with self.session.get(f"{self.base_url}/health") as response:
                 text = await response.text()
                 return text == "Node is healthy"
         except aiohttp.ClientError as e:
@@ -57,14 +70,12 @@ class RPCClient:
         :raises RPCConnectionError: If there is a connection error with the RPC server.
         """
         try:
-            async with aiohttp.ClientSession() as session:
-                async with session.get(f"{self.base_url}/rpc/{content_topic}", headers=self.headers) as response:
-                    if response.status == 401:
-                        raise RPCAuthenticationError()
+            async with self.session.get(f"{self.base_url}/rpc/{content_topic}") as response:
+                if response.status == 401:
+                    raise RPCAuthenticationError()
 
-                    response.raise_for_status()
-                    res_json = await response.json()
-                    return res_json["data"]["results"]
+                res_json = await response.json()
+                return res_json["data"]["results"]
         except aiohttp.ClientResponseError as e:
             if e.status == 401:
                 raise RPCAuthenticationError()
@@ -78,7 +89,7 @@ class RPCClient:
             raise
 
     async def push_content_topic(
-        self, data: Union[str, bytes], content_topic: str
+            self, data: Union[str, bytes], content_topic: str
     ) -> bool:
         """
         Push content to a topic.
@@ -92,17 +103,14 @@ class RPCClient:
         """
         try:
             logger.debug("Pushing content to topic: %s", content_topic)
-            async with aiohttp.ClientSession() as session:
-                async with session.post(
-                        f"{self.base_url}/rpc/{content_topic}",
-                        json={"value": {"payload": data}},
-                        headers={**self.headers, "Content-Type": "application/json"},
-                ) as response:
-                    if response.status == 401:
-                        raise RPCAuthenticationError()
-
-                    response.raise_for_status()
-                    return True
+            async with self.session.post(
+                    f"{self.base_url}/rpc/{content_topic}",
+                    json={"value": {"payload": data}},
+                    headers={"Content-Type": "application/json"},
+            ) as response:
+                if response.status == 401:
+                    raise RPCAuthenticationError()
+                return True
         except aiohttp.ClientResponseError as e:
             if e.status == 401:
                 raise RPCAuthenticationError()

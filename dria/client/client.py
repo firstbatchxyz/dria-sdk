@@ -15,7 +15,7 @@ from dria.constants import (
 from dria.db.mq import KeyValueQueue
 from dria.db.storage import Storage
 from dria.models import Task, TaskResult
-from dria.models.enums import FunctionCallingModels, OllamaModels, OpenAIModels
+from dria.models.enums import FunctionCallingModels, OllamaModels, OpenAIModels, CoderModels
 from dria.models.exceptions import TaskPublishError
 from dria.request import RPCClient
 from dria.utils import logger
@@ -103,6 +103,7 @@ class Dria:
             await asyncio.sleep(10)  # Retry after sleep
 
     async def _run_monitoring(self) -> None:
+        await self.rpc.initialize()
         """Run the monitoring process to track task statuses."""
         monitor = Monitor(self.storage, self.rpc)
         while True:
@@ -111,7 +112,7 @@ class Dria:
             except Exception:
                 logger.error("Error in monitoring", exc_info=True)
 
-    def run_cleanup(self) -> None:
+    async def run_cleanup(self) -> None:
         """Run the cleanup process to remove expired tasks and pipelines."""
         if self.background_tasks and not self.background_tasks.done():
             self.background_tasks.cancel()
@@ -119,6 +120,7 @@ class Dria:
                 self.background_tasks
             except asyncio.CancelledError:
                 pass
+        await self.rpc.close()
 
     async def push(self, task: Task) -> bool:
         """
@@ -494,6 +496,8 @@ class Dria:
                 model_list.extend(model.value for model in OpenAIModels)
             elif model == "ollama":
                 model_list.extend(model.value for model in OllamaModels)
+            elif model == "coder":
+                model_list.extend(model.value for model in CoderModels)
             else:
                 model_list.append(model)
         if has_function_calling:

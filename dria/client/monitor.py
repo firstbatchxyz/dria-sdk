@@ -93,7 +93,7 @@ class Monitor:
                 nodes_as_address = self._decrypt_nodes(
                     [base64_to_json(t) for t in topic], uuid_
                 )
-                logger.info(f"Current nodes: {nodes_as_address}")
+                logger.debug(f"Current nodes: {nodes_as_address}")
 
                 for model, addresses in nodes_as_address.items():
                     self.task_manager.add_available_nodes(

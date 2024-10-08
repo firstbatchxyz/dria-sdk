@@ -139,7 +139,7 @@ class Pipeline:
                     await self._run_next_step(step, self.steps.index(step) + 1)
 
             except Exception as e:
-                self._graceful_shutdown(e)
+                await self._graceful_shutdown(e)
 
 
             await asyncio.sleep(self.config.retry_interval)
@@ -191,13 +191,13 @@ class Pipeline:
         """Update the pipelines error reason in storage."""
         self.storage.set_value(f"{self.pipeline_id}_error_reason", e)
 
-    def _graceful_shutdown(self, e: Exception) -> None:
+    async def _graceful_shutdown(self, e: Exception) -> None:
         """Gracefully shutdown the pipelines."""
         self.logger.info("Error in executing the pipeline. Gracefully shutting down.")
         self._update_status(PipelineStatus.FAILED)
         self._update_state(PipelineStatus.FAILED.value)
         self._update_error_reason(e)
-        self.client.run_cleanup()
+        await self.client.run_cleanup()
 
     def _save_output(self, output: Optional[Union[str, Dict]] = None) -> None:
         """Save the pipelines output to storage."""
