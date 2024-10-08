@@ -2,6 +2,7 @@ import logging
 from dria.client import Dria
 from dria.pipelines import Pipeline, PipelineConfig
 from dria.pipelines.builder import PipelineBuilder
+from dria.models import Model
 from .backstory.task import BackStory
 from .random_variables.task import RandomVariable
 
@@ -26,8 +27,8 @@ class PersonaPipeline:
         self.pipeline.input(simulation_description=simulation_description)
         (
             self.pipeline
-            << RandomVariable(num_samples=num_samples).scatter()
-            << BackStory()
+            << RandomVariable(num_samples=num_samples).set_models([Model.GEMMA2_9B_FP16])
+            << BackStory().set_models([Model.QWEN2_5_7B_FP16, Model.GEMMA2_9B_FP16, Model.LLAMA3_1_8B_FP16])
         )
         return self.pipeline.build()
 
