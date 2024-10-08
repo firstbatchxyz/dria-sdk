@@ -160,15 +160,18 @@ class Step(ABC):
             raise ValueError(error_msg)
 
         try:
-            workflow_result = self.workflow(
-                input_dict,
-                max_tokens=self.config.max_tokens,
-                max_time=self.config.max_time,
-                max_steps=self.config.max_steps,
-            )
+            if isinstance(self.workflow, Workflow):
+                workflow_result = self.workflow
+            else:
+                workflow_result = self.workflow(
+                    input_dict,
+                    max_tokens=self.config.max_tokens,
+                    max_time=self.config.max_time,
+                    max_steps=self.config.max_steps,
+                )
             result = workflow_result.model_dump(warnings=False)
             self.logger.debug(
-                f"Workflow executed successfully for step '{self.name}': {result}"
+                f"Workflow built successfully for step '{self.name}': {result}"
             )
             return result
         except Exception as e:
