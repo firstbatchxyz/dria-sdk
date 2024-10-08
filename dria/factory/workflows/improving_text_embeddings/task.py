@@ -1,4 +1,5 @@
 from dria_workflows import Workflow, WorkflowBuilder, Operator, Write, Edge
+from dria.factory.utilities import get_abs_path
 
 
 def generate_semantic_triple(
@@ -16,7 +17,6 @@ def generate_semantic_triple(
     :param high_score: The similarity score between S1 and S2 (1 to 5).
     :param low_score: The similarity score between S1 and S3 (1 to 5).
     :param difficulty: The education level required to understand the units (e.g., "college", "high school").
-    :param models: Optional list of models to use for generation.
     :return: A Task object representing the workflow.
     """
 
@@ -24,12 +24,12 @@ def generate_semantic_triple(
     builder = WorkflowBuilder(
         unit=unit,
         language=language,
-        high_score=high_score,
-        low_score=low_score,
+        high_score=str(high_score),
+        low_score=str(low_score),
         difficulty=difficulty,
     )
     builder.generative_step(
-        path="monolingual_triplet.md",
+        path=get_abs_path("monolingual_triplet.md"),
         operator=Operator.GENERATION,
         outputs=[Write.new("semantic_triple")],
     )
@@ -56,7 +56,7 @@ def generate_text_matching_example(
 
     # Add a generative step using the prompt stored in 'text_matching_example.md'
     builder.generative_step(
-        path="text_matching_example.md",  # The prompt file containing the provided prompt
+        path=get_abs_path("text_matching_example.md"),  # The prompt file containing the provided prompt
         operator=Operator.GENERATION,
         outputs=[Write.new("text_matching_example")],
     )
@@ -90,7 +90,7 @@ def generate_text_classification_example(
 
     # Add a generative step using the prompt stored in 'text_classification_example.md'
     builder.generative_step(
-        path="text_classification_example.md",
+        path=get_abs_path("text_classification_example.md"),
         operator=Operator.GENERATION,
         outputs=[Write.new("classification_example")],
     )
@@ -132,14 +132,14 @@ def generate_text_retrieval_example(
         query_type=query_type,
         query_length=query_length,
         clarity=clarity,
-        num_words=num_words,
+        num_words=str(num_words),
         language=language,
         difficulty=difficulty,
     )
 
     # Add a generative step using the prompt stored in 'text_retrieval_example.md'
     builder.generative_step(
-        path="text_retrieval_example.md",
+        path=get_abs_path("text_retrieval_example.md"),
         operator=Operator.GENERATION,
         outputs=[Write.new("retrieval_example")],
     )

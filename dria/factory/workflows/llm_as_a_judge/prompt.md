@@ -2,12 +2,12 @@ You will be given a predicted answer and a correct answer to a question. Your ta
 
 Here is the predicted answer:
 <prediction>
-{prediction}
+{{prediction}}
 </prediction>
 
 Here is the correct answer:
 <correct_answer>
-{correct_answer}
+{{correct_answer}}
 </correct_answer>
 
 To complete this task:

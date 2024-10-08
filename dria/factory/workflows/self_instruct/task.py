@@ -1,4 +1,5 @@
 from dria_workflows import Workflow, WorkflowBuilder, Operator, Write, Edge
+from dria.factory.utilities import get_abs_path
 
 
 def self_instruct(
@@ -19,7 +20,7 @@ def self_instruct(
 
     # Initialize the workflow with variables to be used in the prompt
     builder = WorkflowBuilder(
-        num_instructions=num_instructions,
+        num_instructions=str(num_instructions),
         criteria_for_query_generation=criteria_for_query_generation,
         application_description=application_description,
         context=context,
@@ -27,7 +28,7 @@ def self_instruct(
 
     # Add a generative step using the prompt string
     builder.generative_step(
-        path="prompt.md",
+        path=get_abs_path("prompt.md"),
         operator=Operator.GENERATION,
         outputs=[Write.new("user_queries")],
     )

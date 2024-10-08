@@ -1,4 +1,5 @@
 from dria_workflows import Workflow, WorkflowBuilder, Operator, Write, Edge
+from dria.factory.utilities import get_abs_path
 
 
 def evaluate_prediction(prediction: str, correct_answer: str) -> Workflow:
@@ -15,7 +16,7 @@ def evaluate_prediction(prediction: str, correct_answer: str) -> Workflow:
 
     # Add a generative step using the prompt
     builder.generative_step(
-        path="prompt.md",
+        path=get_abs_path("prompt.md"),
         operator=Operator.GENERATION,
         outputs=[Write.new("evaluation_result")],
     )

@@ -1,7 +1,9 @@
+from typing import List
+from dria.factory.utilities import get_abs_path
 from dria_workflows import Workflow, WorkflowBuilder, Operator, Write, Edge
 
 
-def evolve_complexity(instruction) -> Workflow:
+def evolve_complexity(instruction: str) -> Workflow:
     """
 
     :param instruction:
@@ -11,7 +13,7 @@ def evolve_complexity(instruction) -> Workflow:
     builder = WorkflowBuilder(instruction=instruction)
     # Prompt to increase the complexity of the instruction
     builder.generative_step(
-        path="evolve.md",
+        path=get_abs_path("evolve.md"),
         operator=Operator.GENERATION,
         outputs=[Write.new("evolved_instruction")],
     )
@@ -21,7 +23,7 @@ def evolve_complexity(instruction) -> Workflow:
     return builder.build()
 
 
-def score_complexity(instructions) -> Workflow:
+def score_complexity(instructions: List[str]) -> Workflow:
     """
 
     :param instructions:
@@ -29,9 +31,9 @@ def score_complexity(instructions) -> Workflow:
     """
     # Build the prompt to score the instructions
     instruction_list = [f"[{i+1}] {instr}" for i, instr in enumerate(instructions)]
-    builder = WorkflowBuilder({"instruction_list": instruction_list})
+    builder = WorkflowBuilder(instruction_list=instruction_list)
     builder.generative_step(
-        path="score.md", operator=Operator.GENERATION, outputs=[Write.new("scores")]
+        path=get_abs_path("score.md"), operator=Operator.GENERATION, outputs=[Write.new("scores")]
     )
     flow = [Edge(source="0", target="_end")]
     builder.flow(flow)

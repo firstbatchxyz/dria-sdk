@@ -3,31 +3,31 @@ from typing import Dict
 
 # Mutation templates
 MUTATION_TEMPLATES: Dict[str, str] = {
-    "FRESH_START": """Write one question or request containing one or more of the following words: {prompt}""",
+    "FRESH_START": """Write one question or request containing one or more of the following words: {{prompt}}""",
     "ADD_CONSTRAINTS": """Add a few more constraints or requirements to #Given Prompt#, and create #New Prompt#.
 
     #Given Prompt#:
-    {prompt}""",
+    {{prompt}}""",
     "DEEPEN": """Slightly increase the depth and breadth of #Given Prompt#, and create #New Prompt#.
     
     #Given Prompt#:
-    {prompt}""",
+    {{prompt}}""",
     "CONCRETIZE": """Make #Given Prompt# slightly more concrete, and create #New Prompt#.
     
     #Given Prompt#:
-    {prompt}""",
+    {{prompt}}""",
     "INCREASE_REASONING": """If #Given Prompt# can be solved with just a few simple thinking processes, rewrite it to explicitly request multi-step reasoning, and create #New Prompt#.
     
     #Given Prompt#:
-    {prompt}""",
+    {{prompt}}""",
     "SWITCH_TOPIC": """Rewrite #Given Prompt# by switching the topic, keeping the domain and difficulty level similar, and create #New Prompt#.
     
     #Given Prompt#:
-    {prompt}""",
+    {{prompt}}""",
 }
 
 
-def evolve_prompt(prompt: str, mutation_type: str) -> Workflow:
+def evolve_instruct(prompt: str, mutation_type: str) -> Workflow:
     """
     Mutate the given prompt using the specified mutation type.
 

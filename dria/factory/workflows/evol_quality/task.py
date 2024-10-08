@@ -1,6 +1,6 @@
 from dria_workflows import Workflow, WorkflowBuilder, Operator, Write, Edge
-from dria.models import Task, Model
-from typing import Dict, List, Optional
+from dria.factory.utilities import get_abs_path
+from typing import Dict
 
 
 MUTATION_TEMPLATES: Dict[str, str] = {
@@ -27,7 +27,7 @@ def evolve_quality(prompt: str, response: str, method: str = "HELPFULNESS") -> W
     )
     builder = WorkflowBuilder(prompt=prompt, response=response, method=selected_method)
     builder.generative_step(
-        path="rewrite.md",
+        path=get_abs_path("rewrite.md"),
         operator=Operator.GENERATION,
         outputs=[Write.new("rewritten_response")],
     )

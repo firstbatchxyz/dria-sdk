@@ -1,6 +1,6 @@
 Rank the following instructions based on complexity from 1 (least complex) to 5 (most complex):
 
-{instruction_list}
+{{instruction_list}}
 
 Provide the scores in the format:
 [1] Score: X

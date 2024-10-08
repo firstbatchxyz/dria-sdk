@@ -1,4 +1,22 @@
 from .complexity_scorer import evolve_complexity, score_complexity, parse_scores
+from .evol_instruct import evolve_instruct
+from .evol_quality import evolve_quality
+from .graph_builder import generate_graph
+from .improving_text_embeddings import generate_text_retrieval_example, generate_text_matching_example, generate_text_classification_example, generate_semantic_triple
+from .llm_as_a_judge import evaluate_prediction
+from .self_instruct import self_instruct
 
-
-__all__ = ["evolve_complexity", "score_complexity", "parse_scores"]
+__all__ = [
+    "evolve_complexity",
+    "score_complexity",
+    "parse_scores",
+    "evolve_instruct",
+    "evolve_quality",
+    "generate_graph",
+    "generate_text_retrieval_example",
+    "generate_text_matching_example",
+    "generate_text_classification_example",
+    "generate_semantic_triple",
+    "evaluate_prediction",
+    "self_instruct",
+]
