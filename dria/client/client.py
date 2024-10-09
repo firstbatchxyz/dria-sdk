@@ -436,12 +436,13 @@ class Dria:
             except Exception as e:
                 logger.exception("Unexpected error processing item")
 
-    async def execute(self, task: Union[Task, List[Task]]):
+    async def execute(self, task: Union[Task, List[Task]], timeout:int = 30):
         """
         Execute a task.
 
         Args:
             task (Task): The task to execute.
+            timeout: Timeout of the task
         """
         await self.initialize()
 
@@ -460,7 +461,7 @@ class Dria:
                 await self.push(t)
                 tasks_.append(t.__deepcopy__())
 
-            results = await self.fetch(task=tasks_)
+            results = await self.fetch(task=tasks_, timeout=timeout)
             return [i.result for i in results]
         except Exception as e:
             logger.error(f"Error during task execution: {str(e)}")
