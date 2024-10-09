@@ -48,15 +48,20 @@ class Pipeline:
         """Get a step from the pipelines by name."""
         return next((step for step in self.steps if step.name == name), None)
 
-    async def execute(self) -> str:
+    async def execute(self, return_output: bool = True) -> Union[str, Dict[str, Any]]:
         """
-        Execute the entire pipelines and return the pipelines ID.
+        Execute the entire pipeline and return the pipeline ID or output.
+
+        Args:
+            return_output (bool): If True, wait for the pipeline to complete and return the output.
+                                  If False, return the pipeline ID immediately.
 
         Returns:
-            str: The unique identifier of the executed pipelines.
+            Union[str, Dict[str, Any]]: The unique identifier of the executed pipeline if return_output is False,
+                                        or the pipeline output if return_output is True.
 
         Raises:
-            ValueError: If the pipelines has no steps.
+            ValueError: If the pipeline has no steps.
         """
         if not self.steps:
             raise ValueError("Pipeline has no steps.")
@@ -65,13 +70,20 @@ class Pipeline:
         self._update_state(first_step.name)
         self._update_status(PipelineStatus.RUNNING)
         self.logger.info(
-            f"Executing pipelines '{self.pipeline_id}' starting with step '{first_step.name}'."
+            f"Executing pipeline '{self.pipeline_id}' starting with step '{first_step.name}'."
         )
 
         await self.run(first_step.name)
         asyncio.create_task(self._poll())
 
-        return self.pipeline_id
+        if return_output:
+            while True:
+                _, status, output = self.poll()
+                if status == PipelineStatus.COMPLETED.value:
+                    return output
+                await asyncio.sleep(5)
+        else:
+            return self.pipeline_id
 
     async def run(self, step_name: str) -> None:
         """
@@ -141,7 +153,6 @@ class Pipeline:
             except Exception as e:
                 await self._graceful_shutdown(e)
 
-
             await asyncio.sleep(self.config.retry_interval)
 
     def _check_step_requirements(self, step: Step) -> bool:
@@ -191,12 +202,13 @@ class Pipeline:
         """Update the pipelines error reason in storage."""
         self.storage.set_value(f"{self.pipeline_id}_error_reason", e)
 
-    async def _graceful_shutdown(self, e: Exception) -> None:
+    async def _graceful_shutdown(self, e: Optional[Exception] = None) -> None:
         """Gracefully shutdown the pipelines."""
         self.logger.info("Error in executing the pipeline. Gracefully shutting down.")
         self._update_status(PipelineStatus.FAILED)
         self._update_state(PipelineStatus.FAILED.value)
-        self._update_error_reason(e)
+        if e:
+            self._update_error_reason(e)
         await self.client.run_cleanup()
 
     def _save_output(self, output: Optional[Union[str, Dict]] = None) -> None:

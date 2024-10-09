@@ -15,7 +15,12 @@ from dria.constants import (
 from dria.db.mq import KeyValueQueue
 from dria.db.storage import Storage
 from dria.models import Task, TaskResult
-from dria.models.enums import FunctionCallingModels, OllamaModels, OpenAIModels, CoderModels
+from dria.models.enums import (
+    FunctionCallingModels,
+    OllamaModels,
+    OpenAIModels,
+    CoderModels,
+)
 from dria.models.exceptions import TaskPublishError
 from dria.request import RPCClient
 from dria.utils import logger
@@ -206,7 +211,6 @@ class Dria:
 
         results: List[TaskResult] = []
         start_time = time.time()
-
         if min_outputs is None:
             if isinstance(task, list):
                 min_outputs = len(task)
@@ -413,7 +417,9 @@ class Dria:
                     processed_result, address = get_truthful_nodes(task, result)
 
                     if processed_result == "":
-                        logger.info("Task result is not valid, retrying with another node...")
+                        logger.info(
+                            "Task result is not valid, retrying with another node..."
+                        )
 
                         asyncio.create_task(self.push(task))
                         continue
@@ -429,6 +435,38 @@ class Dria:
                 logger.error(f"Error processing item: {e}", exc_info=True)
             except Exception as e:
                 logger.exception("Unexpected error processing item")
+
+    async def execute(self, task: Union[Task, List[Task]]):
+        """
+        Execute a task.
+
+        Args:
+            task (Task): The task to execute.
+        """
+        await self.initialize()
+
+        if isinstance(task, Task):
+            tasks = [task]
+        elif isinstance(task, list):
+            if not all(isinstance(t, Task) for t in task):
+                raise ValueError("All elements in the list must be of type Task.")
+            tasks = task
+        else:
+            raise ValueError("Invalid task type. Expected Task or List[Task].")
+
+        try:
+            tasks_ = []
+            for t in tasks:
+                await self.push(t)
+                tasks_.append(t.__deepcopy__())
+
+            results = await self.fetch(task=tasks_)
+            return results
+        except Exception as e:
+            logger.error(f"Error during task execution: {str(e)}")
+            raise
+        finally:
+            await self.run_cleanup()
 
     @staticmethod
     def _is_task_valid(task: Task, current_time: int) -> bool:

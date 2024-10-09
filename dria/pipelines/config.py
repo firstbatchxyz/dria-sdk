@@ -20,7 +20,7 @@ class PipelineConfig(BaseModel):
         ge=0,
     )
     pipeline_timeout: int = Field(
-        default=300,
+        default=100,
         description="Maximum allowed duration for the entire pipelines execution, in seconds",
         ge=1,
     )

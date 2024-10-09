@@ -19,6 +19,8 @@ class RPCClient:
         auth_token (str): The authentication token for the RPC client.
     """
 
+    NETWORK_MAX_MESSAGE_SIZE = 128
+
     def __init__(self, auth_token: str):
         if not auth_token:
             raise ValueError(
@@ -32,11 +34,14 @@ class RPCClient:
             "Accept": "application/json",
         }
         self.session = None
+        self.connector = None
 
     async def initialize(self):
         if self.session is None:
+            self.connector = aiohttp.TCPConnector(force_close=True)
             self.session = aiohttp.ClientSession(
                 headers=self.headers,
+                connector=self.connector,
             )
         return self
 
@@ -44,6 +49,16 @@ class RPCClient:
         if self.session:
             await self.session.close()
             self.session = None
+        if self.connector:
+            await self.connector.close()
+            self.connector = None
+
+    async def __aenter__(self):
+        await self.initialize()
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        await self.close()
 
     async def health_check(self) -> bool:
         """
@@ -70,7 +85,9 @@ class RPCClient:
         :raises RPCConnectionError: If there is a connection error with the RPC server.
         """
         try:
-            async with self.session.get(f"{self.base_url}/rpc/{content_topic}") as response:
+            async with self.session.get(
+                f"{self.base_url}/rpc/{content_topic}"
+            ) as response:
                 if response.status == 401:
                     raise RPCAuthenticationError()
 
@@ -89,7 +106,7 @@ class RPCClient:
             raise
 
     async def push_content_topic(
-            self, data: Union[str, bytes], content_topic: str
+        self, data: Union[str, bytes], content_topic: str
     ) -> bool:
         """
         Push content to a topic.
@@ -101,12 +118,17 @@ class RPCClient:
         :raises RPCAuthenticationError: If there is an authentication error.
         :raises RPCConnectionError: If there is a connection error with the RPC server.
         """
+        data_size = len(data) if isinstance(data, bytes) else len(data.encode("utf-8"))
+        if data_size > self.NETWORK_MAX_MESSAGE_SIZE * 1024:
+            raise ValueError(
+                f"Data size ({data_size} bytes) exceeds the maximum allowed size of {self.NETWORK_MAX_MESSAGE_SIZE} bytes"
+            )
         try:
             logger.debug("Pushing content to topic: %s", content_topic)
             async with self.session.post(
-                    f"{self.base_url}/rpc/{content_topic}",
-                    json={"value": {"payload": data}},
-                    headers={"Content-Type": "application/json"},
+                f"{self.base_url}/rpc/{content_topic}",
+                json={"value": {"payload": data}},
+                headers={"Content-Type": "application/json"},
             ) as response:
                 if response.status == 401:
                     raise RPCAuthenticationError()

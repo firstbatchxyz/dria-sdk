@@ -25,5 +25,5 @@ __all__ = [
     "generate_semantic_triple",
     "evaluate_prediction",
     "self_instruct",
-    "simple_workflow"
+    "simple_workflow",
 ]

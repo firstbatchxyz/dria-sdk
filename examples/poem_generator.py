@@ -24,26 +24,18 @@ logger = logging.getLogger(__name__)
 dria = Dria()
 
 
-async def generate_poem(prompt: str):
-    task = Task(
-        workflow=simple_workflow(prompt).model_dump(),
-        models=[
-            Model.OLLAMA
-        ],
-    )
-    await dria.push(task)
-    return task
-
-
 async def main():
     await dria.initialize()
 
     prompt = "Write a poem about love"
-    node_count = 1
+    node_count = 5
 
     logger.info(f"Generating {node_count} poem(s) based on the prompt: '{prompt}'")
-    tasks = [await generate_poem(prompt) for _ in range(1)]
-    results = await dria.fetch(task=tasks)
+    task = Task(
+        workflow=simple_workflow(prompt).model_dump(),
+        models=[Model.OLLAMA],
+    )
+    results = await dria.execute([task for _ in range(node_count)])
     print(results)
 
     for i, result in enumerate(results, 1):

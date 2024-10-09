@@ -50,4 +50,3 @@ class GenerateSubtopics(StepTemplate):
         outputs = [parse_json(o.result) for o in step.output]
         flattened = [item for sublist in outputs for item in sublist]
         return TaskInput(**{"subtopics": flattened})
-
