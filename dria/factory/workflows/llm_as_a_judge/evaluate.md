@@ -1,14 +1,14 @@
-You will be given a predicted answer and a correct answer to a question. Your task is to determine if the predicted answer is contextually and semantically correct when compared to the correct answer.
+You will be given a predicted answer to a question. Your task is to reason with your existing knowledge to evaluate if the predicted answer is correct or not.
 
 Here is the predicted answer:
 <prediction>
 {{prediction}}
 </prediction>
 
-Here is the correct answer:
-<correct_answer>
-{{correct_answer}}
-</correct_answer>
+Here is the question answer:
+<question>
+{{question}}
+</question>
 
 To complete this task:
 1. Carefully read both the prediction and the correct answer.

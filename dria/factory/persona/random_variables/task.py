@@ -38,6 +38,8 @@ class RandomVariable(StepTemplate):
             dict: The generated random variables.
         """
         builder = WorkflowBuilder(simulation_description=simulation_description)
+        builder.set_max_time(90)
+        builder.set_max_tokens(750)
 
         # Step A: RandomVarGen
         builder.generative_step(
@@ -98,7 +100,7 @@ class RandomVariable(StepTemplate):
         try:
             output = parse_json(output)
             inputs = []
-            for _ in range(self.params.num_of_samples):
+            for _ in range(self.params.num_samples):
                 persona_traits = [
                     f"{var['description']}: {self.sample_variable(var)}".replace(
                         "'", ""

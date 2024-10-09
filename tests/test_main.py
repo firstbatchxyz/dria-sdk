@@ -1,5 +1,5 @@
 import asyncio
-
+from typing import Dict, Any
 from dria.factory import (
     score_complexity,
     evolve_complexity,
@@ -21,17 +21,9 @@ dria = Dria(rpc_token=os.environ["DRIA_RPC_TOKEN"])
 async def main(pipeline: Pipeline):
     await dria.initialize()
     print("Executing pipeline")
-    await pipeline.execute()
-
-    while True:
-        state, status, output = pipeline.poll()
-        if output:
-            logger.info("Pipeline execution completed successfully.")
-            logger.info(f"Output: {output}")
-            break
-        else:
-            logger.debug(f"Pipeline status: {status}. Current state: {state}")
-            await asyncio.sleep(5)
+    result = await pipeline.execute()
+    print(result)
+    return
 
 if __name__ == "__main__":
 
