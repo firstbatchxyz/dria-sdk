@@ -33,8 +33,15 @@ class SubTopicPipeline:
             raise ValueError("Max depth must be greater than 0")
         self.pipeline.input(topic=topic)
         for i in range(max_depth - 1):
-            self.pipeline << GenerateSubtopics().set_models([Model.GPT4_TURBO, Model.GEMMA2_9B_FP16]).scatter()
-        self.pipeline << GenerateSubtopics().set_models([Model.GPT4_TURBO, Model.GEMMA2_9B_FP16])
+            (
+                self.pipeline
+                << GenerateSubtopics()
+                .set_models([Model.GPT4_TURBO, Model.GEMMA2_9B_FP16])
+                .scatter()
+            )
+        self.pipeline << GenerateSubtopics().set_models(
+            [Model.GPT4_TURBO, Model.GEMMA2_9B_FP16]
+        )
         return self.pipeline.build()
 
 

@@ -25,12 +25,16 @@ async def main(pipeline: Pipeline):
     print(result)
     return
 
+
 if __name__ == "__main__":
 
     load_dotenv()
 
     cfg = PipelineConfig()
-    pipe = PersonaPipeline(dria, cfg).build(simulation_description="Doctors that work in a hospital in cuba. Each coming from a different background, some not cuban. "
-                                                                   "They work on different domains. Some are novice, some are experts.", num_samples=2)
+    pipe = PersonaPipeline(dria, cfg).build(
+        simulation_description="Doctors that work in a hospital in cuba. Each coming from a different background, some not cuban. "
+        "They work on different domains. Some are novice, some are experts.",
+        num_samples=2,
+    )
 
     asyncio.run(main(pipe))
