@@ -8,6 +8,7 @@ from dria.factory import (
     SubTopicPipeline,
     evaluate_prediction,
     magpie_instruct,
+    DialoguePipeline,
 )
 import os
 from dotenv import load_dotenv
@@ -30,17 +31,17 @@ async def main(pipeline: Pipeline):
 
 
 async def evaluate():
-    "te"
     print(
         await dria.execute(
             Task(
                 workflow=magpie_instruct(
                     instructor_persona="A patient that has problems with her knees while running. Your communications are direct and concise. You wan't get better soon.",
                     responding_persona="You are expert MD working on a hospital. Your are helpful and good at understanding patient needs.",
-                    num_turns=1,
+                    num_turns=2,
                 ).model_dump(),
-                models=[Model.LLAMA3_1_8B_FP16],
-            )
+                models=[Model.QWEN2_5_7B_FP16],
+            ),
+            timeout=90,
         )
     )
 
@@ -50,12 +51,12 @@ if __name__ == "__main__":
     load_dotenv()
 
     cfg = PipelineConfig()
-    """
-    pipe = PersonaPipeline(dria, cfg).build(
-        simulation_description="Doctors that work in a hospital in cuba. Each coming from a different background, some not cuban. "
-        "They work on different domains. Some are novice, some are experts.",
-        num_samples=2,
-    )
-    """
 
-    asyncio.run(evaluate())
+    pipe = DialoguePipeline(dria, cfg).build(
+        instructor_persona="A patient that has problems with her knees while running. Your communications are direct and concise. You wan't get better soon.",
+        responding_persona="You are expert MD working on a hospital. Your are helpful and good at understanding patient needs.",
+        num_turns=2,
+        speakers=["Patient", "Doctor"],
+    )
+
+    asyncio.run(main(pipe))

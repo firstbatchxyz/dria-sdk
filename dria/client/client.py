@@ -436,7 +436,7 @@ class Dria:
             except Exception as e:
                 logger.exception("Unexpected error processing item")
 
-    async def execute(self, task: Union[Task, List[Task]], timeout:int = 30):
+    async def execute(self, task: Union[Task, List[Task]], timeout: int = 30):
         """
         Execute a task.
 

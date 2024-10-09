@@ -59,7 +59,7 @@ class TaskManager:
             raise TaskPublishError(f"Failed to publish task: {e}") from e
 
     async def prepare_task(
-            self, task: Task, blacklist: Dict[str, Dict[str, int]]
+        self, task: Task, blacklist: Dict[str, Dict[str, int]]
     ) -> tuple[dict[str, Any], Task]:
         """
         Prepare a task for publishing.
@@ -95,13 +95,13 @@ class TaskManager:
                 pickedNodes=picked_nodes,
                 deadline=deadline,
                 publicKey=task.public_key.lstrip("0x"),
-                privateKey=task.private_key
+                privateKey=task.private_key,
             ).dict(),
             task,
         )
 
     async def push_task(
-            self, task: Task, blacklist: Dict[str, Dict[str, int]]
+        self, task: Task, blacklist: Dict[str, Dict[str, int]]
     ) -> tuple[bool, Union[Optional[List[str]]]]:
         """
         Push a task to the content topic.
@@ -140,10 +140,10 @@ class TaskManager:
             return []
 
     async def create_filter(
-            self,
-            using_models: List[str],
-            blacklist: Dict[str, Dict[str, int]],
-            retry: int = 0,
+        self,
+        using_models: List[str],
+        blacklist: Dict[str, Dict[str, int]],
+        retry: int = 0,
     ) -> Tuple[List[str], dict]:
         """
         Create a filter for a given task.

@@ -1,6 +1,7 @@
 from .workflows import *
 from .persona import *
 from .subtopic import *
+from .dialogue import *
 
 __all__ = [
     "evolve_complexity",
@@ -19,4 +20,5 @@ __all__ = [
     "self_instruct",
     "PersonaPipeline",
     "SubTopicPipeline",
+    "DialoguePipeline",
 ]
