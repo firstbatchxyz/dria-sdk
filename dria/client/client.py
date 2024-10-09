@@ -189,7 +189,7 @@ class Dria:
         pipeline: Optional[Any] = None,
         task: Union[Optional[Task], Optional[List[Task]]] = None,
         min_outputs: Optional[int] = None,
-        timeout: int = 300,
+        timeout: int = 30,
     ) -> List[TaskResult]:
         """
         Fetch task results from storage based on pipelines and/or task.
@@ -461,7 +461,7 @@ class Dria:
                 tasks_.append(t.__deepcopy__())
 
             results = await self.fetch(task=tasks_)
-            return results
+            return [i.result for i in results]
         except Exception as e:
             logger.error(f"Error during task execution: {str(e)}")
             raise
