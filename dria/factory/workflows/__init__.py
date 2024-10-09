@@ -8,7 +8,8 @@ from .improving_text_embeddings import (
     generate_text_classification_example,
     generate_semantic_triple,
 )
-from .llm_as_a_judge import evaluate_prediction
+from .llm_as_a_judge import evaluate_prediction, validate_prediction
+from .magpie_instruct import magpie_instruct
 from .self_instruct import self_instruct
 from .simple import simple_workflow
 
@@ -24,6 +25,8 @@ __all__ = [
     "generate_text_classification_example",
     "generate_semantic_triple",
     "evaluate_prediction",
+    "validate_prediction",
     "self_instruct",
     "simple_workflow",
+    "magpie_instruct",
 ]
