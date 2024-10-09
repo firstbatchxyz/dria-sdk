@@ -85,14 +85,13 @@ def aggregation_callback(step: Step) -> TaskInput:
     Raises:
         ValueError: If the output is not a valid JSON or if there's an error during processing.
     """
-    output_ = step.output[0].result
     try:
-        parsed_output = parse_json(output_)
+        output_ = [parse_json(o.result) for o in step.output]
     except json.JSONDecodeError:
-        raise ValueError(f"Invalid JSON output: {output_}")
+        raise ValueError(f"Invalid JSON output: {step.output}")
 
     try:
-        return TaskInput(**{step.next_step_input[0]: parsed_output})
+        return TaskInput(**{step.next_step_input[0]: output_})
     except Exception as e:
         raise ValueError(f"Error in aggregation_callback: {str(e)}")
 

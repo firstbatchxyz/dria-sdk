@@ -28,8 +28,10 @@ class TaskModel(BaseModel):
     taskId: str
     filter: Dict[str, Any]
     input: Dict[str, Any]
+    pickedNodes: List
     deadline: int
     publicKey: str
+    privateKey: str
 
 
 class Task(BaseModel):

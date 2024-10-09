@@ -71,14 +71,15 @@ class TaskManager:
         Returns:
             Tuple[dict, dict]: Task model and task
         """
-        task_id = self.generate_random_string()
+        if task.id is None:
+            task.id = self.generate_random_string()
         deadline = int(time.time_ns() + TASK_DEADLINE * 1e9)
         try:
             picked_nodes, task_filter = await self.create_filter(task.models, blacklist)
         except Exception as e:
             raise TaskFilterError(f"{task.id}: {e}") from e
 
-        task.id = task_id
+        task.id = task.id
         task.deadline = deadline
         task.nodes = picked_nodes
 
@@ -88,11 +89,13 @@ class TaskManager:
         ).dict()
         return (
             TaskModel(
-                taskId=task_id,
+                taskId=task.id,
                 filter=task_filter,
                 input=task_input,
+                pickedNodes=picked_nodes,
                 deadline=deadline,
                 publicKey=task.public_key.lstrip("0x"),
+                privateKey=task.private_key
             ).dict(),
             task,
         )
