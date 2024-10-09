@@ -1,6 +1,7 @@
 import logging
 from dria.models import TaskInput
 from dria.factory.utilities import get_abs_path
+from dria.utils.task_utils import parse_json
 from typing import Any
 from dria_workflows import (
     WorkflowBuilder,
@@ -17,6 +18,7 @@ import re
 import random
 from typing import Dict, List
 from dria.pipelines import Step, StepTemplate
+
 
 logger = logging.getLogger(__name__)
 
@@ -94,7 +96,7 @@ class RandomVariable(StepTemplate):
 
         output = step.output[0].result
         try:
-            output = self.parse_json(output)
+            output = parse_json(output)
             inputs = []
             for _ in range(self.params.num_of_samples):
                 persona_traits = [
@@ -115,28 +117,6 @@ class RandomVariable(StepTemplate):
         except Exception as e:
             logger.error(f"Error in random_var_callback: {str(e)}")
             raise
-
-    @staticmethod
-    def parse(result: str) -> Dict:
-        """Parse the JSON text.
-
-        Args:
-            result: The result to parse.
-
-        Returns:
-            dict: JSON output.
-        """
-        json_content = re.search(r"<JSON>(.*?)</JSON>", result, re.DOTALL)
-        if not json_content:
-            return {}
-
-        json_text = re.sub(r"<[^>]+>", "", json_content.group(1)).strip()
-
-        try:
-            return json.loads(json_text)
-        except json.JSONDecodeError:
-            # If parsing fails, return an empty dictionary
-            return {}
 
     @staticmethod
     def sample_variable(variable: Dict[str, Any]) -> Any:
