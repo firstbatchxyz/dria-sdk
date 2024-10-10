@@ -37,6 +37,7 @@ class Pipeline:
         self.storage = client.storage
         self.client = client
         self.config = config
+        self.client.initialize_pipeline(self.pipeline_id)
 
     def add_step(self, step: Step) -> None:
         """Add a step to the pipelines."""
@@ -80,6 +81,7 @@ class Pipeline:
             while True:
                 _, status, output = self.poll()
                 if status == PipelineStatus.COMPLETED.value:
+                    await self._graceful_shutdown()
                     return output
                 await asyncio.sleep(5)
         else:
@@ -128,11 +130,18 @@ class Pipeline:
         start_time = time.time()
         while True:
             try:
+                if (
+                    self.client.background_tasks is None
+                    or self.client.background_tasks.done()
+                ):
+                    raise Exception("Pipeline execution failed")
                 if time.time() - start_time > self.config.pipeline_timeout:
-                    self._handle_deadline_exceeded()
+                    await self._handle_deadline_exceeded()
                     return
 
-                results: List[TaskResult] = await self.client.fetch(pipeline=self)
+                results: List[TaskResult] = await self.client.fetch(
+                    pipeline=self, timeout=0
+                )
                 for result in results:
                     step = self.get_step(result.step_name)
                     if not step:
@@ -179,15 +188,15 @@ class Pipeline:
         self._save_output()
         self.logger.info("Pipeline execution completed successfully.")
 
-    def _handle_deadline_exceeded(self) -> None:
+    async def _handle_deadline_exceeded(self) -> None:
         """Handle the deadline exceeded error."""
         self.logger.error(
             f"Pipeline '{self.pipeline_id}' exceeded the deadline of {self.config.pipeline_timeout} seconds."
         )
-        self._update_status(PipelineStatus.FAILED)
-        self._update_state(PipelineStatus.FAILED.value)
-        self.logger.warning(
-            f"Terminating pipelines execution due to deadline exceeded. Current pipelines deadline {self.config.pipeline_timeout}"
+        await self._graceful_shutdown(
+            Exception(
+                f"Terminating pipelines execution due to deadline exceeded. Current pipelines deadline {self.config.pipeline_timeout}"
+            )
         )
 
     def _update_state(self, state: str) -> None:
@@ -209,7 +218,7 @@ class Pipeline:
         self._update_state(PipelineStatus.FAILED.value)
         if e:
             self._update_error_reason(e)
-        await self.client.run_cleanup()
+        await self.client.run_cleanup(self.pipeline_id)
 
     def _save_output(self, output: Optional[Union[str, Dict]] = None) -> None:
         """Save the pipelines output to storage."""

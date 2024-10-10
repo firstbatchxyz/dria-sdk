@@ -27,7 +27,7 @@ class RPCConnectionError(RPCClientError):
         Args:
             msg (str): The exception message.
         """
-        super().__init__(f"Connection error: {msg}")
+        super().__init__(f"{msg}")
 
 
 class RPCAuthenticationError(RPCClientError):

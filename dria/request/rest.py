@@ -97,10 +97,9 @@ class RPCClient:
             if e.status == 401:
                 raise RPCAuthenticationError()
             logger.error(f"Failed to get content topic {content_topic}: {e}")
-            raise RPCContentTopicError("Failed to get content topic", content_topic)
+            raise RPCContentTopicError(str(e), content_topic)
         except aiohttp.ClientError as e:
-            logger.error(f"Failed to get content topic {content_topic}: {e}")
-            raise RPCConnectionError(f"Connection error: {str(e)}")
+            raise RPCConnectionError(f"{str(e)}")
         except Exception as e:
             logger.error(f"Failed to get content topic {content_topic}: {e}")
             raise

@@ -51,6 +51,7 @@ class Dria:
         self.kv = KeyValueQueue()
         self.background_tasks: Optional[asyncio.Task] = None
         self.blacklist: Dict[str, Dict[str, int]] = {}
+        self.running_pipelines: List[str] = []
 
         cache_dir = os.path.join(os.path.dirname(__file__), ".cache")
         os.makedirs(cache_dir, exist_ok=True)
@@ -90,6 +91,13 @@ class Dria:
         else:
             logger.debug(f"Address {address} not found in blacklist.")
 
+    def initialize_pipeline(self, pipeline_id: str):
+        self.running_pipelines.append(pipeline_id)
+
+    def remove_pipeline(self, pipeline_id: str):
+        if pipeline_id in self.running_pipelines:
+            self.running_pipelines.remove(pipeline_id)
+
     def flush_blacklist(self):
         """Flush the blacklist to file."""
         self.blacklist = {}
@@ -103,9 +111,9 @@ class Dria:
         """Start and manage background tasks for monitoring and polling."""
         try:
             await asyncio.gather(self._run_monitoring(), self.poll())
-        except Exception:
-            logger.error("Error in background tasks", exc_info=True)
-            await asyncio.sleep(10)  # Retry after sleep
+        except Exception as e:
+            await self.run_cleanup("*")
+            raise Exception(e)
 
     async def _run_monitoring(self) -> None:
         await self.rpc.initialize()
@@ -114,11 +122,18 @@ class Dria:
         while True:
             try:
                 await monitor.run()
-            except Exception:
-                logger.error("Error in monitoring", exc_info=True)
+            except Exception as e:
+                raise Exception(e)
 
-    async def run_cleanup(self) -> None:
+    async def run_cleanup(self, pipeline_id: Optional[str] = None) -> None:
         """Run the cleanup process to remove expired tasks and pipelines."""
+        if pipeline_id:
+            if pipeline_id == "*":
+                self.running_pipelines = []
+            else:
+                self.remove_pipeline(pipeline_id)
+        if len(self.running_pipelines) > 0:
+            return
         if self.background_tasks and not self.background_tasks.done():
             self.background_tasks.cancel()
             try:
@@ -230,10 +245,11 @@ class Dria:
         while len(results) < min_outputs:
             elapsed_time = time.time() - start_time
             if elapsed_time > timeout:
-                logger.warning(
-                    f"Unable to fetch {min_outputs} outputs within {timeout} seconds."
-                )
-                break
+                if timeout > 0:
+                    logger.debug(
+                        f"Unable to fetch {min_outputs} outputs within {timeout} seconds."
+                    )
+                    break
             pipeline_id = (
                 pipeline.pipeline_id
                 if pipeline and hasattr(pipeline, "pipeline_id")
@@ -254,6 +270,8 @@ class Dria:
             new_results = self._fetch_results(pipeline_id, task_id)
             results.extend(new_results)
 
+            if timeout == 0:
+                return results
             if not new_results:
                 await asyncio.sleep(FETCH_INTERVAL)
 
@@ -372,11 +390,11 @@ class Dria:
             try:
                 topic_results = await self.rpc.get_content_topic(OUTPUT_CONTENT_TOPIC)
                 if topic_results:
-                    await self._process_results(topic_results)
+                    await self._process_results(list(set(topic_results)))
                 else:
                     logger.debug("No results found in the output content topic.")
             except Exception as e:
-                logger.exception("Error fetching content topic")
+                raise Exception(f"Error fetching content topic: {e}")
             finally:
                 await asyncio.sleep(MONITORING_INTERVAL)
 
@@ -427,14 +445,15 @@ class Dria:
                         if address in self.blacklist:
                             self._remove_from_blacklist(address)
                     pipeline_id = task.pipeline_id or ""
+                    print(processed_result, pipeline_id, identifier)
                     self.kv.push(
                         f"{pipeline_id}:{identifier}",
                         {"result": processed_result, "model": result["model"]},
                     )
             except (json.JSONDecodeError, KeyError, TypeError, ValueError) as e:
-                logger.error(f"Error processing item: {e}", exc_info=True)
+                raise Exception(f"Error processing item: {e}")
             except Exception as e:
-                logger.exception("Unexpected error processing item")
+                raise Exception(f"Unexpected error processing item: {e}")
 
     async def execute(self, task: Union[Task, List[Task]], timeout: int = 30):
         """
