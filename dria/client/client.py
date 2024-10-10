@@ -271,7 +271,7 @@ class Dria:
                     logger.debug(
                         f"Unable to fetch {min_outputs} outputs within {timeout} seconds."
                     )
-                break
+                    break
 
             pipeline_id = getattr(pipeline, "pipeline_id", None) if pipeline else None
             task_id = self._get_task_id(task)

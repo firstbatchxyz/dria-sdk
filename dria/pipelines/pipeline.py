@@ -160,7 +160,7 @@ class Pipeline:
                     await self._run_next_step(step, self.steps.index(step) + 1)
 
             except Exception as e:
-                await self._graceful_shutdown(e)
+                return await self._graceful_shutdown(e)
 
             await asyncio.sleep(self.config.retry_interval)
 
@@ -193,11 +193,12 @@ class Pipeline:
         self.logger.error(
             f"Pipeline '{self.pipeline_id}' exceeded the deadline of {self.config.pipeline_timeout} seconds."
         )
-        await self._graceful_shutdown(
+        return await self._graceful_shutdown(
             Exception(
                 f"Terminating pipelines execution due to deadline exceeded. Current pipelines deadline {self.config.pipeline_timeout}"
             )
         )
+
 
     def _update_state(self, state: str) -> None:
         """Update the pipelines state in storage."""
