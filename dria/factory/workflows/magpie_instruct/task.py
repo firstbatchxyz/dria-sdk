@@ -18,8 +18,7 @@ from dria.factory.workflows.template import SingletonTemplate
 class MagPie(SingletonTemplate):
 
     def workflow(
-            self,
-            instructor_persona: str, responding_persona: str, num_turns=1
+        self, instructor_persona: str, responding_persona: str, num_turns=1
     ) -> Workflow:
         """
 
@@ -89,4 +88,3 @@ class MagPie(SingletonTemplate):
             dialogue.append({speaker: message})
 
         return dialogue
-

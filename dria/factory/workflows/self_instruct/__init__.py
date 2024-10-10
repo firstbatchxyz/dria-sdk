@@ -1,3 +1,3 @@
-from .task import self_instruct
+from .task import SelfInstruct
 
-__all__ = ["self_instruct"]
+__all__ = ["SelfInstruct"]

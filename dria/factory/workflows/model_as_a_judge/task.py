@@ -56,7 +56,9 @@ class EvaluatePrediction(SingletonTemplate):
         """
 
         # Initialize the workflow with variables
-        builder = WorkflowBuilder(prediction=prediction, question=question, context=context)
+        builder = WorkflowBuilder(
+            prediction=prediction, question=question, context=context
+        )
 
         # Add a generative step using the prompt
         builder.generative_step(
@@ -75,4 +77,3 @@ class EvaluatePrediction(SingletonTemplate):
 
     def parse_result(self, result: Any):
         return result[0]
-

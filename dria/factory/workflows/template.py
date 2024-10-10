@@ -12,6 +12,10 @@ class SingletonTemplate(ABC):
 
     params: SimpleNamespace = SimpleNamespace()
 
+    def __init__(self, **kwargs):
+        super().__init__()
+        self.params = SimpleNamespace(**kwargs)
+
     @abstractmethod
     def workflow(self, **kwargs):
         """

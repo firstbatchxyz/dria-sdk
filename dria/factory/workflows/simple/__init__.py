@@ -1,3 +1,3 @@
-from .task import simple_workflow
+from .task import Simple
 
-__all__ = ["simple_workflow"]
+__all__ = ["Simple"]

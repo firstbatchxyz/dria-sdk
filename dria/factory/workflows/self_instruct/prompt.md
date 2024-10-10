@@ -9,6 +9,6 @@ Write each query on a separate line and avoid using numbered lists or bullet poi
 {{application_description}}
 
 # Context
-{{input}}
+{{context}}
 
 # Output

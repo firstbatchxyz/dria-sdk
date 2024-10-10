@@ -1,7 +1,6 @@
 from .workflows import *
 from .persona import *
 from .subtopic import *
-from .dialogue import *
 
 __all__ = [
     "Clair",
@@ -15,10 +14,11 @@ __all__ = [
     "TextClassification",
     "SemanticTriplet",
     "MagPie",
+    "Simple",
     "EvaluatePrediction",
     "ValidatePrediction",
-    "self_instruct",
+    "SelfInstruct",
     "PersonaPipeline",
     "SubTopicPipeline",
-    "DialoguePipeline",
+    "WebFactCheck",
 ]

@@ -192,16 +192,22 @@ class Dria:
         max_attempts = 20
         for attempt in range(max_attempts):
             task.private_key, task.public_key = generate_task_keys()
-            if not task.public_key.startswith("0x0"):  # It should not start with 0 for encoding reasons
+            if not task.public_key.startswith(
+                "0x0"
+            ):  # It should not start with 0 for encoding reasons
                 break
         else:
-            raise TaskPublishError(f"Failed to generate valid keys for task {task.id} after {max_attempts} attempts.")
+            raise TaskPublishError(
+                f"Failed to generate valid keys for task {task.id} after {max_attempts} attempts."
+            )
 
         try:
             success, nodes = await self.task_manager.push_task(task, self.blacklist)
             if success:
                 await self._update_blacklist(nodes)
-                logger.info(f"Task {task.id} successfully published. Step: {task.step_name}")
+                logger.info(
+                    f"Task {task.id} successfully published. Step: {task.step_name}"
+                )
                 return True
             else:
                 logger.error(f"Failed to publish task {task.id}.")
@@ -223,7 +229,9 @@ class Dria:
             wait_time = self.DEADLINE_MULTIPLIER * 60 * (4 ** (node_entry["count"] - 1))
             node_entry["deadline"] = current_time + wait_time
             self.blacklist[node] = node_entry
-            logger.info(f"Address {node} added to blacklist with deadline at {node_entry['deadline']}.")
+            logger.info(
+                f"Address {node} added to blacklist with deadline at {node_entry['deadline']}."
+            )
 
         self._save_blacklist()
 
@@ -260,10 +268,12 @@ class Dria:
             elapsed_time = time.time() - start_time
             if elapsed_time > timeout:
                 if timeout > 0:
-                    logger.debug(f"Unable to fetch {min_outputs} outputs within {timeout} seconds.")
+                    logger.debug(
+                        f"Unable to fetch {min_outputs} outputs within {timeout} seconds."
+                    )
                 break
 
-            pipeline_id = getattr(pipeline, 'pipeline_id', None) if pipeline else None
+            pipeline_id = getattr(pipeline, "pipeline_id", None) if pipeline else None
             task_id = self._get_task_id(task)
 
             new_results = self._fetch_results(pipeline_id, task_id)
@@ -276,7 +286,11 @@ class Dria:
 
         return results
 
-    def _determine_min_outputs(self, task: Union[Optional[Task], Optional[List[Task]]], min_outputs: Optional[int]) -> int:
+    def _determine_min_outputs(
+        self,
+        task: Union[Optional[Task], Optional[List[Task]]],
+        min_outputs: Optional[int],
+    ) -> int:
         """
         Determine the minimum number of outputs to fetch based on the task and provided min_outputs.
 
@@ -294,15 +308,21 @@ class Dria:
                 return 1
         else:
             if isinstance(task, list) and min_outputs > len(task):
-                logger.warning(f"min_outputs is greater than the number of tasks. Setting min_outputs to {len(task)}")
+                logger.warning(
+                    f"min_outputs is greater than the number of tasks. Setting min_outputs to {len(task)}"
+                )
                 return len(task)
             elif not isinstance(task, list) and min_outputs > 1:
-                logger.warning("min_outputs is greater than the number of tasks. Setting min_outputs to 1")
+                logger.warning(
+                    "min_outputs is greater than the number of tasks. Setting min_outputs to 1"
+                )
                 return 1
             else:
                 return min_outputs
 
-    def _get_task_id(self, task: Union[Optional[Task], Optional[List[Task]]]) -> Union[None, str, List[str]]:
+    def _get_task_id(
+        self, task: Union[Optional[Task], Optional[List[Task]]]
+    ) -> Union[None, str, List[str]]:
         """
         Get the task ID or list of task IDs from the provided task(s).
 
@@ -482,7 +502,9 @@ class Dria:
                     processed_result, address = get_truthful_nodes(task, result)
 
                     if processed_result == "":
-                        logger.info("Task result is not valid, retrying with another node...")
+                        logger.info(
+                            "Task result is not valid, retrying with another node..."
+                        )
                         asyncio.create_task(self.push(task))
                         continue
                     else:
@@ -498,7 +520,9 @@ class Dria:
             except Exception as e:
                 logger.error(f"Unexpected error processing item: {e}", exc_info=True)
 
-    async def execute(self, task: Union[Task, List[Task]], timeout: int = 30) -> List[Any]:
+    async def execute(
+        self, task: Union[Task, List[Task]], timeout: int = 30
+    ) -> List[Any]:
         """
         Execute a task or list of tasks.
 
@@ -608,11 +632,15 @@ class Dria:
                 model_list.append(model)
 
         if has_function_calling:
-            filtered_models = [model for model in model_list if model in supported_models]
+            filtered_models = [
+                model for model in model_list if model in supported_models
+            ]
 
             for model in model_list:
                 if model not in supported_models:
-                    logger.warning(f"Model '{model}' is not supported for function calling and will be removed.")
+                    logger.warning(
+                        f"Model '{model}' is not supported for function calling and will be removed."
+                    )
 
             task.models = filtered_models
 
