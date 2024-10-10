@@ -10,8 +10,8 @@ from .improving_text_embeddings import (
     TextRetrieval,
     SemanticTriplet,
 )
-from .llm_as_a_judge import evaluate_prediction, validate_prediction
-from .magpie_instruct import magpie_instruct
+from .llm_as_a_judge import EvaluatePrediction, ValidatePrediction
+from .magpie_instruct import MagPie
 from .self_instruct import self_instruct
 from .simple import simple_workflow
 
@@ -27,8 +27,9 @@ __all__ = [
     "TextMatching",
     "TextClassification",
     "SemanticTriplet",
-    "evaluate_prediction",
-    "validate_prediction",
+    "EvaluatePrediction",
+    "ValidatePrediction",
+    "MagPie",
     "self_instruct",
     "simple_workflow",
     "magpie_instruct",

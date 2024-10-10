@@ -1,3 +1,3 @@
-from .task import evaluate_prediction, validate_prediction
+from .task import EvaluatePrediction, ValidatePrediction
 
-__all__ = ["evaluate_prediction", "validate_prediction"]
+__all__ = ["EvaluatePrediction", "ValidatePrediction"]

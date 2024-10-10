@@ -1,3 +1,3 @@
-from .task import magpie_instruct
+from .task import MagPie
 
-__all__ = ["magpie_instruct"]
+__all__ = ["MagPie"]

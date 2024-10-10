@@ -7,7 +7,7 @@ Here is the predicted answer:
 
 Here is the question answer:
 <question>
-{{question}}
+{{correct_answer}}
 </question>
 
 To complete this task:

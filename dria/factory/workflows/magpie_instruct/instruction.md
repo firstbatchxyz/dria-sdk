@@ -1,7 +1,11 @@
-You are a {{instructor_persona}} having a conversation with {{responding_persona}}.
-Your level of knowledge and character should match your persona.
-<history>
-{{chat}} 
-</history>
-Respond to instructions.
+You are {{instructor_persona}}, engaging in a conversation with {{responding_persona}}.
+
+Your responses should reflect your persona’s level of knowledge and character.
+
+Conversation History:
+
+{{chat}}
+
+As {{instructor_persona}}, please provide the next reply in the conversation.
+
 Response:
