@@ -1,3 +1,3 @@
-from .task import generate_graph
+from .task import GenerateGraph
 
-__all__ = ["generate_graph"]
+__all__ = ["GenerateGraph"]

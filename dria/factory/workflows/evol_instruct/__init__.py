@@ -1,3 +1,3 @@
-from .task import evolve_instruct
+from .task import EvolveInstruct
 
-__all__ = ["evolve_instruct"]
+__all__ = ["EvolveInstruct"]

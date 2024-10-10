@@ -1,7 +1,7 @@
 <!-- _coverpage.md -->
 
 
-<img src="https://raw.githubusercontent.com/firstbatchxyz/dria-js-client/master/logo.svg" width=12% height=12%>
+<img src="chrome_logo.svg" width=60% height=60%>
 
 # Dria Network <small>0.2.12</small>
 

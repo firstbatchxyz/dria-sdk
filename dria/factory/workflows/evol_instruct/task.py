@@ -1,8 +1,18 @@
 from dria_workflows import Workflow, WorkflowBuilder, Operator, Write, Edge
-from typing import Dict
+from typing import Dict, Any, Literal
+from dria.factory.workflows.template import SingletonTemplate
+import re
 
-# Mutation templates
-MUTATION_TEMPLATES: Dict[str, str] = {
+MutationType = Literal[
+    "FRESH_START",
+    "ADD_CONSTRAINTS",
+    "DEEPEN",
+    "CONCRETIZE",
+    "INCREASE_REASONING",
+    "SWITCH_TOPIC"
+]
+
+MUTATION_TEMPLATES: Dict[MutationType, str] = {
     "FRESH_START": """Write one question or request containing one or more of the following words: {{prompt}}""",
     "ADD_CONSTRAINTS": """Add a few more constraints or requirements to #Given Prompt#, and create #New Prompt#.
 
@@ -27,24 +37,34 @@ MUTATION_TEMPLATES: Dict[str, str] = {
 }
 
 
-def evolve_instruct(prompt: str, mutation_type: str) -> Workflow:
-    """
-    Mutate the given prompt using the specified mutation type.
+class EvolveInstruct(SingletonTemplate):
 
-    :param prompt: The original prompt to be mutated.
-    :param mutation_type: The type of mutation to apply.
-    :return: A Task object representing the mutation workflow.
-    """
-    if mutation_type not in MUTATION_TEMPLATES:
-        raise ValueError(f"Invalid mutation type: {mutation_type}")
+    def workflow(self, prompt: str, mutation_type: MutationType) -> Workflow:
+        """
+        Mutate the given prompt using the specified mutation type.
 
-    builder = WorkflowBuilder(prompt=prompt)
-    builder.generative_step(
-        prompt=MUTATION_TEMPLATES[mutation_type],
-        operator=Operator.GENERATION,
-        outputs=[Write.new("mutated_prompt")],
-    )
-    flow = [Edge(source="0", target="_end")]
-    builder.flow(flow)
-    builder.set_return_value("mutated_prompt")
-    return builder.build()
+        :param prompt: The original prompt to be mutated.
+        :param mutation_type: The type of mutation to apply.
+        :return: A Task object representing the mutation workflow.
+        """
+        if mutation_type not in MUTATION_TEMPLATES:
+            raise ValueError(f"Invalid mutation type: {mutation_type}")
+
+        self.params.prompt = prompt
+        builder = WorkflowBuilder(prompt=prompt)
+        builder.generative_step(
+            prompt=MUTATION_TEMPLATES[mutation_type],
+            operator=Operator.GENERATION,
+            outputs=[Write.new("mutated_prompt")],
+        )
+        flow = [Edge(source="0", target="_end")]
+        builder.flow(flow)
+        builder.set_return_value("mutated_prompt")
+        return builder.build()
+
+    def parse_result(self, result: Any) -> Dict[str, str]:
+        # extract text bet {}
+        result = re.findall(r"\{([^}]+)\}", result[0])
+        return {"mutated_prompt": result[0].strip(), "prompt": self.params.prompt}
+
+

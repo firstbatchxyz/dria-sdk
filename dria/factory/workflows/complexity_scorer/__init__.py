@@ -1,3 +1,3 @@
-from .task import evolve_complexity, score_complexity, parse_scores
+from .task import EvolveComplexity, ScoreComplexity
 
-__all__ = ["evolve_complexity", "score_complexity", "parse_scores"]
+__all__ = ["EvolveComplexity", "ScoreComplexity"]
