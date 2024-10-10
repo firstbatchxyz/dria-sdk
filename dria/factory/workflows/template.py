@@ -9,6 +9,7 @@ class SingletonTemplate(ABC):
 
     This class encapsulates the logic for creating a singleton template.
     """
+
     params: SimpleNamespace = SimpleNamespace()
 
     @abstractmethod

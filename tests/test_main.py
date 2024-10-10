@@ -34,20 +34,16 @@ async def main(pipeline: Pipeline):
 async def evaluate():
     cl = TextMatching()
     res = await dria.execute(
-            Task(
-                workflow=cl.workflow(
-                    task_description="Classify airline tweets into positive, negative, or neutral sentiment.",
-                    language="en",
-                ).model_dump(),
-                models=[Model.QWEN2_5_7B_FP16],
-            ),
-            timeout=90,
-        )
+        Task(
+            workflow=cl.workflow(
+                task_description="Classify airline tweets into positive, negative, or neutral sentiment.",
+                language="en",
+            ).model_dump(),
+            models=[Model.QWEN2_5_7B_FP16],
+        ),
+        timeout=90,
+    )
     print(cl.parse_result(res))
-
-
-
-
 
 
 if __name__ == "__main__":

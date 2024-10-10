@@ -31,7 +31,7 @@ class Clair(SingletonTemplate):
         if isinstance(result, list):
             result = result[0]
 
-        parts = result.split('{corrected_student_solution}')
+        parts = result.split("{corrected_student_solution}")
         if len(parts) == 2:
             teacher_reasoning = parts[0].replace("{teacher_reasoning}", "").strip()
             # The second part is the corrected_student_solution
@@ -39,7 +39,9 @@ class Clair(SingletonTemplate):
         else:
             raise ValueError(f"Invalid result format: {result}")
 
-        return {"reasoning": teacher_reasoning,
-                            "corrected_student_solution": corrected_student_solution,
-                            "task": self.params.task,
-                            "student_solution": self.params.student_solution}
+        return {
+            "reasoning": teacher_reasoning,
+            "corrected_student_solution": corrected_student_solution,
+            "task": self.params.task,
+            "student_solution": self.params.student_solution,
+        }

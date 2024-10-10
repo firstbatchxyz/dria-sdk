@@ -9,7 +9,7 @@ MutationType = Literal[
     "DEEPEN",
     "CONCRETIZE",
     "INCREASE_REASONING",
-    "SWITCH_TOPIC"
+    "SWITCH_TOPIC",
 ]
 
 MUTATION_TEMPLATES: Dict[MutationType, str] = {
@@ -66,5 +66,3 @@ class EvolveInstruct(SingletonTemplate):
         # extract text bet {}
         result = re.findall(r"\{([^}]+)\}", result[0])
         return {"mutated_prompt": result[0].strip(), "prompt": self.params.prompt}
-
-

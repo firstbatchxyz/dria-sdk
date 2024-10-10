@@ -27,7 +27,10 @@ class EvolveComplexity(SingletonTemplate):
         return builder.build()
 
     def parse_result(self, result: List[str]) -> Dict[str, str]:
-        return {"evolved_instruction": result[0].strip(), "instruction": self.params.instruction}
+        return {
+            "evolved_instruction": result[0].strip(),
+            "instruction": self.params.instruction,
+        }
 
 
 class ScoreComplexity(SingletonTemplate):
@@ -39,7 +42,9 @@ class ScoreComplexity(SingletonTemplate):
         :return:
         """
         self.params.instructions = instructions
-        instruction_list = [f"[{i + 1}] {instr}" for i, instr in enumerate(instructions)]
+        instruction_list = [
+            f"[{i + 1}] {instr}" for i, instr in enumerate(instructions)
+        ]
         builder = WorkflowBuilder(instruction_list=instruction_list)
         builder.generative_step(
             path=get_abs_path("score.md"),
@@ -64,6 +69,3 @@ class ScoreComplexity(SingletonTemplate):
             {"instruction": instr, "score": scores.get(i, 0)}
             for i, instr in enumerate(self.params.instructions)
         ]
-
-
-

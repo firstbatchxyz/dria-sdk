@@ -8,13 +8,13 @@ from dria.factory.workflows.template import SingletonTemplate
 class SemanticTriplet(SingletonTemplate):
 
     def workflow(
-            self,
-            unit: str,
-            language: str,
-            high_score: int,
-            low_score: int,
-            difficulty: str,
-            num_generations: int = 1,
+        self,
+        unit: str,
+        language: str,
+        high_score: int,
+        low_score: int,
+        difficulty: str,
+        num_generations: int = 1,
     ) -> Workflow:
         """
         Generate a Task to create a JSON object with three units (S1, S2, S3) having specified semantic similarity scores.
@@ -51,9 +51,9 @@ class SemanticTriplet(SingletonTemplate):
 class TextMatching(SingletonTemplate):
 
     def workflow(
-            self,
-            task_description: str,
-            language: str,
+        self,
+        task_description: str,
+        language: str,
     ) -> Workflow:
         """
         Generate a Task to create a JSON object with 'input' and 'positive_document' for a specified text matching task.
@@ -90,8 +90,7 @@ class TextMatching(SingletonTemplate):
 class TextClassification(SingletonTemplate):
 
     def workflow(
-            self,
-            task_description: str, language: str, clarity: str, difficulty: str
+        self, task_description: str, language: str, clarity: str, difficulty: str
     ) -> Workflow:
         """
         Generate a Task to create a JSON object with 'input_text', 'label', and 'misleading_label' for a specified text classification task.
@@ -105,7 +104,10 @@ class TextClassification(SingletonTemplate):
 
         # Initialize the workflow with variables to be used in the prompt
         builder = WorkflowBuilder(
-            task=task_description, language=language, clarity=clarity, difficulty=difficulty
+            task=task_description,
+            language=language,
+            clarity=clarity,
+            difficulty=difficulty,
         )
 
         # Add a generative step using the prompt stored in 'text_classification_example.md'
@@ -130,14 +132,14 @@ class TextClassification(SingletonTemplate):
 class TextRetrieval(SingletonTemplate):
 
     def workflow(
-            self,
-            task_description: str,
-            query_type: str,
-            query_length: str,
-            clarity: str,
-            num_words: int,
-            language: str,
-            difficulty: str,
+        self,
+        task_description: str,
+        query_type: str,
+        query_length: str,
+        clarity: str,
+        num_words: int,
+        language: str,
+        difficulty: str,
     ) -> Workflow:
         """
         Generate a Task to create a JSON object with 'user_query', 'positive_document', and 'hard_negative_document' for a specified retrieval task.
@@ -180,5 +182,3 @@ class TextRetrieval(SingletonTemplate):
 
     def parse_result(self, result: Any):
         return json.loads(result[0])
-
-

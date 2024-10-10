@@ -4,9 +4,7 @@ from dria.factory.workflows.template import SingletonTemplate
 
 
 def fact_check(context: str) -> Workflow:
-    """
-
-    """
+    """ """
     # Initialize the workflow with variables
     builder = WorkflowBuilder(context=context)
 

@@ -40,5 +40,3 @@ class GenerateGraph(SingletonTemplate):
 
     def parse_result(self, result: Any):
         return result[0].strip()
-
-
