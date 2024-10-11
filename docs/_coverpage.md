@@ -5,11 +5,12 @@
 
 # Dria Network <small>0.2.12</small>
 
-> Decentralized synthetic data generation.
+> Multi-agent network for synthetic data.
 
-- Hundreds of nodes running a hyperparallel inference network
-- LLMs with tool usage, memory and internet access
-- Flexible and powerful pipelines
+- Massively Parallel Inference
+- Extensive Model Diversity
+- Scalable & Reliable Data Pipelines
+- Agents with Integrated Tools and Web Access
 
 [GitHub](https://github.com/firstbatchxyz/dria-sdk/)
 [Get Started](/quickstart.md)
