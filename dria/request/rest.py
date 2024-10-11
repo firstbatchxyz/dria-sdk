@@ -19,7 +19,7 @@ class RPCClient:
         auth_token (str): The authentication token for the RPC client.
     """
 
-    NETWORK_MAX_MESSAGE_SIZE = 128
+    NETWORK_MAX_MESSAGE_SIZE = 256
 
     def __init__(self, auth_token: str):
         if not auth_token:
