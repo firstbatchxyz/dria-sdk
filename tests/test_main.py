@@ -5,7 +5,7 @@ from dria.factory import (
     PersonaPipeline,
     SubTopicPipeline,
     SelfInstruct,
-    WebFactCheck,
+    WebSearch,
     Clair,
     GenerateGraph,
     ScoreComplexity,
@@ -31,22 +31,15 @@ async def main(pipeline: Pipeline):
 
 
 async def evaluate():
-    cl = WebFactCheck(num_queries=2)
-    wf = cl.workflow(
-        context="A 16-year-old boy with a seizure disorder and cognitive delay is brought to the physician because of progressively worsening right lower extremity weakness for the past 6 months. He does not make eye contact and sits very close to his mother. Physical examination shows a grade 3/6 holosystolic murmur at the cardiac apex. Neurological examination shows decreased strength in the right lower leg with normal strength in the other extremities. Fundoscopic examination shows several multinodular, calcified lesions in the retina bilaterally. A photograph of his skin findings is shown. This patient's condition is most likely due to a mutation in which of the following?"
-    )
-    print(wf.model_dump_json(exclude_none=True, exclude_unset=True))
+    cl = WebSearch()
     res = await dria.execute(
         Task(
             workflow=cl.workflow(
-                num_instructions=5,
-                criteria_for_query_generation="Queries should be multi-step and complex.",
-                application_description="A chatbot that helps users with their mental health.",
-                context="Someone struggling with anxiety.",
+                topic="VHL gene on chromosome 3", mode="WIDE"
             ).model_dump(),
             models=[Model.LLAMA3_1_8B_FP16],
         ),
-        timeout=90,
+        timeout=200,
     )
     print(cl.parse_result(res))
 

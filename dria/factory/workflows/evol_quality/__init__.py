@@ -1,3 +1,3 @@
-from .task import evolve_quality
+from .task import EvolveQuality
 
-__all__ = ["evolve_quality"]
+__all__ = ["EvolveQuality"]

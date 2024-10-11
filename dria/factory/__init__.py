@@ -7,7 +7,7 @@ __all__ = [
     "EvolveComplexity",
     "ScoreComplexity",
     "EvolveInstruct",
-    "evolve_quality",
+    "EvolveQuality",
     "GenerateGraph",
     "TextRetrieval",
     "TextMatching",
@@ -21,4 +21,6 @@ __all__ = [
     "PersonaPipeline",
     "SubTopicPipeline",
     "WebFactCheck",
+    "WebMultiChoice",
+    "WebSearch",
 ]

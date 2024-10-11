@@ -199,7 +199,6 @@ class Pipeline:
             )
         )
 
-
     def _update_state(self, state: str) -> None:
         """Update the pipelines state in storage."""
         self.storage.set_value(f"{self.pipeline_id}_state", state)

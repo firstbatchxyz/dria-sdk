@@ -1,8 +1,10 @@
 from .clair import Clair
 from .complexity_scorer import EvolveComplexity, ScoreComplexity
 from .evol_instruct import EvolveInstruct
-from .evol_quality import evolve_quality
+from .evol_quality import EvolveQuality
 from .web_fact_check import WebFactCheck
+from .web_multi_choice import WebMultiChoice
+from .web_search import WebSearch
 from .graph_builder import GenerateGraph
 from .improving_text_embeddings import (
     TextClassification,
@@ -20,8 +22,7 @@ __all__ = [
     "EvolveComplexity",
     "ScoreComplexity",
     "EvolveInstruct",
-    "evolve_quality",
-    "web_fact_check",
+    "EvolveQuality",
     "GenerateGraph",
     "TextRetrieval",
     "TextMatching",
@@ -32,5 +33,7 @@ __all__ = [
     "MagPie",
     "SelfInstruct",
     "WebFactCheck",
+    "WebMultiChoice",
+    "WebSearch",
     "Simple",
 ]
