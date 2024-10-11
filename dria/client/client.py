@@ -631,6 +631,7 @@ class Dria:
             else:
                 model_list.append(model)
 
+        filtered_models = model_list
         if has_function_calling:
             filtered_models = [
                 model for model in model_list if model in supported_models
@@ -642,11 +643,12 @@ class Dria:
                         f"Model '{model}' is not supported for function calling and will be removed."
                     )
 
-            task.models = filtered_models
-
             if not filtered_models:
                 supported_model_names = [model.name for model in FunctionCallingModels]
                 raise ValueError(
                     f"No supported function calling models found for task. "
                     f"Supported models: {', '.join(supported_model_names)}"
                 )
+
+        task.models = filtered_models
+
