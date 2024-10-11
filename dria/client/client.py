@@ -651,4 +651,3 @@ class Dria:
                 )
 
         task.models = filtered_models
-

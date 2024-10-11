@@ -3,7 +3,21 @@ from dria.factory.workflows.template import SingletonTemplate
 from typing import Dict, List, Literal
 import re
 
-Language = Literal["python", "javascript", "java", "c++", "c", "rust", "haskell", "typescript", "go", "solidity", "ruby", "lua", "bash"]
+Language = Literal[
+    "python",
+    "javascript",
+    "java",
+    "c++",
+    "c",
+    "rust",
+    "haskell",
+    "typescript",
+    "go",
+    "solidity",
+    "ruby",
+    "lua",
+    "bash",
+]
 
 
 def parser(code: str, language: Language) -> str:
@@ -30,7 +44,9 @@ def parser(code: str, language: Language) -> str:
         extracted_code = match.group(1).strip()
         return extracted_code
     else:
-        raise ValueError(f"Code block for language '{language}' not found in the provided text.")
+        raise ValueError(
+            f"Code block for language '{language}' not found in the provided text."
+        )
 
 
 class GenerateCode(SingletonTemplate):
@@ -47,7 +63,7 @@ class GenerateCode(SingletonTemplate):
         builder = WorkflowBuilder(instruction=instruction, language=language)
         builder.generative_step(
             prompt="You have been given the following instruction: "
-                   "{{instruction}}. Write clean, commented and robust code in {{language}}. Code: ",
+            "{{instruction}}. Write clean, commented and robust code in {{language}}. Code: ",
             operator=Operator.GENERATION,
             outputs=[Write.new("code")],
         )
@@ -60,7 +76,7 @@ class GenerateCode(SingletonTemplate):
         return {
             "instruction": self.params.instruction,
             "language": self.params.language,
-            "code": parser(result[0].strip(), self.params.language)
+            "code": parser(result[0].strip(), self.params.language),
         }
 
 
@@ -79,7 +95,7 @@ class IterateCode(SingletonTemplate):
         builder = WorkflowBuilder(instruction=instruction, code=code, language=language)
         builder.generative_step(
             prompt="Here is you previous code: {{code}}.\n Iterate your previous code based on the instruction: "
-                   "{{instruction}}. Write clean, commented and robust code in {{language}}. Code: ",
+            "{{instruction}}. Write clean, commented and robust code in {{language}}. Code: ",
             operator=Operator.GENERATION,
             outputs=[Write.new("code")],
         )
@@ -93,5 +109,5 @@ class IterateCode(SingletonTemplate):
             "instruction": self.params.instruction,
             "language": self.params.language,
             "iterated_code": parser(result[0].strip(), self.params.language),
-            "code": self.params.code
+            "code": self.params.code,
         }
