@@ -4,6 +4,8 @@ from .subtopic import *
 
 __all__ = [
     "Clair",
+    "GenerateCode",
+    "IterateCode",
     "EvolveComplexity",
     "ScoreComplexity",
     "EvolveInstruct",

@@ -1,4 +1,5 @@
 from .clair import Clair
+from .code_gen import GenerateCode, IterateCode
 from .complexity_scorer import EvolveComplexity, ScoreComplexity
 from .evol_instruct import EvolveInstruct
 from .evol_quality import EvolveQuality
@@ -19,6 +20,8 @@ from .simple import Simple
 
 __all__ = [
     "Clair",
+    "GenerateCode",
+    "IterateCode",
     "EvolveComplexity",
     "ScoreComplexity",
     "EvolveInstruct",

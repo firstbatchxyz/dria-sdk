@@ -14,7 +14,6 @@ class SemanticTriplet(SingletonTemplate):
         high_score: int,
         low_score: int,
         difficulty: str,
-        num_generations: int = 1,
     ) -> Workflow:
         """
         Generate a Task to create a JSON object with three units (S1, S2, S3) having specified semantic similarity scores.
