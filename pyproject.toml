@@ -2,7 +2,7 @@
 name = "dria"
 version = "0.0.25"
 description = "Dria SDK - A Python library for interacting with the Dria AI Network"
-authors = ["Omer <omer@firstbatch.xyz>", "Anil <anil@firstbatch.xyz>"]
+authors = ["andthattoo <omer@firstbatch.xyz>", "Anil <anil@firstbatch.xyz>"]
 readme = "README.md"
 homepage = "https://github.com/firstbatchxyz/dria-sdk"
 repository = "https://github.com/firstbatchxyz/dria-sdk"
