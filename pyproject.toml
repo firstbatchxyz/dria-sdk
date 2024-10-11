@@ -25,6 +25,7 @@ dria-workflows = "^0.2.6"
 aiohttp = "^3.10.9"
 eciespy = "0.4.1"
 fastbloom-rs = "0.5.9"
+datasets = "^3.0.1"
 
 [tool.poetry.urls]
 "Bug Tracker" = "https://github.com/firstbatchxyz/dria-sdk/issues"
