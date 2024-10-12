@@ -40,7 +40,7 @@
     * Model-as-a-Judge
       * [EvaluatePrediction](factory/evaluate.md)
       * [ValidatePrediction](factory/validate.md)
-    * Search & Data Ingestion
+    * Search & Data Ingestion (Experimental)
     * [WebFactCheck](factory/web_fact_check.md)
     * [WebMultiChoice](factory/web_multi_choice.md)
     * [WebSearch](factory/web_search.md)

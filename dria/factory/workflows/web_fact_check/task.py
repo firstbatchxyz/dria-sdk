@@ -17,6 +17,7 @@ from dria.factory.utilities import get_abs_path
 from dria.factory.workflows.template import SingletonTemplate
 from dria.models import TaskResult
 from typing import List
+from .utils import extract_tag
 
 
 class WebFactCheck(SingletonTemplate):
@@ -27,6 +28,7 @@ class WebFactCheck(SingletonTemplate):
         builder = WorkflowBuilder(context=context)
         builder.set_max_time(200)
         builder.set_max_tokens(750)
+        builder.set_max_steps(50)
 
         # Add a generative step using the prompt
         builder.generative_step(
@@ -101,4 +103,8 @@ class WebFactCheck(SingletonTemplate):
         return builder.build()
 
     def parse_result(self, result: List[TaskResult]):
-        return {"evaluation": result[0].result, "model": result[0].model}
+        return {
+            "reasoning": result[0].result,
+            "evaluation": extract_tag(result[0].result),
+            "model": result[0].model,
+        }

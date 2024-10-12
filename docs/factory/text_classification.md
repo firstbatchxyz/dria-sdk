@@ -51,3 +51,14 @@ def main():
 if __name__ == "__main__":
     main()
 ```
+
+Expected output
+
+```json
+{
+  "input_text": "The plot was somewhat predictable, but the performances were top-notch and kept me engaged throughout.",
+  "label": "positive",
+  "misleading_label": "negative",
+  "model": "qwen2.5:32b-instruct-fp16"
+}
+```

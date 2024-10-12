@@ -4,6 +4,7 @@ from dria_workflows import Workflow, WorkflowBuilder, Operator, Write, Edge
 from dria.factory.utilities import get_abs_path
 from dria.factory.workflows.template import SingletonTemplate
 from dria.models import TaskResult
+from .utils import parse_json
 import re
 
 
@@ -68,7 +69,7 @@ class TextMatching(SingletonTemplate):
 
         # Initialize the workflow with variables to be used in the prompt
         builder = WorkflowBuilder(task=task_description, language=language)
-
+        builder.set_max_tokens(500)
         # Add a generative step using the prompt stored in 'text_matching_example.md'
         builder.generative_step(
             path=get_abs_path(
@@ -87,7 +88,7 @@ class TextMatching(SingletonTemplate):
         return builder.build()
 
     def parse_result(self, result: List[TaskResult]):
-        output = json.loads(result[0].result)
+        output = parse_json(result[0].result)
         output["model"] = result[0].model
         return output
 
@@ -131,7 +132,7 @@ class TextClassification(SingletonTemplate):
         return builder.build()
 
     def parse_result(self, result: List[TaskResult]):
-        output = json.loads(result[0].task_input)
+        output = parse_json(result[0].result)
         output["model"] = result[0].model
         return output
 
@@ -189,14 +190,6 @@ class TextRetrieval(SingletonTemplate):
 
     def parse_result(self, result: List[TaskResult]):
         # Take between ```
-        output = re.search(r"```([^`]*)```", result[0].result)
-        if output:
-            output = output.group(1)
-        else:
-            output = result[0].result
-        try:
-            output = json.loads(output.replace("\n", ""))
-        except Exception as e:
-            raise ValueError(f"Could not parse JSON from result: {output}")
+        output = parse_json(result[0].result)
         output["model"] = result[0].model
         return output
