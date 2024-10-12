@@ -553,8 +553,7 @@ class Dria:
             for t in tasks_:
                 await self.push(t)
 
-            results = await self.fetch(task=tasks_, timeout=timeout)
-            return [i.result for i in results]
+            return await self.fetch(task=tasks_, timeout=timeout)
         except Exception as e:
             logger.error(f"Error during task execution: {str(e)}")
             raise
