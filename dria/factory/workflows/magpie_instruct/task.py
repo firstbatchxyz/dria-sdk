@@ -81,7 +81,7 @@ class MagPie(SingletonTemplate):
             list of dict: A list where each element is a dictionary representing a turn in the dialogue.
         """
         dialogue = []
-        speakers = ["A", "B"]
+        speakers = ["instructor", "responder"]
 
         for index, message in enumerate(messages):
             speaker = speakers[index % 2]

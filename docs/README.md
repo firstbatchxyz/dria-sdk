@@ -56,7 +56,7 @@ Creating value for AI that can only be obtained through decentralization.
 
 [Get Started](quickstart.md)
 
-[FAQ](faq.md)
+[FAQ](node)
 
 -----
 

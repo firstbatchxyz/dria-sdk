@@ -1,16 +1,23 @@
 * Getting Started
   * [What is Dria?](/)
   * [Installation](quickstart.md)
-  * [FAQ](faq.md)
-* Core Concepts
-  * [DKN](core-concepts/overview.md)
-  * [Workflows](core-concepts/workflows.md)
-  * [Pipelines](core-concepts/pipelines.md)
-  * [Models](core-concepts/models.md)
-* Cooking Datasets
+  * [Run a node (optional)](node.md)
+* How-To Guides
+  * Simple
+    * [Tasks](how-to/tasks.md)
+    * [Selecting Models](how-to/models.md)
+    * [Creating Pipelines](how-to/pipelines.md)
+    * [Functions](how-to/functions.md)
+    * [Batches](how-to/batches.md)
+  * Advanced
+    * [Custom Tasks](how-to/workflows.md)
+    * [Custom Pipelines](how-to/diversity.md)
+
+* Cookbook
   * [Patient Dialogues](cookbook/patient_dialogues.md)
   * [Specialized Q&A](cookbook/qa.md)
   * [Function Calling](cookbook/function_calling.md)
+  * [Slack Group Chat](cookbook/slack.md)
 * Factory
   * [Overview](factory/overview.md)
   * Singletons
@@ -33,7 +40,7 @@
     * Model-as-a-Judge
       * [EvaluatePrediction](factory/evaluate.md)
       * [ValidatePrediction](factory/validate.md)
-    * WebFlows
+    * Search & Data Ingestion
     * [WebFactCheck](factory/web_fact_check.md)
     * [WebMultiChoice](factory/web_multi_choice.md)
     * [WebSearch](factory/web_search.md)
