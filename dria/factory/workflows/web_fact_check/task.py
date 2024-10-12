@@ -15,6 +15,8 @@ from dria_workflows import (
 )
 from dria.factory.utilities import get_abs_path
 from dria.factory.workflows.template import SingletonTemplate
+from dria.models import TaskResult
+from typing import List
 
 
 class WebFactCheck(SingletonTemplate):
@@ -98,5 +100,5 @@ class WebFactCheck(SingletonTemplate):
         builder.set_return_value("evaluation")
         return builder.build()
 
-    def parse_result(self, result):
-        return {"graph": result[0]}
+    def parse_result(self, result: List[TaskResult]):
+        return {"evaluation": result[0].result, "model": result[0].model}

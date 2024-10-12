@@ -14,6 +14,7 @@ from dria_workflows import (
 )
 from dria.factory.utilities import get_abs_path
 from dria.factory.workflows.template import SingletonTemplate
+from dria.models import TaskResult
 from typing import List
 
 
@@ -100,5 +101,5 @@ class WebMultiChoice(SingletonTemplate):
         builder.set_return_value("evaluation")
         return builder.build()
 
-    def parse_result(self, result):
-        return {"answer": result[0].strip()}
+    def parse_result(self, result: List[TaskResult]):
+        return {"answer": result[0].result.strip(), "model": result[0].model}

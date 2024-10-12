@@ -1,5 +1,5 @@
-from typing import Any
-
+from typing import List, Dict, Any
+from dria.models import TaskResult
 from dria_workflows import Workflow, WorkflowBuilder, Operator, Write, Edge
 from dria.factory.utilities import get_abs_path
 from dria.factory.workflows.template import SingletonTemplate
@@ -34,11 +34,11 @@ class ValidatePrediction(SingletonTemplate):
         builder.set_return_value("validation_result")
         return builder.build()
 
-    def parse_result(self, result: Any) -> bool:
-        if result[0].lower() == "true":
-            return True
-        elif result[0].lower() == "false":
-            return False
+    def parse_result(self, result: List[TaskResult]) -> Dict[str, Any]:
+        if result[0].result.lower() == "true":
+            return {"validation": True, "model": result[0].model}
+        elif result[0].result.lower() == "false":
+            return {"validation": False, "model": result[0].model}
         else:
             raise ValueError("The result is not a boolean value.")
 
@@ -75,5 +75,5 @@ class EvaluatePrediction(SingletonTemplate):
         builder.set_return_value("evaluation_result")
         return builder.build()
 
-    def parse_result(self, result: Any):
-        return result[0]
+    def parse_result(self, result: List[TaskResult]) -> Dict[str, Any]:
+        return {"evaluation": result[0].result, "model": result[0].model}

@@ -1,8 +1,9 @@
-from typing import Any
-
+from typing import Any, List
+from dria.models import TaskResult
 from dria_workflows import Workflow, WorkflowBuilder, Operator, Write, Edge
 from dria.factory.utilities import get_abs_path
 from dria.factory.workflows.template import SingletonTemplate
+import json
 
 
 class GenerateGraph(SingletonTemplate):
@@ -38,5 +39,9 @@ class GenerateGraph(SingletonTemplate):
         builder.set_return_value("graph")
         return builder.build()
 
-    def parse_result(self, result: Any):
-        return result[0].strip()
+    def parse_result(self, result: List[TaskResult]):
+        try:
+            graph = json.loads(result[0].result.strip())
+        except:
+            graph = result[0].result.strip()
+        return {"graph": graph, "model": result[0].model}

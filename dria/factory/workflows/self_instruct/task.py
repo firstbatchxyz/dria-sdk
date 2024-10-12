@@ -1,5 +1,5 @@
-from typing import Any
-
+from typing import List
+from dria.models import TaskResult
 from dria_workflows import Workflow, WorkflowBuilder, Operator, Write, Edge
 from dria.factory.utilities import get_abs_path
 from dria.factory.workflows.template import SingletonTemplate
@@ -47,5 +47,5 @@ class SelfInstruct(SingletonTemplate):
         builder.set_return_value("user_queries")
         return builder.build()
 
-    def parse_result(self, result: Any):
-        return {"instruction": result[0]}
+    def parse_result(self, result: List[TaskResult]):
+        return {"instruction": result[0].result, "model": result[0].model}

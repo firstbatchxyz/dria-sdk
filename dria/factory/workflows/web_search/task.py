@@ -14,7 +14,8 @@ from dria_workflows import (
 )
 from dria.factory.utilities import get_abs_path
 from dria.factory.workflows.template import SingletonTemplate
-from typing import Literal
+from dria.models import TaskResult
+from typing import Literal, List
 import re
 
 Mode = Literal[
@@ -98,13 +99,15 @@ class WebSearch(SingletonTemplate):
         builder.set_return_value("notes")
         return builder.build()
 
-    def parse_result(self, result):
+    def parse_result(self, result: List[TaskResult]):
         # take between tags <summary>, write a lambda
 
         return {
             "notes": [
-                self.get_tags(note)[0].strip().replace("\\n", "") for note in result
-            ]
+                self.get_tags(note.result)[0].strip().replace("\\n", "")
+                for note in result
+            ],
+            "model": result[0].model,
         }
 
     @staticmethod

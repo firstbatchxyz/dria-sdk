@@ -1,6 +1,7 @@
 from dria_workflows import Workflow, WorkflowBuilder, Operator, Write, Edge
-from typing import Dict, Any, Literal
+from typing import Dict, List, Literal
 from dria.factory.workflows.template import SingletonTemplate
+from dria.models import TaskResult
 import re
 
 MutationType = Literal[
@@ -62,7 +63,24 @@ class EvolveInstruct(SingletonTemplate):
         builder.set_return_value("mutated_prompt")
         return builder.build()
 
-    def parse_result(self, result: Any) -> Dict[str, str]:
-        # extract text bet {}
-        result = re.findall(r"\{([^}]+)\}", result[0])
-        return {"mutated_prompt": result[0].strip(), "prompt": self.params.prompt}
+    def parse_result(self, result: List[TaskResult]) -> Dict[str, str]:
+
+        parts = result[0].result.split("## New Prompt:")
+        if len(parts) != 2:
+            raise ValueError(
+                f"Invalid result format: {result[0].result}:' sections found"
+            )
+        new_prompt = (
+            parts[1]
+            .strip()
+            .replace("##", "")
+            .strip()
+            .replace("{", "")
+            .replace("}", "")
+            .strip()
+        )
+        return {
+            "mutated_prompt": new_prompt,
+            "prompt": self.params.prompt,
+            "model": result[0].model,
+        }

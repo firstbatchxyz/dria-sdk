@@ -1,5 +1,6 @@
 from dria_workflows import Workflow, WorkflowBuilder, Operator, Write, Edge
 from dria.factory.workflows.template import SingletonTemplate
+from dria.models import TaskResult
 from typing import Dict, List, Literal
 import re
 
@@ -72,11 +73,12 @@ class GenerateCode(SingletonTemplate):
         builder.set_return_value("code")
         return builder.build()
 
-    def parse_result(self, result: List[str]) -> Dict[str, str]:
+    def parse_result(self, result: List[TaskResult]) -> Dict[str, str]:
         return {
             "instruction": self.params.instruction,
             "language": self.params.language,
-            "code": parser(result[0].strip(), self.params.language),
+            "code": parser(result[0].result.strip(), self.params.language),
+            "model": result[0].model,
         }
 
 
@@ -104,10 +106,11 @@ class IterateCode(SingletonTemplate):
         builder.set_return_value("code")
         return builder.build()
 
-    def parse_result(self, result: List[str]) -> Dict[str, str]:
+    def parse_result(self, result: List[TaskResult]) -> Dict[str, str]:
         return {
             "instruction": self.params.instruction,
             "language": self.params.language,
-            "iterated_code": parser(result[0].strip(), self.params.language),
+            "iterated_code": parser(result[0].result.strip(), self.params.language),
             "code": self.params.code,
+            "model": result[0].model,
         }

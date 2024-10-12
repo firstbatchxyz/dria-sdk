@@ -1,6 +1,6 @@
 import os
 import asyncio
-from dria.factory import GenerateCode
+from dria.factory import TextRetrieval
 from dria.client import Dria
 from dria.models import Task, Model
 
@@ -8,18 +8,23 @@ dria = Dria(rpc_token=os.environ["DRIA_RPC_TOKEN"])
 
 
 async def evaluate():
-    generate_code = GenerateCode()
+    text_retrieval = TextRetrieval()
     res = await dria.execute(
         Task(
-            workflow=generate_code.workflow(
-                instruction="Write a function to calculate the factorial of a number",
-                language="python"
+            workflow=text_retrieval.workflow(
+                task_description="Generate a text retrieval example for a science topic",
+                query_type="informational",
+                query_length="short",
+                clarity="clear",
+                num_words=100,
+                language="English",
+                difficulty="high school",
             ).model_dump(),
-            models=[Model.QWEN2_5_CODER_1_5B],
+            models=[Model.LLAMA3_1_8B_FP16],
         ),
         timeout=45,
     )
-    return generate_code.parse_result(res)
+    return text_retrieval.parse_result(res)
 
 
 def main():

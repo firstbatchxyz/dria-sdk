@@ -7,8 +7,8 @@
 - prompt (`str`): The prompt to generate text from.
 
 #### Outputs
-- text: (`str`): The generated text.
-
+- generation: (`str`): The generated text.
+- model (`str`): The model used for code generation.
 
 ### Example
 
@@ -48,10 +48,9 @@ if __name__ == "__main__":
 
 Expected output:
 
-```bash
-2024-10-12 17:23:58,912 - INFO - Address 2ca170738d7178ecd3f1264e46c175be6469dbd1 added to blacklist with deadline at 1728743638.
-2024-10-12 17:23:58,912 - INFO - Task N3cyBA9hWczmHHNnzltn6DEyqYMthkDf successfully published. Step: 
-2024-10-12 17:24:05,004 - INFO - Address 2ca170738d7178ecd3f1264e46c175be6469dbd1 removed from blacklist.
-2024-10-12 17:24:05,920 - INFO - Background tasks cancelled.
-Hey there! 👋 What can I do for you today? 😊  
+```json
+{
+  "generation": "Hello! How can I assist you today?", 
+  "model": "qwen2.5:7b-instruct-fp16"
+}
 ```

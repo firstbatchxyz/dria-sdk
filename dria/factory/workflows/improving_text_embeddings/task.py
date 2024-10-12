@@ -1,8 +1,10 @@
-from typing import Any
+from typing import Any, List
 import json
 from dria_workflows import Workflow, WorkflowBuilder, Operator, Write, Edge
 from dria.factory.utilities import get_abs_path
 from dria.factory.workflows.template import SingletonTemplate
+from dria.models import TaskResult
+import re
 
 
 class SemanticTriplet(SingletonTemplate):
@@ -43,8 +45,10 @@ class SemanticTriplet(SingletonTemplate):
         builder.set_return_value("semantic_triple")
         return builder.build()
 
-    def parse_result(self, result: Any):
-        return json.loads(result[0].strip())
+    def parse_result(self, result: List[TaskResult]):
+        output = json.loads(result[0].result.strip())
+        output["model"] = result[0].model
+        return output
 
 
 class TextMatching(SingletonTemplate):
@@ -82,8 +86,10 @@ class TextMatching(SingletonTemplate):
         builder.set_return_value("text_matching_example")
         return builder.build()
 
-    def parse_result(self, result: Any):
-        return json.loads(result[0])
+    def parse_result(self, result: List[TaskResult]):
+        output = json.loads(result[0].result)
+        output["model"] = result[0].model
+        return output
 
 
 class TextClassification(SingletonTemplate):
@@ -124,8 +130,10 @@ class TextClassification(SingletonTemplate):
         builder.set_return_value("classification_example")
         return builder.build()
 
-    def parse_result(self, result: Any):
-        return json.loads(result[0])
+    def parse_result(self, result: List[TaskResult]):
+        output = json.loads(result[0].task_input)
+        output["model"] = result[0].model
+        return output
 
 
 class TextRetrieval(SingletonTemplate):
@@ -163,7 +171,7 @@ class TextRetrieval(SingletonTemplate):
             language=language,
             difficulty=difficulty,
         )
-
+        builder.set_max_tokens(750)
         # Add a generative step using the prompt stored in 'text_retrieval_example.md'
         builder.generative_step(
             path=get_abs_path("text_retrieval.md"),
@@ -179,5 +187,16 @@ class TextRetrieval(SingletonTemplate):
         builder.set_return_value("retrieval_example")
         return builder.build()
 
-    def parse_result(self, result: Any):
-        return json.loads(result[0])
+    def parse_result(self, result: List[TaskResult]):
+        # Take between ```
+        output = re.search(r"```([^`]*)```", result[0].result)
+        if output:
+            output = output.group(1)
+        else:
+            output = result[0].result
+        try:
+            output = json.loads(output.replace("\n", ""))
+        except Exception as e:
+            raise ValueError(f"Could not parse JSON from result: {output}")
+        output["model"] = result[0].model
+        return output

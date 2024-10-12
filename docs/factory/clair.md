@@ -11,6 +11,7 @@
 - corrected_student_solution (`str`): The improved version of the student's solution.
 - task (`str`): The original task description (echoed from input).
 - student_solution (`str`): The original student solution (echoed from input).
+- model (`str`): The model used for code generation.
 
 ### Example
 
@@ -41,11 +42,20 @@ async def evaluate():
 
 def main():
     result = asyncio.run(evaluate())
-    print("Teacher's Reasoning:")
-    print(result["reasoning"])
-    print("\nCorrected Student Solution:")
-    print(result["corrected_student_solution"])
+    print(result)
 
 if __name__ == "__main__":
     main()
+```
+
+Expected output
+
+```json
+{
+   "reasoning":"##  Understanding Factorials\n\nFactorial (represented by the symbol \"!\") means multiplying a number by all the whole numbers less than it down to 1. For example, 5! = 5 * 4 * 3 * 2 * 1 = 120.\n\n****: The provided code has a small syntax error.  In Python, colons (`:`) are used to indicate the start of a block of code, not as part of the return statement itself.\n\n\n **",
+   "corrected_student_solution":"**:\n\n```python\ndef factorial(n):\n    if n == 0:\n        return 1\n    else:\n        return n * factorial(n-1) \n```\n\n\n\nLet me break down how this corrected code works:\n\n1. **Base Case:** The `if n == 0:` statement checks if the input number is 0. If it is, the function returns 1 because 0! is defined as 1.\n\n2. **Recursive Step:**  If `n` is not 0, the `else` block executes. It calculates the factorial by multiplying `n` with the factorial of `",
+   "task":"Write a function to calculate the factorial of a number.",
+   "student_solution":"def factorial(n):\n    if n == 0:\n        return 1\n    else:\n        return n * factorial(n-1)",
+   "model":"gemma2:9b-instruct-fp16"
+}
 ```

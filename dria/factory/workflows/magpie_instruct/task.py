@@ -13,6 +13,7 @@ from dria_workflows import (
 )
 from dria.factory.utilities import get_abs_path
 from dria.factory.workflows.template import SingletonTemplate
+from dria.models import TaskResult
 
 
 class MagPie(SingletonTemplate):
@@ -66,8 +67,13 @@ class MagPie(SingletonTemplate):
         builder.set_return_value("chat")
         return builder.build()
 
-    def parse_result(self, result: Any) -> List[Dict[str, str]]:
-        return [self.group_into_dialogue(json.loads(o)) for o in result][0]
+    def parse_result(self, result: List[TaskResult]) -> Dict[str, Any]:
+        return {
+            "dialogue": [
+                self.group_into_dialogue(json.loads(o.result)) for o in result
+            ][0],
+            "model": result[0].model,
+        }
 
     @staticmethod
     def group_into_dialogue(messages):

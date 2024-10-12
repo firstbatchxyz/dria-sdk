@@ -1,7 +1,8 @@
 from dria.factory.utilities import get_abs_path
 from dria_workflows import Workflow, WorkflowBuilder, Operator, Write, Edge
 from dria.factory.workflows.template import SingletonTemplate
-from typing import Dict, List, Any, Union
+from dria.models import TaskResult
+from typing import Dict, List, Union
 import re
 
 
@@ -26,10 +27,11 @@ class EvolveComplexity(SingletonTemplate):
         builder.set_return_value("evolved_instruction")
         return builder.build()
 
-    def parse_result(self, result: List[str]) -> Dict[str, str]:
+    def parse_result(self, result: List[TaskResult]) -> Dict[str, str]:
         return {
-            "evolved_instruction": result[0].strip(),
+            "evolved_instruction": result[0].result.strip(),
             "instruction": self.params.instruction,
+            "model": result[0].model,
         }
 
 
@@ -56,9 +58,11 @@ class ScoreComplexity(SingletonTemplate):
         builder.set_return_value("scores")
         return builder.build()
 
-    def parse_result(self, result: Any) -> List[Dict[str, Union[str, int]]]:
+    def parse_result(
+        self, result: List[TaskResult]
+    ) -> List[Dict[str, Union[str, int]]]:
         scores = {}
-        lines = result[0].strip().split("\n")
+        lines = result[0].result.strip().split("\n")
         for line in lines:
             match = re.match(r"\[(\d+)\]\s*Score:\s*(\d+)", line)
             if match:
@@ -66,6 +70,6 @@ class ScoreComplexity(SingletonTemplate):
                 score = int(match.group(2))
                 scores[idx] = score
         return [
-            {"instruction": instr, "score": scores.get(i, 0)}
+            {"instruction": instr, "score": scores.get(i, 0), "model": result[0].model}
             for i, instr in enumerate(self.params.instructions)
         ]

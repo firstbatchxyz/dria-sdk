@@ -12,6 +12,7 @@
 - instruction (`str`): The original instruction.
 - language (`Language`): The specified programming language.
 - code (`str`): The generated code.
+- model (`str`): The model used for code generation.
 
 ### Example
 
@@ -48,11 +49,13 @@ if __name__ == "__main__":
     main()
 ```
 
+Expected output
 
-```bash
+```json
 {
    "instruction":"Write a function to calculate the factorial of a number",
    "language":"python",
-   "code":"def factorial(n):\n    \"\"\"\n    Calculate the factorial of a non-negative integer n.\n    \n    Args:\n    n (int): A non-negative integer whose factorial is to be calculated.\n    \n    Returns:\n    int: The factorial of n.\n    \"\"\"\n    # Check if the input is a non-negative integer\n    if not isinstance(n, int) or n < 0:\n        raise ValueError(\"Input must be a non-negative integer.\")\n    \n    # Base case: factorial of 0 or 1 is 1\n    if n == 0 or n == 1:\n        return 1\n    \n    # Recursive case: n * factorial of (n-1)\n    else:\n        return n * factorial(n - 1)\n\n# Example usage\nprint(factorial(5))  # Output: 120"
+   "code":"def factorial(n):\n    \"\"\"\n    Calculate the factorial of a non-negative integer n.\n    \n    Args:\n    n (int): A non-negative integer whose factorial is to be calculated.\n    \n    Returns:\n    int: The factorial of the input number.\n    \n    Raises:\n    ValueError: If n is negative.\n    \"\"\"\n    # Check if the input is a non-negative integer\n    if not isinstance(n, int) or n < 0:\n        raise ValueError(\"Input must be a non-negative integer.\")\n    \n    # Initialize the result to 1 (since 0! = 1)\n    result = 1\n    \n    # Calculate the factorial using a loop\n    for i in range(1, n + 1):\n        result *= i\n    \n    return result\n\n# Example usage:\ntry:\n    print(factorial(5))  # Output: 120\nexcept ValueError as e:\n    print(e)",
+   "model":"qwen2.5-coder:1.5b"
 }
 ```

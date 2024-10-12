@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import List
 from types import SimpleNamespace
+from dria.models import TaskResult
 
 
 class SingletonTemplate(ABC):
@@ -26,7 +27,7 @@ class SingletonTemplate(ABC):
         pass
 
     @abstractmethod
-    def parse_result(self, result: Any):
+    def parse_result(self, result: List[TaskResult]):
         """
         The parse_result method for the singleton template.
         Args:

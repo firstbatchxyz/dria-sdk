@@ -1,5 +1,7 @@
 from dria_workflows import Workflow, WorkflowBuilder, Operator, Edge, Write
 from dria.factory.workflows.template import SingletonTemplate
+from dria.models import TaskResult
+from typing import List
 
 
 class Simple(SingletonTemplate):
@@ -14,5 +16,5 @@ class Simple(SingletonTemplate):
         builder.set_return_value("response")
         return builder.build()
 
-    def parse_result(self, result):
-        return result[0]
+    def parse_result(self, result: List[TaskResult]):
+        return {"generation": result[0].result, "model": result[0].model}
