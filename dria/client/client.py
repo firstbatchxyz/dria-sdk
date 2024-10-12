@@ -495,6 +495,7 @@ class Dria:
 
                 if "error" in result:
                     logger.info(f"Error in result: {result['error']}. Task retrying..")
+                    await self._handle_error_type(task, result["error"])
                     asyncio.create_task(self.push(task))
                     continue
 
@@ -651,3 +652,9 @@ class Dria:
                 )
 
         task.models = filtered_models
+
+    async def _handle_error_type(self, task: Task, error: str) -> None:
+        """Handle the error type."""
+        if "InvalidInput" in error:
+            for address in task.nodes:
+                self._remove_from_blacklist(address)
