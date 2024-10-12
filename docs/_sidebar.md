@@ -5,19 +5,19 @@
 * How-To Guides
   * Simple
     * [Tasks](how-to/tasks.md)
+    * [Singletons](how-to/singletons.md)
     * [Selecting Models](how-to/models.md)
-    * [Creating Pipelines](how-to/pipelines.md)
-    * [Functions](how-to/functions.md)
     * [Batches](how-to/batches.md)
   * Advanced
-    * [Custom Tasks](how-to/workflows.md)
-    * [Custom Pipelines](how-to/diversity.md)
+    * [Writing Workflows](how-to/workflows.md)
+    * [Functions](how-to/functions.md)
+    * [Custom Pipelines](how-to/pipelines.md)
 
-* Cookbook
+<!-- * Cookbook 
   * [Patient Dialogues](cookbook/patient_dialogues.md)
   * [Specialized Q&A](cookbook/qa.md)
   * [Function Calling](cookbook/function_calling.md)
-  * [Slack Group Chat](cookbook/slack.md)
+  * [Slack Group Chat](cookbook/slack.md) -->
 * Factory
   * [Overview](factory/overview.md)
   * Singletons

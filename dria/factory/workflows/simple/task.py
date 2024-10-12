@@ -17,4 +17,4 @@ class Simple(SingletonTemplate):
         return builder.build()
 
     def parse_result(self, result: List[TaskResult]):
-        return {"generation": result[0].result, "model": result[0].model}
+        return [{"generation": res.result, "model": res.model} for res in result]

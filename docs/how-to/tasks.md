@@ -30,7 +30,7 @@ They have memory, tools, and a model to execute tasks.
 ### Sending Tasks
 
 In this example, we are using `Simple` task, one of the built-in tasks that takes prompt and executes it on a model.
-See [Singletons](factory/simple.md) for more details.
+See [Singletons](how-to/singletons.md) for more details.
 
 ```python
 import os
@@ -56,3 +56,12 @@ async def evaluate():
 if __name__ == "__main__":
     asyncio.run(evaluate())
 ```
+
+### Lifecycle of a Task
+
+- Task Creation: You create a task by specifying a workflow and models.
+- Task Publication: The task is published to the network for execution.
+- Task Execution: Nodes that run one of the selected models execute the task asynchronously.
+- Result Retrieval: After execution, the result is published back to the network.
+- Result Polling: SDK polls the network to retrieve the result.
+- Task Completion: The task is marked as completed once the result is retrieved.

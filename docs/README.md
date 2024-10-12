@@ -20,7 +20,7 @@ As a network, Dria allows you to directly offload your compute needs to the netw
 
 **Flexible and Scalable Custom Pipelines**: 
 
-Dria provides extremely flexible tools to write custom pipelines and scale them through the network. You can design complex data generation workflows tailored to your specific needs, all without requiring your own GPUs.
+Dria provides flexible tools to write custom pipelines and scale them through the network. You can design complex data generation workflows tailored to your specific needs, all without requiring your own GPUs.
 
 
 **Extensive Built-in Toolset**: 
@@ -30,7 +30,7 @@ Dria comes with a vast factory of built-in tools derived from verified research 
 
 **Diverse Data Source Integration**: 
 
-Dria uniquely enables the integration of both web and siloed data sources in your generation process. This capability allows for richer, more diverse datasets that can improve the quality and applicability of your AI models.
+Dria enables the integration of both web and siloed data sources in your generation process. This capability allows for richer, more diverse datasets that can improve the quality and applicability of your AI models.
 
 
 **Versatility Across AI Tasks**: 
@@ -56,7 +56,7 @@ Creating value for AI that can only be obtained through decentralization.
 
 [Get Started](quickstart.md)
 
-[FAQ](node)
+[Run a Node](node)
 
 -----
 
