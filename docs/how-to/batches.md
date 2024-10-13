@@ -1,8 +1,9 @@
 # Batches
 
+Batches (ParallelSingletonExecutor) is a way to run multiple instructions in parallel. 
+This is useful when you have a large number of instructions to run and you want to run them concurrently.
 
-## Overview
-
+To use Batches, you need to create a `Dria` client, a `Singleton` task, and a `ParallelSingletonExecutor` object.
 
 ```python
 from dria.client import Dria
@@ -10,13 +11,22 @@ from dria.factory import Simple
 from dria.batches import ParallelSingletonExecutor
 import asyncio
 
-async def main():
+async def batch():
     dria_client = Dria()
     singleton = Simple()
-    executor = ParallelSingletonExecutor(dria_client, singleton, batch_size=100)
+    executor = ParallelSingletonExecutor(dria_client, singleton)
     executor.load_instructions([{ "prompt": "What is the capital of France?" }, { "prompt": "What is the capital of Germany?" }])
-    results = await executor.run()
+    return await executor.run()
+
+def main():
+    results = asyncio.run(batch())
     print(results)
 
-asyncio.run(main())
+if __name__ == "__main__":
+    main()
 ```
+
+Instructions are passed to the `executor` using the `load_instructions` method.
+Format of the instructions should match the input format of the `Singleton` task.
+
+
