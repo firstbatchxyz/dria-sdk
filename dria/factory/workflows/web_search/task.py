@@ -14,8 +14,9 @@ from dria_workflows import (
 from dria.factory.utilities import get_abs_path
 from dria.factory.workflows.template import SingletonTemplate
 from dria.models import TaskResult
-from typing import Literal, List
+from typing import Literal, List, Dict, Any
 import re
+import json
 
 Mode = Literal[
     "WIDE",
@@ -98,17 +99,18 @@ class WebSearch(SingletonTemplate):
         builder.set_return_value("notes")
         return builder.build()
 
-    def parse_result(self, result: List[TaskResult]):
-        # take between tags <summary>, write a lambda
-
-        return {
-            "notes": [
-                self.get_tags(note.result)[0].strip().replace("\\n", "")
-                for note in result
-            ],
-            "model": result[0].model,
-        }
+    def parse_result(self, results: List[TaskResult]) -> List[Dict[str, Any]]:
+        return [
+            {
+                "notes": [
+                    self.get_tags(note)[0].strip().replace("\\n", "")
+                    for note in json.loads(r.result)
+                ],
+                "model": r.model,
+            }
+            for r in results
+        ]
 
     @staticmethod
     def get_tags(text):
-        return re.findall(r"<summary>(.*?)</summary>", text)
+        return re.findall(r"<summary>(.*?)</summary>", text, re.DOTALL)

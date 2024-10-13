@@ -1,11 +1,10 @@
-from typing import Any, List
+from typing import Any, List, Dict
 import json
 from dria_workflows import Workflow, WorkflowBuilder, Operator, Write, Edge
 from dria.factory.utilities import get_abs_path
 from dria.factory.workflows.template import SingletonTemplate
 from dria.models import TaskResult
 from .utils import parse_json
-import re
 
 
 class SemanticTriplet(SingletonTemplate):
@@ -46,10 +45,13 @@ class SemanticTriplet(SingletonTemplate):
         builder.set_return_value("semantic_triple")
         return builder.build()
 
-    def parse_result(self, result: List[TaskResult]):
-        output = json.loads(result[0].result.strip())
-        output["model"] = result[0].model
-        return output
+    def parse_result(self, result: List[TaskResult]) -> List[Dict[str, Any]]:
+        results = []
+        for r in result:
+            output = parse_json(r.result)
+            output["model"] = r.model
+            results.append(output)
+        return results
 
 
 class TextMatching(SingletonTemplate):
@@ -87,10 +89,13 @@ class TextMatching(SingletonTemplate):
         builder.set_return_value("text_matching_example")
         return builder.build()
 
-    def parse_result(self, result: List[TaskResult]):
-        output = parse_json(result[0].result)
-        output["model"] = result[0].model
-        return output
+    def parse_result(self, result: List[TaskResult]) -> List[Dict[str, Any]]:
+        results = []
+        for r in result:
+            output = parse_json(r.result)
+            output["model"] = r.model
+            results.append(output)
+        return results
 
 
 class TextClassification(SingletonTemplate):
@@ -131,10 +136,13 @@ class TextClassification(SingletonTemplate):
         builder.set_return_value("classification_example")
         return builder.build()
 
-    def parse_result(self, result: List[TaskResult]):
-        output = parse_json(result[0].result)
-        output["model"] = result[0].model
-        return output
+    def parse_result(self, result: List[TaskResult]) -> List[Dict[str, Any]]:
+        results = []
+        for r in result:
+            output = parse_json(r.result)
+            output["model"] = r.model
+            results.append(output)
+        return results
 
 
 class TextRetrieval(SingletonTemplate):
@@ -188,8 +196,10 @@ class TextRetrieval(SingletonTemplate):
         builder.set_return_value("retrieval_example")
         return builder.build()
 
-    def parse_result(self, result: List[TaskResult]):
-        # Take between ```
-        output = parse_json(result[0].result)
-        output["model"] = result[0].model
-        return output
+    def parse_result(self, result: List[TaskResult]) -> List[Dict[str, Any]]:
+        results = []
+        for r in result:
+            output = parse_json(r.result)
+            output["model"] = r.model
+            results.append(output)
+        return results

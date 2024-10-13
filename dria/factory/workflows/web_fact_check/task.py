@@ -103,8 +103,11 @@ class WebFactCheck(SingletonTemplate):
         return builder.build()
 
     def parse_result(self, result: List[TaskResult]):
-        return {
-            "reasoning": result[0].result,
-            "evaluation": extract_tag(result[0].result),
-            "model": result[0].model,
-        }
+        return [
+            {
+                "reasoning": r.result,
+                "evaluation": extract_tag(r.result),
+                "model": r.model,
+            }
+            for r in result
+        ]

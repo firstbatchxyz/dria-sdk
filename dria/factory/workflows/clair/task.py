@@ -1,8 +1,9 @@
-from typing import Union, List, Dict
+from typing import Union, List, Dict, Any
 from dria_workflows import Workflow, WorkflowBuilder, Operator, Edge, Write
 from dria.factory.utilities import get_abs_path
 from dria.factory.workflows.template import SingletonTemplate
 from dria.models import TaskResult
+import re
 
 
 class Clair(SingletonTemplate):
@@ -26,24 +27,37 @@ class Clair(SingletonTemplate):
         builder.set_return_value("response")
         return builder.build()
 
-    def parse_result(self, result: Union[str, List[TaskResult]]) -> Dict[str, str]:
+    def parse_result(self, result: List[TaskResult]) -> List[Dict[str, str]]:
+        """Parse the result from TaskResult objects and extract the reasoning and corrected student solution.
 
-        # if result is a list, take first element
-        _result = result[0].result
-        model = result[0].model
+        Args:
+            result (List[TaskResult]): A list of TaskResult objects.
 
-        parts = _result.split("{corrected_student_solution}")
-        if len(parts) == 2:
-            teacher_reasoning = parts[0].replace("{teacher_reasoning}", "").strip()
-            # The second part is the corrected_student_solution
-            corrected_student_solution = parts[1].strip()
-        else:
-            raise ValueError(f"Invalid result format: {_result}")
+        Returns:
+            List[Dict[str, str]]: A list of dictionaries containing the parsed information.
+        """
+        results = []
+        pattern = r"\{teacher_reasoning\}(.*?)\{corrected_student_solution\}(.*)"
 
-        return {
-            "reasoning": teacher_reasoning,
-            "corrected_student_solution": corrected_student_solution,
-            "task": self.params.task,
-            "student_solution": self.params.student_solution,
-            "model": model,
-        }
+        for r in result:
+            _result = r.result
+            model = r.model
+
+            # Use regex to extract teacher reasoning and corrected student solution
+            match = re.search(pattern, _result, re.DOTALL)
+            if match:
+                teacher_reasoning = match.group(1).strip()
+                corrected_student_solution = match.group(2).strip()
+            else:
+                raise ValueError(f"Invalid result format: {_result}")
+
+            results.append(
+                {
+                    "reasoning": teacher_reasoning,
+                    "corrected_student_solution": corrected_student_solution,
+                    "task": self.params.task,
+                    "student_solution": self.params.student_solution,
+                    "model": model,
+                }
+            )
+        return results

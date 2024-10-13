@@ -48,7 +48,10 @@ class SelfInstruct(SingletonTemplate):
         return builder.build()
 
     def parse_result(self, result: List[TaskResult]):
-        return {
-            "instructions": list(filter(None, result[0].result.strip().split("\n"))),
-            "model": result[0].model,
-        }
+        return [
+            {
+                "instructions": list(filter(None, r.result.strip().split("\n"))),
+                "model": r.model,
+            }
+            for r in result
+        ]

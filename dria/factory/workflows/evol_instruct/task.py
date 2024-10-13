@@ -63,7 +63,7 @@ class EvolveInstruct(SingletonTemplate):
         builder.set_return_value("mutated_prompt")
         return builder.build()
 
-    def parse_result(self, result: List[TaskResult]) -> Dict[str, str]:
+    def parse_result(self, result: List[TaskResult]) -> List[Dict[str, str]]:
 
         parts = result[0].result.split("## New Prompt:")
         if len(parts) != 2:
@@ -79,8 +79,11 @@ class EvolveInstruct(SingletonTemplate):
             .replace("}", "")
             .strip()
         )
-        return {
-            "mutated_prompt": new_prompt,
-            "prompt": self.params.prompt,
-            "model": result[0].model,
-        }
+        return [
+            {
+                "mutated_prompt": new_prompt,
+                "prompt": self.params.prompt,
+                "model": r.model,
+            }
+            for r in result
+        ]

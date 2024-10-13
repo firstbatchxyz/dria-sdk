@@ -75,5 +75,5 @@ class EvaluatePrediction(SingletonTemplate):
         builder.set_return_value("evaluation_result")
         return builder.build()
 
-    def parse_result(self, result: List[TaskResult]) -> Dict[str, Any]:
-        return {"evaluation": result[0].result, "model": result[0].model}
+    def parse_result(self, result: List[TaskResult]) -> List[Dict[str, Any]]:
+        return [{"evaluation": r.result, "model": r.model} for r in result]

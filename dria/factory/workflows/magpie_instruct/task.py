@@ -67,13 +67,14 @@ class MagPie(SingletonTemplate):
         builder.set_return_value("chat")
         return builder.build()
 
-    def parse_result(self, result: List[TaskResult]) -> Dict[str, Any]:
-        return {
-            "dialogue": [
-                self.group_into_dialogue(json.loads(o.result)) for o in result
-            ][0],
-            "model": result[0].model,
-        }
+    def parse_result(self, result: List[TaskResult]) -> List[Dict[str, Any]]:
+        return [
+            {
+                "dialogue": self.group_into_dialogue(json.loads(r.result)),
+                "model": r.model,
+            }
+            for r in result
+        ]
 
     @staticmethod
     def group_into_dialogue(messages):

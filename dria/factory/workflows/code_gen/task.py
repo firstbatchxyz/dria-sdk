@@ -73,13 +73,16 @@ class GenerateCode(SingletonTemplate):
         builder.set_return_value("code")
         return builder.build()
 
-    def parse_result(self, result: List[TaskResult]) -> Dict[str, str]:
-        return {
-            "instruction": self.params.instruction,
-            "language": self.params.language,
-            "code": parser(result[0].result.strip(), self.params.language),
-            "model": result[0].model,
-        }
+    def parse_result(self, result: List[TaskResult]) -> List[Dict[str, str]]:
+        return [
+            {
+                "instruction": self.params.instruction,
+                "language": self.params.language,
+                "code": parser(r.result.strip(), self.params.language),
+                "model": r.model,
+            }
+            for r in result
+        ]
 
 
 class IterateCode(SingletonTemplate):
@@ -106,11 +109,14 @@ class IterateCode(SingletonTemplate):
         builder.set_return_value("code")
         return builder.build()
 
-    def parse_result(self, result: List[TaskResult]) -> Dict[str, str]:
-        return {
-            "instruction": self.params.instruction,
-            "language": self.params.language,
-            "iterated_code": parser(result[0].result.strip(), self.params.language),
-            "code": self.params.code,
-            "model": result[0].model,
-        }
+    def parse_result(self, result: List[TaskResult]) -> List[Dict[str, str]]:
+        return [
+            {
+                "instruction": self.params.instruction,
+                "language": self.params.language,
+                "iterated_code": parser(r.result.strip(), self.params.language),
+                "code": self.params.code,
+                "model": r.model,
+            }
+            for r in result
+        ]

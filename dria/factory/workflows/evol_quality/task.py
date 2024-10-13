@@ -2,7 +2,7 @@ from dria_workflows import Workflow, WorkflowBuilder, Operator, Write, Edge
 from dria.factory.utilities import get_abs_path
 from dria.models import TaskResult
 from dria.factory.workflows.template import SingletonTemplate
-from typing import Dict, List
+from typing import Dict, List, Any
 
 MUTATION_TEMPLATES: Dict[str, str] = {
     "HELPFULNESS": "Please make the Response more helpful to the user.",
@@ -45,10 +45,13 @@ class EvolveQuality(SingletonTemplate):
         builder.set_return_value("rewritten_response")
         return builder.build()
 
-    def parse_result(self, result: List[TaskResult]):
-        return {
-            "response": self.params.response,
-            "evolved_response": result[0].result.strip(),
-            "method": self.params.method,
-            "model": result[0].model,
-        }
+    def parse_result(self, result: List[TaskResult]) -> List[Dict[str, Any]]:
+        return [
+            {
+                "response": self.params.response,
+                "evolved_response": r.result.strip(),
+                "method": self.params.method,
+                "model": r.model,
+            }
+            for r in result
+        ]

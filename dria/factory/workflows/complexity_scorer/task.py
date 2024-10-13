@@ -27,12 +27,15 @@ class EvolveComplexity(SingletonTemplate):
         builder.set_return_value("evolved_instruction")
         return builder.build()
 
-    def parse_result(self, result: List[TaskResult]) -> Dict[str, str]:
-        return {
-            "evolved_instruction": result[0].result.strip(),
-            "instruction": self.params.instruction,
-            "model": result[0].model,
-        }
+    def parse_result(self, result: List[TaskResult]) -> List[Dict[str, str]]:
+        return [
+            {
+                "evolved_instruction": r.result.strip(),
+                "instruction": self.params.instruction,
+                "model": r.model,
+            }
+            for r in result
+        ]
 
 
 class ScoreComplexity(SingletonTemplate):
@@ -60,7 +63,7 @@ class ScoreComplexity(SingletonTemplate):
 
     def parse_result(
         self, result: List[TaskResult]
-    ) -> List[Dict[str, Union[str, int]]]:
+    ) -> List[List[Dict[str, Union[str, int]]]]:
         scores = {}
         lines = result[0].result.strip().split("\n")
         for line in lines:
@@ -70,6 +73,9 @@ class ScoreComplexity(SingletonTemplate):
                 score = int(match.group(2))
                 scores[idx] = score
         return [
-            {"instruction": instr, "score": scores.get(i, 0), "model": result[0].model}
-            for i, instr in enumerate(self.params.instructions)
+            [
+                {"instruction": instr, "score": scores.get(i, 0), "model": r.model}
+                for i, instr in enumerate(self.params.instructions)
+            ]
+            for r in result
         ]

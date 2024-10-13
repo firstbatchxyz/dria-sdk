@@ -1,4 +1,4 @@
-from typing import Any, List
+from typing import Any, List, Dict
 from dria.models import TaskResult
 from dria_workflows import Workflow, WorkflowBuilder, Operator, Write, Edge
 from dria.factory.utilities import get_abs_path
@@ -39,9 +39,9 @@ class GenerateGraph(SingletonTemplate):
         builder.set_return_value("graph")
         return builder.build()
 
-    def parse_result(self, result: List[TaskResult]):
+    def parse_result(self, result: List[TaskResult]) -> List[Dict[str, Any]]:
         try:
             graph = json.loads(result[0].result.strip())
         except:
             graph = result[0].result.strip()
-        return {"graph": graph, "model": result[0].model}
+        return [{"graph": graph, "model": r.model} for r in result]

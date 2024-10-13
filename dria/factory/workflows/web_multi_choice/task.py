@@ -102,4 +102,4 @@ class WebMultiChoice(SingletonTemplate):
         return builder.build()
 
     def parse_result(self, result: List[TaskResult]):
-        return {"answer": result[0].result.strip(), "model": result[0].model}
+        return [{"answer": r.result.strip(), "model": r.model} for r in result]
