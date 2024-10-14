@@ -156,28 +156,6 @@ def remove_text_between_tags(text: str, tag: str) -> str:
     return re.sub(f"<{tag}>.*?</{tag}>", "", text, flags=re.DOTALL)
 
 
-def parse_json(text: str) -> Dict:
-    """Parse the JSON text.
-
-    Args:
-        text (str): The text to parse.
-
-    Returns:
-        dict: JSON output.
-    """
-    json_content = re.search(r"<JSON>(.*?)</JSON>", text, re.DOTALL)
-    if not json_content:
-        return {}
-
-    json_text = re.sub(r"<[^>]+>", "", json_content.group(1)).strip()
-
-    try:
-        return json.loads(json_text)
-    except json.JSONDecodeError:
-        # If parsing fails, return an empty dictionary
-        return {}
-
-
 def parse_backstory(backstory_json: str) -> List[str]:
     """Parse the backstory JSON.
 

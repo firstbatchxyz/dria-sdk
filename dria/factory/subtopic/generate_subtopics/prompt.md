@@ -10,7 +10,7 @@ subtopics for the given topics.
 ## Instructions
 
 1. Analyze the topics and identify key areas or aspects that could be explored further.
-2. Generate a list of 3 subtopics that are directly related to the topics.
+2. Generate a list of subtopics that are directly related to the topics.
 3. Ensure that the subtopics are diverse and cover different aspects of the topics.
 4. Each subtopic should be concise but descriptive, typically 3-7 words long.
 5. Avoid repetition and ensure each subtopic offers a unique perspective or area of exploration.

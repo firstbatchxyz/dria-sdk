@@ -19,8 +19,8 @@ def parse_json(result: str) -> dict:
     """
     # Patterns to match code blocks with optional 'json' and <json> tags
     patterns = [
-        r"```(?:json)?\s*(.*?)\s*```",  # Code block with or without 'json'
-        r"<json>\s*(.*?)\s*</json>",  # <json>...</json> tags
+        r"```(?:JSON)?\s*(.*?)\s*```",  # Code block with or without 'json'
+        r"<JSON>\s*(.*?)\s*</JSON>",  # <json>...</json> tags
     ]
 
     for pattern in patterns:
@@ -38,4 +38,13 @@ def parse_json(result: str) -> dict:
 
 
 if __name__ == "__main__":
-    print(parse_json('<json>```\n{"key": "value"}\n```</json>'))
+
+    test_values = [
+        '<json>```\n{"key": "value"}\n```</json>',
+        '<JSON>\n{"key": "value"}\n  </JSON>',
+        '<json>\n{"key": "value"}\n</json>',
+        "```[1, 2, 3]```",
+    ]
+
+    for test in test_values:
+        print(parse_json(test))

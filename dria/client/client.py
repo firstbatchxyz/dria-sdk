@@ -113,7 +113,6 @@ class Dria:
         """
         self.api_mode = api_mode
 
-
     def flush_blacklist(self) -> None:
         """Clear the blacklist and save the empty state to file."""
         self.blacklist = {}

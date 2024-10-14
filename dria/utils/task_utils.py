@@ -242,21 +242,36 @@ def parse_json(text: Union[str, List]) -> Union[list[dict], dict]:
         dict: JSON output.
     """
 
-    def parse_single_json(t: str) -> Dict:
-        json_content = re.search(r"<JSON>(.*?)</JSON>", t, re.DOTALL)
-        if json_content:
-            json_text = re.sub(r"<[^>]+>", "", json_content.group(1)).strip()
-            try:
-                return json.loads(json_text)
-            except json.JSONDecodeError:
-                return {}
+    def parse_single_json(result: str) -> dict:
+        """Parse JSON text from a string, extracting from code blocks or <json> tags if present.
 
-        json_block = re.search(r"```json(.*?)```", t, re.DOTALL)
-        if json_block:
-            try:
-                return json.loads(json_block.group(1).strip())
-            except json.JSONDecodeError:
-                return {}
+        Args:
+            result (str): The text to parse.
+
+        Returns:
+            dict: Parsed JSON output.
+
+        Raises:
+            ValueError: If JSON cannot be parsed.
+        """
+        # Patterns to match code blocks with optional 'json' and <json> tags
+        patterns = [
+            r"```(?:JSON)?\s*(.*?)\s*```",  # Code block with or without 'json'
+            r"<JSON>\s*(.*?)\s*</JSON>",  # <json>...</json> tags
+        ]
+
+        for pattern in patterns:
+            match = re.search(pattern, result, re.DOTALL | re.IGNORECASE)
+            if match:
+                json_text = match.group(1)
+                break
+        else:
+            json_text = result
+
+        try:
+            return json.loads(json_text)
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Could not parse JSON from result: {json_text}") from e
 
     if isinstance(text, list):
         return [parse_single_json(item) for item in text]

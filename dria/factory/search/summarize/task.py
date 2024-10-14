@@ -31,11 +31,9 @@ class PageSummarizer(StepTemplate):
             dict: collected pages
         """
         builder = WorkflowBuilder(url=article["url"])
-        builder.set_max_time(150)
+        builder.set_max_time(50)
         builder.set_max_steps(5)
         builder.set_max_tokens(750)
-
-        self.params.article = article
 
         builder.generative_step(
             id="search",
@@ -83,14 +81,19 @@ class PageSummarizer(StepTemplate):
         Raises:
             Exception: If there's an error processing the step output.
         """
-        return [self.parse(o.result) for o in step.output]
+        results = []
+        for i, o in enumerate(step.output):
+            res = self.parse(o.result)
+            res.update({"url": step.input[i].url})
+            res.update({"summary": step.input[i].summary})
+            results.append(TaskInput(**res))
+        return results
 
-    @staticmethod
-    def parse(result) -> Any:
+    def parse(self, result) -> Dict[str, str]:
         parsed = json.loads(result)
         if len(parsed) == 2:
-            return TaskInput(**{"llm_summary":parsed[1], "content":parsed[0]})
+            return {"content": parsed[0], "llm_summary": parsed[1]}
         elif len(parsed) == 1:
-            return TaskInput(**{"content": parsed[0]})
+            return {"content": parsed[0]}
         else:
             raise ValueError("Unexpected number of outputs from summarizer")

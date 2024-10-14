@@ -24,11 +24,7 @@ class SearchPipeline:
         self.pipeline_config: PipelineConfig = config or PipelineConfig()
         self.pipeline = PipelineBuilder(self.pipeline_config, dria)
 
-    def build(
-        self,
-        topic: str,
-        summarize: bool = False
-    ) -> Pipeline:
+    def build(self, topic: str, summarize: bool = False) -> Pipeline:
 
         self.pipeline.input(topic=topic)
         (
@@ -43,7 +39,7 @@ class SearchPipeline:
                 ]
             )
             << PageSummarizer(summarize=summarize).set_models(
-                [Model.QWEN2_5_7B_FP16, Model.LLAMA3_1_8BQ8, Model.LLAMA3_1_8B_FP16, Model.GPT4O]
+                [Model.QWEN2_5_7B_FP16, Model.LLAMA3_1_8B_FP16, Model.QWEN2_5_32B_FP16]
             )
         )
         return self.pipeline.build()
