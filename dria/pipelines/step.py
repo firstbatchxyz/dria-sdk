@@ -164,7 +164,7 @@ class Step(ABC):
         try:
             if isinstance(self.workflow, Workflow):
                 workflow_result = self.workflow
-                workflow_result.external_memory.update(input_dict)
+                workflow_result.external_memory.update({key: input_dict[key] for key in self.input_keys if key in input_dict})
             else:
                 workflow_result = self.workflow(
                     input_dict,

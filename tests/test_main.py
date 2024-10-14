@@ -10,7 +10,7 @@ dria = Dria(rpc_token=os.environ["DRIA_RPC_TOKEN"])
 
 async def evaluate():
     await dria.initialize()
-    pipeline = SearchPipeline(dria, PipelineConfig(pipeline_timeout=200)).build(
+    pipeline = SearchPipeline(dria, PipelineConfig(pipeline_timeout=50)).build(
         topic="Journalism in Turkey."
     )
     res = await pipeline.execute(return_output=True)

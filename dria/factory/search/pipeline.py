@@ -5,6 +5,7 @@ from dria.pipelines import Pipeline, PipelineConfig
 from dria.pipelines.builder import PipelineBuilder
 from dria.models import Model
 from .aggregate_pages import PageAggregator
+from dria.factory.subtopic.generate_subtopics import SubtopicGenerator
 from .summarize import PageSummarizer
 
 logger = logging.getLogger(__name__)
@@ -45,7 +46,7 @@ class SearchPipeline:
                 ]
             )
             << PageSummarizer(summarize=summarize).set_models(
-                [Model.QWEN2_5_7B_FP16, Model.LLAMA3_2_3B, Model.LLAMA3_1_8B_FP16]
+                [Model.QWEN2_5_7B_FP16, Model.GEMMA2_9B_FP16, Model.LLAMA3_1_8B_FP16]
             )
         )
         return self.pipeline.build()

@@ -3,7 +3,7 @@ from dria.models import TaskInput
 from dria_workflows import WorkflowBuilder, Operator, Push, Read, Edge, Peek, Workflow
 from typing import Dict, List, Any, TypedDict
 from dria.pipelines import Step, StepTemplate
-
+import json
 
 logger = logging.getLogger(__name__)
 
@@ -83,6 +83,14 @@ class PageSummarizer(StepTemplate):
         Raises:
             Exception: If there's an error processing the step output.
         """
+        return [self.parse(o.result) for o in step.output]
 
-        output = step.output[0].result
-        return output
+    @staticmethod
+    def parse(result) -> Any:
+        parsed = json.loads(result)
+        if len(parsed) == 2:
+            return TaskInput(**{"llm_summary":parsed[1], "content":parsed[0]})
+        elif len(parsed) == 1:
+            return TaskInput(**{"content": parsed[0]})
+        else:
+            raise ValueError("Unexpected number of outputs from summarizer")

@@ -23,8 +23,6 @@ __all__ = [
     "SelfInstruct",
     "PersonaPipeline",
     "SubTopicPipeline",
-    "WebFactCheck",
     "WebMultiChoice",
-    "WebSearch",
     "SearchPipeline",
 ]
