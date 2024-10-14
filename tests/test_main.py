@@ -1,30 +1,21 @@
-import os
 import asyncio
-from dria.factory import WebSearch
+import os
+
 from dria.client import Dria
-from dria.models import Task, Model
+from dria.factory import SearchPipeline
+from dria.pipelines import PipelineConfig
 
 dria = Dria(rpc_token=os.environ["DRIA_RPC_TOKEN"])
 
 
 async def evaluate():
-    web_search = WebSearch()
-    res = await dria.execute(
-        Task(
-            workflow=web_search.workflow(
-                topic="Solomonoff Induction", mode="NARROW"
-            ).model_dump(),
-            models=[Model.LLAMA3_1_8B_FP16],
-        ),
-        timeout=200,
+    await dria.initialize()
+    pipeline = SearchPipeline(dria, PipelineConfig(pipeline_timeout=200)).build(
+        topic="Journalism in Turkey."
     )
-    return web_search.parse_result(res)
-
-
-def main():
-    result = asyncio.run(evaluate())
-    print(result)
+    res = await pipeline.execute(return_output=True)
+    print(res)
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(evaluate())

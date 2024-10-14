@@ -60,3 +60,8 @@ Expected output
    "model":"gemma2:9b-instruct-fp16"
 }
 ```
+
+#### References
+- [EvolInstruct Distilabel](https://distilabel.argilla.io/latest/components-gallery/tasks/evolinstruct/#input-output-columns)
+- [WizardLM: Empowering Large Language Models to Follow Complex Instructions](https://arxiv.org/abs/2304.12244)
+- [GitHub: h2oai/h2o-wizardlm](https://github.com/h2oai/h2o-wizardlm)

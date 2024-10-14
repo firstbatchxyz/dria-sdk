@@ -54,3 +54,8 @@ Expected output
    "model":"qwen2.5:32b-instruct-fp16"
 }
 ```
+
+#### References
+- [EvolComplexity Distilabel](https://distilabel.argilla.io/latest/components-gallery/tasks/evolcomplexity/)
+- [WizardLM: Empowering Large Language Models to Follow Complex Instructions](https://arxiv.org/abs/2304.12244)
+- [GitHub: h2oai/h2o-wizardlm](https://github.com/h2oai/h2o-wizardlm)

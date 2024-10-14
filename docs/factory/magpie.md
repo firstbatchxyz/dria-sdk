@@ -74,3 +74,7 @@ Expected output
    "model":"gemma2:9b-instruct-fp16"
 }
 ```
+
+#### References
+- [Distilabel MagPie](https://distilabel.argilla.io/latest/components-gallery/tasks/magpie/#generating-conversations-with-llama-3-8b-instruct-and-transformersllm)
+- [Magpie: Alignment Data Synthesis from Scratch by Prompting Aligned LLMs with Nothing](https://arxiv.org/html/2406.08464v1)

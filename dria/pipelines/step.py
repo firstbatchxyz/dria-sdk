@@ -151,7 +151,9 @@ class Step(ABC):
         """
         input_dict = task_input.dict()
 
-        if self.input_keys and sorted(input_dict.keys()) != sorted(self.input_keys):
+        if self.input_keys and not set(sorted(self.input_keys)).issubset(
+            set(sorted(input_dict.keys()))
+        ):
             error_msg = (
                 f"Workflow input keys mismatch for step '{self.name}'. "
                 f"Expected: {self.input_keys}, Got: {list(input_dict.keys())}"

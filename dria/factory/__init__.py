@@ -1,6 +1,7 @@
 from .workflows import *
 from .persona import *
 from .subtopic import *
+from .search import *
 
 __all__ = [
     "Clair",
@@ -25,4 +26,5 @@ __all__ = [
     "WebFactCheck",
     "WebMultiChoice",
     "WebSearch",
+    "SearchPipeline",
 ]

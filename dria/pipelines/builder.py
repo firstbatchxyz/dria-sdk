@@ -1,6 +1,6 @@
 import inspect
 from types import SimpleNamespace
-from typing import Dict, List, Callable, Optional, Union, Any, get_type_hints
+from typing import Dict, List, Callable, Optional, Union, TypedDict, Any, get_type_hints
 import uuid
 
 from dria_workflows import Workflow
@@ -78,6 +78,13 @@ class StepTemplate(BaseModel, ABC):
             return [random.randint(0, 100) for _ in range(3)]
         elif param_type == Dict[str, Any]:
             return {f"key_{i}": self._create_dummy_data(str) for i in range(3)}
+        # Handling TypedDict types like 'Article'
+        elif isinstance(param_type, type) and hasattr(param_type, "__annotations__"):
+            dummy_data = {}
+            # Generate dummy data for each field in the TypedDict
+            for field, field_type in param_type.__annotations__.items():
+                dummy_data[field] = self._create_dummy_data(field_type)
+            return dummy_data
         else:
             return None
 
