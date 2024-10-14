@@ -9,10 +9,6 @@ Dria is a __complete__ synthetic data infrastructure, featuring:
 Dria is designed to empower a wide range of AI projects, from traditional predictive models to advanced generative and large language model (LLM) applications. 
 Whether you’re working on classification, extraction, instruction following, dialogue generation, or complex reasoning tasks, Dria provides the scalable and versatile tools you need to accelerate your AI development with high-quality, diverse synthetic datasets.
 
-
-Dria is designed to empower a wide range of AI projects, from traditional predictive models to advanced generative and large language model (LLM) applications. 
-
-
 **Massive Parallelization and Compute Offloading**: 
 
 As a network, Dria allows you to directly offload your compute needs to the network, leveraging massive parallelization. This means faster processing and more efficient resource utilization without the need for personal GPU infrastructure.

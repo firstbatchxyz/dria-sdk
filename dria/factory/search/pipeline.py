@@ -5,12 +5,9 @@ from dria.pipelines import Pipeline, PipelineConfig
 from dria.pipelines.builder import PipelineBuilder
 from dria.models import Model
 from .aggregate_pages import PageAggregator
-from dria.factory.subtopic.generate_subtopics import SubtopicGenerator
 from .summarize import PageSummarizer
 
 logger = logging.getLogger(__name__)
-
-Granularization = Literal["None", "Narrow", "Wide"]
 
 
 class SearchPipeline:
@@ -30,8 +27,7 @@ class SearchPipeline:
     def build(
         self,
         topic: str,
-        summarize: bool = False,
-        granularization: Granularization = "None",
+        summarize: bool = False
     ) -> Pipeline:
 
         self.pipeline.input(topic=topic)
@@ -40,13 +36,14 @@ class SearchPipeline:
             << PageAggregator().set_models(
                 [
                     Model.LLAMA3_1_8B_FP16,
+                    Model.LLAMA3_1_8BQ8,
                     Model.QWEN2_5_32B_FP16,
                     Model.QWEN2_5_7B_FP16,
                     Model.GPT4O,
                 ]
             )
             << PageSummarizer(summarize=summarize).set_models(
-                [Model.QWEN2_5_7B_FP16, Model.GEMMA2_9B_FP16, Model.LLAMA3_1_8B_FP16]
+                [Model.QWEN2_5_7B_FP16, Model.LLAMA3_1_8BQ8, Model.LLAMA3_1_8B_FP16, Model.GPT4O]
             )
         )
         return self.pipeline.build()

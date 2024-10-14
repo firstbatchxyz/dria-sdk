@@ -23,7 +23,7 @@ They have memory, tools, and a model to execute tasks.
 
 2. **Asynchronous Execution**: Tasks are published to the network and executed by available nodes. This asynchronous nature allows for efficient distribution of work across the network.
 
-3. **Result Retrieval**: After a task is executed, results are published back to the network. Your client can then poll the network to retrieve these results.
+3. **Result Retrieval**: After a task is executed, results are published back to the network.
 
 4. **Scalability**: There is no limit to the number of tasks you can publish to the network, allowing for highly scalable operations.
 
