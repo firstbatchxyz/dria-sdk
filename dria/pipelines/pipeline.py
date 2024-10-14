@@ -37,7 +37,6 @@ class Pipeline:
         self.storage = client.storage
         self.client = client
         self.config = config
-        self.client.initialize_pipeline(self.pipeline_id)
 
     def add_step(self, step: Step) -> None:
         """Add a step to the pipelines."""
@@ -186,7 +185,7 @@ class Pipeline:
         """Finalize the pipelines execution."""
         self.output = final_step.callback(final_step)
         self._save_output()
-        self.logger.info("Pipeline execution completed successfully.")
+        self.logger.info("Pipeline execution completed.")
 
     async def _handle_deadline_exceeded(self) -> None:
         """Handle the deadline exceeded error."""
@@ -218,7 +217,13 @@ class Pipeline:
         self._update_state(PipelineStatus.FAILED.value)
         if e:
             self._update_error_reason(e)
-        await self.client.run_cleanup(self.pipeline_id)
+
+        latest_step = self.steps[-1] if self.steps else None
+        if latest_step:
+            self._finalize_pipeline(latest_step)
+        else:
+            self.logger.warning("No steps were executed before shutdown")
+        await self.client.run_cleanup()
 
     def _save_output(self, output: Optional[Union[str, Dict]] = None) -> None:
         """Save the pipelines output to storage."""
