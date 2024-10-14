@@ -59,3 +59,9 @@ Expected output
    "model":"gemma2:9b-instruct-fp16"
 }
 ```
+
+#### References
+- [Distilabel CLAIR](https://distilabel.argilla.io/latest/components-gallery/tasks/clair/)
+-[Anchored Preference Optimization and Contrastive Revisions: Addressing Underspecification in Alignment
+](https://arxiv.org/abs/2408.06266v1)
+- [CLAIR_and_APO](https://github.com/ContextualAI/CLAIR_and_APO)

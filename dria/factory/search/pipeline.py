@@ -12,12 +12,7 @@ logger = logging.getLogger(__name__)
 
 class SearchPipeline:
     """
-    A pipeline for searching and retrieving data from web based on a topic..
-
-    It is a simple pipelines that generates personas based on a simulation description.
-    Pipeline would create random variables that fit into the simulation description.
-    Then it would generate a backstory for each sample.
-    Number of samples can be specified to determine the number of personas to be generated.
+    A pipeline for searching and retrieving data from web based on a topic
     """
 
     def __init__(self, dria: Dria, config: PipelineConfig):

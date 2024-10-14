@@ -1,3 +1,15 @@
+# SubTopicPipeline
+
+`SubTopicPipeline` is a class that creates a pipeline for generating subtopics based on a given topic. The pipeline recursively generates subtopics with increasing depth.
+
+## Class Overview
+
+The `SubTopicPipeline` class has the following components:
+
+- Constructor: Initializes the pipeline with a `Dria` instance and a `PipelineConfig`.
+- `build` method: Constructs the pipeline based on the given topic and maximum depth.
+
+
 ```python
 import asyncio
 import os
