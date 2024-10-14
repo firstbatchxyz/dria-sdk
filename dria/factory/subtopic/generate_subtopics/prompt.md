@@ -19,8 +19,7 @@ subtopics for the given topics.
 
 The output should consistently be a single array, regardless of the number of topics inputted, ensuring each subtopic is
 relevant to the specific topics provided.
-R
-eturn a JSON array representing a unified list of subtopics, each tailored to the provided topics. The array should
+Return a JSON array representing a unified list of subtopics, each tailored to the provided topics. The array should
 include entries such as:
 
 [
@@ -32,5 +31,5 @@ include entries such as:
 "Future trends and predictions"
 ]
 
-
+Only include the subtopics in the JSON array, without any additional text or formatting.
 JSON Output:
