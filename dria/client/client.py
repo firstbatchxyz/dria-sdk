@@ -39,13 +39,14 @@ class Dria:
 
     DEADLINE_MULTIPLIER: int = 10
 
-    def __init__(self, rpc_token: Optional[str] = None):
+    def __init__(self, rpc_token: Optional[str] = None, api_mode: bool = False):
         """
         Initialize the Dria client with the given configuration.
 
         Args:
             rpc_token (Optional[str]): Authentication token for RPCClient. If not provided,
                                        it will attempt to use the DRIA_RPC_TOKEN environment variable.
+            api_mode (bool): If True, the client will run in API mode. API mode will not clean up monitoring and polling.
         """
         self.rpc = RPCClient(auth_token=rpc_token or os.environ.get("DRIA_RPC_TOKEN"))
         self.storage = Storage()
@@ -53,8 +54,8 @@ class Dria:
         self.kv = KeyValueQueue()
         self.background_tasks: Optional[asyncio.Task] = None
         self.blacklist: Dict[str, Dict[str, int]] = {}
-        self.running_pipelines: List[str] = []
         self.shutdown_event = asyncio.Event()
+        self.api_mode = api_mode
 
         cache_dir = os.path.join(os.path.dirname(__file__), ".cache")
         os.makedirs(cache_dir, exist_ok=True)
@@ -103,24 +104,15 @@ class Dria:
         else:
             logger.debug(f"Address {address} not found in blacklist.")
 
-    def initialize_pipeline(self, pipeline_id: str) -> None:
+    def set_api_mode(self, api_mode: bool) -> None:
         """
-        Initialize a pipeline by adding its ID to the list of running pipelines.
+        Set the API mode of the client.
 
         Args:
-            pipeline_id (str): The ID of the pipeline to initialize.
+            api_mode (bool): If True, the client will run in API mode.
         """
-        self.running_pipelines.append(pipeline_id)
+        self.api_mode = api_mode
 
-    def remove_pipeline(self, pipeline_id: str) -> None:
-        """
-        Remove a pipeline from the list of running pipelines.
-
-        Args:
-            pipeline_id (str): The ID of the pipeline to remove.
-        """
-        if pipeline_id in self.running_pipelines:
-            self.running_pipelines.remove(pipeline_id)
 
     def flush_blacklist(self) -> None:
         """Clear the blacklist and save the empty state to file."""
@@ -138,7 +130,7 @@ class Dria:
         except asyncio.CancelledError:
             logger.info("Background tasks cancelled.")
         except Exception as e:
-            await self.run_cleanup("*")
+            await self.run_cleanup(forced=True)
             raise Exception(f"Error in background tasks: {e}")
 
     async def _run_monitoring(self) -> None:
@@ -153,19 +145,14 @@ class Dria:
             await asyncio.sleep(MONITORING_INTERVAL)
         raise Exception("Received signal for closing...")
 
-    async def run_cleanup(self, pipeline_id: Optional[str] = None) -> None:
+    async def run_cleanup(self, forced: bool = False) -> None:
         """
         Run the cleanup process to remove expired tasks and pipelines.
 
         Args:
-            pipeline_id (Optional[str]): The ID of the pipeline to clean up. If "*", cleans up all pipelines.
+            forced (bool): If True, the cleanup will be forced.
         """
-        if pipeline_id:
-            if pipeline_id == "*":
-                self.running_pipelines.clear()
-            else:
-                self.remove_pipeline(pipeline_id)
-        if not self.running_pipelines:
+        if not self.api_mode or forced:
             if self.background_tasks and not self.background_tasks.done():
                 self.background_tasks.cancel()
                 try:

@@ -5,7 +5,6 @@ from dria.pipelines import Pipeline, PipelineConfig
 from dria.pipelines.builder import PipelineBuilder
 from dria.models import Model
 from .aggregate_pages import PageAggregator
-from dria.factory.subtopic.generate_subtopics import SubtopicGenerator
 from .summarize import PageSummarizer
 
 logger = logging.getLogger(__name__)
