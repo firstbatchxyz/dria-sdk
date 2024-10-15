@@ -14,9 +14,13 @@ class ParallelSingletonExecutor:
         self.singleton = singleton
         self.batch_size = batch_size
         self.instructions: List[Task] = []
+        self.models = [Model.OLLAMA]
 
     def load_instructions(self, inputs: List[Dict[str, Any]]):
         [self.instructions.append(self._create_task(inp)) for inp in inputs]
+
+    def set_models(self, models: List[Model]):
+        self.models = models
 
     async def execute_workflows(self):
         all_results = []
@@ -30,7 +34,7 @@ class ParallelSingletonExecutor:
 
     def _create_task(self, data: Dict[str, Any]) -> Task:
         workflow_data = self.singleton.workflow(**data).model_dump()
-        return Task(workflow=workflow_data, models=[data.get("model", Model.OLLAMA)])
+        return Task(workflow=workflow_data, models=self.models)
 
     def _parse_results(self, results: List[Any]) -> List[Any]:
         return self.singleton.parse_result(results)
