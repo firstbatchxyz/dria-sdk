@@ -21,28 +21,21 @@ Dria provides flexible tools to write custom pipelines and scale them through th
 
 **Extensive Built-in Toolset**: 
 
-Dria comes with a vast factory of built-in tools derived from verified research papers. These tools significantly speed up the data generation process, allowing you to leverage state-of-the-art techniques without reinventing the wheel.
+Dria comes with a extensive factory of built-in tools derived from verified research papers, significantly speed up the data generation process.
 
 
-**Diverse Data Source Integration**: 
+**Searching for Grounding**: 
 
-Dria enables the integration of both web and siloed data sources in your generation process. This capability allows for richer, more diverse datasets that can improve the quality and applicability of your AI models.
-
-
-**Versatility Across AI Tasks**: 
-
-Whether you're working on classification, extraction, instruction following, dialogue generation, or complex reasoning tasks, Dria provides the scalable and versatile tools you need to accelerate your AI development with high-quality, diverse synthetic datasets.
+Dria enables you to create pipelines in which the AI can search for grounding in the web or siloed APIs, allowing you to create diverse synthetic data with real-life distribution.
 
 
-### Decentralization
+#### Decentralization
 
 _Dria’s primary objective is to leverage decentralization to obtain state-of-the-art synthesized data._
-_As data fuels every new iteration of LLMs—from smaller task-driven models to large models capable of complex reasoning, from case-specific RAG applications to multilingual models—synthetic data is an entire ecosystem._
-_This ecosystem requires diverse pipelines and the orchestration of different models, particularly for privacy concerns._
 
 **What does leveraging decentralization mean?**
 
-Creating value for AI that can only be obtained through decentralization.
+Creating value for AI that can be obtained through decentralization.
 
 - Unbounded access to web based grounding
 - Hyper parallelization of inference

@@ -68,3 +68,8 @@ Expected output
    "model":"llama3.1:8b-instruct-fp16"
 }
 ```
+
+#### References
+
+- [Distilabel TextRetrieval](https://distilabel.argilla.io/latest/components-gallery/tasks/generatetextretrievaldata/)
+- [Improving Text Embeddings with Large Language Models](https://arxiv.org/abs/2401.00368)

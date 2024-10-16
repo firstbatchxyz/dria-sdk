@@ -36,6 +36,9 @@ class Model(Enum):
     QWEN2_5_7B_FP16 = "qwen2.5:7b-instruct-fp16"
     QWEN2_5_32B_FP16 = "qwen2.5:32b-instruct-fp16"
     QWEN2_5_CODER_1_5B = "qwen2.5-coder:1.5b"
+    QWEN2_5_CODER_7B = "qwen2.5-coder:7b"
+    QWEN2_5_CODER_7B_Q8 = "qwen2.5-coder:7b-instruct-q8_0"
+    QWEN2_5_CODER_7B_FP16 = "qwen2.5-coder:7b-instruct-fp16"
     DEEPSEEK_CODER_6_7B = "deepseek-coder:6.7b"
     MIXTRAL_8_7B = "mixtral:8x7b"
 

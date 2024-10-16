@@ -11,7 +11,7 @@
   * Advanced
     * [Writing Workflows](how-to/workflows.md)
     * [Functions](how-to/functions.md)
-    * [Custom Pipelines](how-to/pipelines.md)
+    * [Pipelines](how-to/pipelines.md)
 
 <!-- * Cookbook 
   * [Patient Dialogues](cookbook/patient_dialogues.md)

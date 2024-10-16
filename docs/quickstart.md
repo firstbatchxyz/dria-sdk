@@ -4,7 +4,7 @@
 
 Dria SDK is compatible with Python 3.10 or higher. To install the SDK, simply run the following command in your terminal:
 
-```bash
+```commandline
 pip install dria
 ```
 
@@ -14,7 +14,7 @@ To interact with the Dria Network, you'll need an RPC (Remote Procedure Call) to
 Visit the [Dria Login API](https://dkn.dria.co/auth/generate-token) and get your unique RPC token.
 
 You can add your RPC key as an env variable by following command on your terminal
-```bash
+```commandline
 export DRIA_RPC_TOKEN=your-token-here
 ```
 

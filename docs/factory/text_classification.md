@@ -62,3 +62,8 @@ Expected output
   "model": "qwen2.5:32b-instruct-fp16"
 }
 ```
+
+#### References
+
+- [Distilabel TextClassification](https://distilabel.argilla.io/latest/components-gallery/tasks/textclassification/)
+- [Improving Text Embeddings with Large Language Models](https://arxiv.org/abs/2401.00368)

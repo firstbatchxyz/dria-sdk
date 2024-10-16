@@ -16,7 +16,7 @@ Check node requirements [here](https://github.com/firstbatchxyz/dkn-compute-node
 1. Download launcher from [Dria website](https://dria.co/earn)
 2. Unzip the node file
 3. Run the launcher:
-    ```bash
+    ```commandline
     ./dkn-compute-launcher
     ```
 4. Enter your ETH wallet private key

@@ -58,3 +58,8 @@ Expected output
   "model": "gemma2:9b-instruct-fp16"
 }
 ```
+
+#### References
+
+- [Distilabel LongTextMatching](https://distilabel.argilla.io/latest/components-gallery/tasks/textclassification/#free-multi-label-classification-without-predefined-labels)
+- [Improving Text Embeddings with Large Language Models](https://arxiv.org/abs/2401.00368)
