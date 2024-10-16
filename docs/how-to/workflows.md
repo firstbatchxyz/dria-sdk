@@ -13,13 +13,22 @@ Workflows enable inter-step communication via [memory](#memory-operations).
 ## Creating a Workflow
 
 Workflows define the execution flow of tasks involving Large Language Models (LLMs). 
-By using the dria_workflows Python package, you can construct these workflows more efficiently. 
 
 Key components of a `Workflow`:
 - Configuration (config): An object containing settings like maximum steps, time limits, and tools.
 - Steps: A list of steps defining the individual units of work in the workflow.
 - Flow: A list specifying the execution order and conditional logic between tasks.
 - Return Value: A memory key indicating what value to return at the end of the workflow.
+
+---
+_`dria_workflows` is a Python package that simplifies the creation of workflows for Dria nodes. It's a dependency of the Dria SDK._
+
+You can install it using pip for experimenting: 
+```bash
+pip install dria-workflows
+```
+---
+
 
 In Dria, you create a `WorkflowBuilder` instance to start building your workflow:
 
@@ -84,7 +93,7 @@ There are two types of steps in a workflow:
 `generative_step()` -> Steps that generate text using an LLM.
 - operator `Operator`
   - GENERATION: Generates text using an LLM.
-  - FUNCTION_CALLING: Used for calling built-in functions. Will execute the function and return the result.
+  - FUNCTION_CALLING: Used for calling built-in [functions](how-to/functions.md). Will execute the function and return the result.
   - FUNCTION_CALLING_RAW: Used for calling built-in or custom functions. Will return a function call without executing it.
 - prompt `str`: The prompt for the LLM.
 - path `str`: The path to a markdown file containing the prompt.
@@ -205,17 +214,15 @@ Edge(
 
 
 
-Example Workflow
-
-Below is a complete example of creating a workflow using dria_workflows.
-
-Workflow Description
+### Example Workflow
 
 We will create a workflow that:
 
 	1.	Generates random variables based on a simulation description.
 	2.	Validates the generated variables.
 	3.	If validation fails, it regenerates the variables.
+
+_See the prompts_: [Random Variable Generation](https://github.com/firstbatchxyz/dria-sdk/blob/master/dria/factory/persona/random_variables/prompt.md) [Validation](https://github.com/firstbatchxyz/dria-sdk/blob/master/dria/factory/persona/random_variables/validate.md)
 
 Step-by-Step Implementation
 
@@ -247,7 +254,8 @@ builder.generative_step(
 Inputs:
 - Reads simulation_description.
 - Optionally reads is_valid (useful if looping back after a failed validation).
-- Outputs:
+
+Outputs:
 - Writes the generated variables to random_vars.
 
 3. Define the Second Task: Validation
@@ -269,6 +277,7 @@ builder.generative_step(
 Inputs:
 - Reads simulation_description.
 - Reads the generated random_vars.
+
 Outputs:
 - Writes the validation result to is_valid.
 
