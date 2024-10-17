@@ -133,7 +133,11 @@ class Pipeline:
                     self.client.background_tasks is None
                     or self.client.background_tasks.done()
                 ):
-                    raise Exception("Pipeline execution failed")
+                    if self.client.api_mode:
+                        logger.debug("Background tasks closed. Reinitializing..")
+                        await self.client.initialize()
+                    else:
+                        raise Exception("Dria client is not initialized")
                 if time.time() - start_time > self.config.pipeline_timeout:
                     await self._handle_deadline_exceeded()
                     return
@@ -212,7 +216,8 @@ class Pipeline:
 
     async def _graceful_shutdown(self, e: Optional[Exception] = None) -> None:
         """Gracefully shutdown the pipelines."""
-        self.logger.info("Error in executing the pipeline. Gracefully shutting down.")
+        if e:
+            self.logger.info(f"Gracefully shutting down. Reason: {e}")
         self._update_status(PipelineStatus.FAILED)
         self._update_state(PipelineStatus.FAILED.value)
         if e:
@@ -227,14 +232,17 @@ class Pipeline:
 
     def _save_output(self, output: Optional[Union[str, Dict]] = None) -> None:
         """Save the pipelines output to storage."""
-        if output:
-            self.output = output
-        if isinstance(self.output, TaskInput):
-            output_data = json.dumps(self.output.dict())
-        elif isinstance(self.output, list) and isinstance(self.output[0], TaskInput):
-            output_data = json.dumps([i.dict() for i in self.output])
-        else:
-            output_data = json.dumps(self.output)
+        try:
+            if output:
+                self.output = output
+            if isinstance(self.output, TaskInput):
+                output_data = json.dumps(self.output.dict())
+            elif isinstance(self.output, list) and isinstance(self.output[0], TaskInput):
+                output_data = json.dumps([i.dict() for i in self.output])
+            else:
+                output_data = json.dumps(self.output)
+        except IndexError as e:
+            output_data = []
         self.storage.set_value(f"{self.pipeline_id}_output", output_data)
         self._update_status(PipelineStatus.COMPLETED)
 

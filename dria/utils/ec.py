@@ -81,17 +81,9 @@ def decrypt_message(private_key: str, encrypted_message: bytes) -> Union[str | N
     Raises:
         ValueError: If the private key is invalid or other cryptographic errors occur.
     """
-    try:
-        private_key_bytes = bytes.fromhex(private_key)
-        try:
-            decrypted_message = decrypt(private_key_bytes, encrypted_message)
-            return decrypted_message.decode("utf-8")
-        except Exception as e:
-            logger.debug(f"Error decrypting message: {e}", exc_info=True)
-            return None
-    except Exception as e:
-        logger.error(f"Error decrypting message: {e}", exc_info=True)
-        raise ValueError(f"Failed to decrypt message: {e}") from e
+    private_key_bytes = bytes.fromhex(private_key)
+    decrypted_message = decrypt(private_key_bytes, encrypted_message)
+    return decrypted_message.decode("utf-8")
 
 
 def publickey_to_address(public_key: bytes) -> str:
@@ -116,7 +108,7 @@ def publickey_to_address(public_key: bytes) -> str:
         raise ValueError(f"Failed to convert public key to address: {e}") from e
 
 
-def get_truthful_nodes(task: Task, topic_result: Dict) -> tuple[str, str]:
+def get_truthful_nodes(task: Task, topic_result: Dict) -> tuple[None, None] | tuple[str | None, str]:
     """
     Get truthful nodes from topic results.
 
@@ -130,9 +122,6 @@ def get_truthful_nodes(task: Task, topic_result: Dict) -> tuple[str, str]:
     if isinstance(topic_result["ciphertext"], str):
         topic_result["ciphertext"] = bytes.fromhex(topic_result["ciphertext"])
     result = decrypt_message(task.private_key[2:], topic_result["ciphertext"])
-    if result is None:
-        logger.debug(f"Decrypting error")
-        return "", ""
     public_key = recover_public_key(
         bytes.fromhex(topic_result["signature"]), (task.id + result).encode()
     )

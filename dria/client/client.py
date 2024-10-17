@@ -129,8 +129,9 @@ class Dria:
         except asyncio.CancelledError:
             logger.info("Background tasks cancelled.")
         except Exception as e:
-            await self.run_cleanup(forced=True)
-            raise Exception(f"Error in background tasks: {e}")
+            if self.api_mode is False:
+                await self.run_cleanup(forced=True)
+                raise Exception(f"Error in background tasks: {e}")
 
     async def _run_monitoring(self) -> None:
         """Run the monitoring process to track task statuses."""
@@ -179,7 +180,7 @@ class Dria:
         for attempt in range(max_attempts):
             task.private_key, task.public_key = generate_task_keys()
             if not task.public_key.startswith(
-                "0x0"
+                    "0x0"
             ):  # It should not start with 0 for encoding reasons
                 break
         else:
@@ -222,11 +223,11 @@ class Dria:
         self._save_blacklist()
 
     async def fetch(
-        self,
-        pipeline: Optional[Any] = None,
-        task: Union[Optional[Task], Optional[List[Task]]] = None,
-        min_outputs: Optional[int] = None,
-        timeout: int = 30,
+            self,
+            pipeline: Optional[Any] = None,
+            task: Union[Optional[Task], Optional[List[Task]]] = None,
+            min_outputs: Optional[int] = None,
+            timeout: int = 30,
     ) -> List[TaskResult]:
         """
         Fetch task results from storage based on pipelines and/or task.
@@ -272,10 +273,10 @@ class Dria:
 
         return results
 
+    @staticmethod
     def _determine_min_outputs(
-        self,
-        task: Union[Optional[Task], Optional[List[Task]]],
-        min_outputs: Optional[int],
+            task: Union[Optional[Task], Optional[List[Task]]],
+            min_outputs: Optional[int],
     ) -> int:
         """
         Determine the minimum number of outputs to fetch based on the task and provided min_outputs.
@@ -306,8 +307,9 @@ class Dria:
             else:
                 return min_outputs
 
+    @staticmethod
     def _get_task_id(
-        self, task: Union[Optional[Task], Optional[List[Task]]]
+            task: Union[Optional[Task], Optional[List[Task]]]
     ) -> Union[None, str, List[str]]:
         """
         Get the task ID or list of task IDs from the provided task(s).
@@ -331,9 +333,9 @@ class Dria:
             raise ValueError("Invalid task type. Expected None, Task, or List[Task].")
 
     def _fetch_results(
-        self,
-        pipeline_id: Optional[str],
-        task_id: Union[Optional[str], Optional[List[str]]],
+            self,
+            pipeline_id: Optional[str],
+            task_id: Union[Optional[str], Optional[List[str]]],
     ) -> List[TaskResult]:
         """
         Helper method to fetch results based on pipeline_id and/or task_id.
@@ -479,10 +481,24 @@ class Dria:
                     logger.error(f"Error validating task data: {e}", exc_info=True)
                     continue
 
+                if task.processed:
+                    logger.debug(f"Task {task.id} has already been processed. Skipping processing.")
+                    continue
+
+                task.processed = True
+                self.storage.set_value(identifier, json.dumps(task.dict()))
+
                 if "error" in result:
-                    logger.info(f"Error in result: {result['error']}. Task retrying..")
+                    logger.debug(f"ID: {identifier} Error in result: {result['error']}. Task retrying..")
                     await self._handle_error_type(task, result["error"])
-                    asyncio.create_task(self.push(task))
+                    t = Task(
+                        workflow=task.workflow,
+                        models=task.models,
+                        step_name=task.step_name,
+                        pipeline_id=task.pipeline_id,
+                    )
+                    self.storage.delete_key(task.id)
+                    asyncio.create_task(self.push(t))
                     continue
 
                 if self._is_task_valid(task, current_time):
@@ -492,7 +508,14 @@ class Dria:
                         logger.info(
                             "Task result is not valid, retrying with another node..."
                         )
-                        asyncio.create_task(self.push(task))
+                        t = Task(
+                            workflow=task.workflow,
+                            models=task.models,
+                            step_name=task.step_name,
+                            pipeline_id=task.pipeline_id,
+                        )
+                        self.storage.delete_key(task.id)
+                        asyncio.create_task(self.push(t))
                         continue
                     else:
                         if address in self.blacklist:
@@ -508,7 +531,7 @@ class Dria:
                 logger.error(f"Unexpected error processing item: {e}", exc_info=True)
 
     async def execute(
-        self, task: Union[Task, List[Task]], timeout: int = 30
+            self, task: Union[Task, List[Task]], timeout: int = 30
     ) -> List[Any]:
         """
         Execute a task or list of tasks.

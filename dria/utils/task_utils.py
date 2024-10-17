@@ -71,8 +71,7 @@ class TaskManager:
         Returns:
             Tuple[dict, dict]: Task model and task
         """
-        if task.id is None:
-            task.id = self.generate_random_string()
+        task.id = self.generate_random_string()
         deadline = int(time.time_ns() + TASK_DEADLINE * 1e9)
         try:
             picked_nodes, task_filter = await self.create_filter(task.models, blacklist)
@@ -183,7 +182,7 @@ class TaskManager:
             for model in Model:
                 node_count = len(self.get_available_nodes(model.value))
                 if node_count > 0:
-                    log_str += f"\n{model.name}: {node_count} nodes"
+                    log_str += f" {model.name}: {node_count} nodes, "
             if log_str:
                 logger.debug(f"Current network state:{log_str}")
             else:

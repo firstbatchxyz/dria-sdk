@@ -44,6 +44,7 @@ class Task(BaseModel):
     deadline: int = 0
     nodes: List[str] = []
     step_name: str = ""
+    processed: bool = False
 
     def dict(self) -> Dict[str, Any]:
         return {

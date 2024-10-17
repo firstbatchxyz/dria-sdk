@@ -34,31 +34,21 @@ class RPCClient:
             "Accept": "application/json",
         }
         self.session = None
-        self.connector = None
 
     async def initialize(self):
         if self.session is None:
-            self.connector = aiohttp.TCPConnector(force_close=True)
             self.session = aiohttp.ClientSession(
-                headers=self.headers,
-                connector=self.connector,
+                headers=self.headers
             )
         return self
 
     async def close(self):
         if self.session:
             await self.session.close()
-            self.session = None
-        if self.connector:
-            await self.connector.close()
-            self.connector = None
 
     async def __aenter__(self):
         await self.initialize()
         return self
-
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
-        await self.close()
 
     async def health_check(self) -> bool:
         """
@@ -86,7 +76,7 @@ class RPCClient:
         """
         try:
             async with self.session.get(
-                f"{self.base_url}/rpc/{content_topic}"
+                    f"{self.base_url}/rpc/{content_topic}"
             ) as response:
                 if response.status == 401:
                     raise RPCAuthenticationError()
@@ -105,7 +95,7 @@ class RPCClient:
             raise
 
     async def push_content_topic(
-        self, data: Union[str, bytes], content_topic: str
+            self, data: Union[str, bytes], content_topic: str
     ) -> bool:
         """
         Push content to a topic.
@@ -125,9 +115,9 @@ class RPCClient:
         try:
             logger.debug("Pushing content to topic: %s", content_topic)
             async with self.session.post(
-                f"{self.base_url}/rpc/{content_topic}",
-                json={"value": {"payload": data}},
-                headers={"Content-Type": "application/json"},
+                    f"{self.base_url}/rpc/{content_topic}",
+                    json={"value": {"payload": data}},
+                    headers={"Content-Type": "application/json"},
             ) as response:
                 if response.status == 401:
                     raise RPCAuthenticationError()
