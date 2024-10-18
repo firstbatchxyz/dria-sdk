@@ -133,3 +133,6 @@ class OllamaModels(Enum):
 class CoderModels(Enum):
     QWEN2_5_CODER_1_5B = Model.QWEN2_5_CODER_1_5B.value
     DEEPSEEK_CODER_6_7B = Model.DEEPSEEK_CODER_6_7B.value
+    QWEN2_5_CODER_7B = Model.QWEN2_5_CODER_7B.value
+    QWEN2_5_CODER_7B_Q8 = Model.QWEN2_5_CODER_7B_Q8.value
+    QWEN2_5_CODER_7B_FP16 = Model.QWEN2_5_CODER_7B_Q8.value
