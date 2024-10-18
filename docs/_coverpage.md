@@ -3,7 +3,7 @@
 
 <img src="chrome_logo.svg" width=60% height=60%>
 
-# Dria Network <small>0.0.30</small>
+# Dria Network <small>0.0.37</small>
 
 > Multi-agent network for synthetic data.
 

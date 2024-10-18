@@ -1,6 +1,6 @@
 # SelfInstruct
 
-`SelfInstruct` is a `SingletonTemplate` task that generates user queries for a given AI application and context.
+`SelfInstruct` is a `Singleton` task that generates user queries for a given AI application and context.
 
 #### Inputs
 - num_instructions (`int`): The number of user queries to generate.

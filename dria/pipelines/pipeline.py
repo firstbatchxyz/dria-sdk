@@ -237,7 +237,9 @@ class Pipeline:
                 self.output = output
             if isinstance(self.output, TaskInput):
                 output_data = json.dumps(self.output.dict())
-            elif isinstance(self.output, list) and isinstance(self.output[0], TaskInput):
+            elif isinstance(self.output, list) and isinstance(
+                self.output[0], TaskInput
+            ):
                 output_data = json.dumps([i.dict() for i in self.output])
             else:
                 output_data = json.dumps(self.output)

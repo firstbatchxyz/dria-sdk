@@ -1,6 +1,6 @@
 # EvolveInstruct
 
-`EvolveInstruct` is a `SingletonTemplate` task that mutates a given prompt based on a specified mutation type.
+`EvolveInstruct` is a `Singleton` task that mutates a given prompt based on a specified mutation type.
 
 #### Inputs
 - prompt (`str`): The original prompt to be mutated.

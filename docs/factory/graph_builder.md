@@ -1,6 +1,6 @@
 # GenerateGraph
 
-`GenerateGraph` is a `SingletonTemplate` task that generates a graph of concepts and their relationships from a given context.
+`GenerateGraph` is a `Singleton` task that generates a graph of concepts and their relationships from a given context.
 
 #### Inputs
 - context (`str`): The context from which to extract the ontology of terms.

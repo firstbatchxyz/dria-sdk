@@ -75,6 +75,14 @@ QWEN2_5_CODER_1_5B = "qwen2.5-coder:1.5b"
 DEEPSEEK_CODER_6_7B = "deepseek-coder:6.7b"
 MIXTRAL_8_7B = "mixtral:8x7b"
 
+# Gemini models
+GEMINI_15_PRO = "gemini-1.5-pro"
+GEMINI_15_FLASH = "gemini-1.5-flash"
+GEMINI_10_PRO = "gemini-1.0-pro"
+GEMMA_2_2B_IT = "gemma-2-2b-it"
+GEMMA_2_9B_IT = "gemma-2-9b-it"
+GEMMA_2_27B_IT = "gemma-2-27b-it"
+
 # OpenAI models
 GPT4_TURBO = "gpt-4-turbo"
 GPT4O = "gpt-4o"
@@ -88,5 +96,6 @@ You can also select providers as your models.
 # Providers
 OLLAMA = "ollama"  # Open source models
 OPENAI = "openai"  # OpenAI models
+GEMINI = "gemini"  # Gemini models
 CODER = "coder"  # Coder models
 ```
