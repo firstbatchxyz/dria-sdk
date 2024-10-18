@@ -1,6 +1,6 @@
 # WebMultiChoice
 
-`WebMultiChoice` is a `SingletonTemplate` task that answers multiple-choice questions using web search and evaluation.
+`WebMultiChoice` is a `Singleton` task that answers multiple-choice questions using web search and evaluation.
 
 #### Inputs
 - question (`str`): The multiple-choice question to be answered.

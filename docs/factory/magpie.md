@@ -1,6 +1,6 @@
 # MagPie
 
-`MagPie` is a `SingletonTemplate` task that generates a dialogue between two personas.
+`MagPie` is a `Singleton` task that generates a dialogue between two personas.
 
 #### Inputs
 - instructor_persona (`str`): The persona of the instructor.

@@ -97,6 +97,8 @@ class TaskResult(BaseModel):
             Model.LLAMA3_2_3B: LlamaParser(),
             Model.LLAMA3_1_8BQ8: LlamaParser(),
             Model.NOUS_THETA: NousParser(),
+            Model.GEMINI_15_PRO: OpenAIParser(),
+            Model.GEMINI_15_FLASH: OpenAIParser(),
         }
 
         parser = model_parsers.get(Model(self.model))

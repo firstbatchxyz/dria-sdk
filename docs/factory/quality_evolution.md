@@ -1,6 +1,6 @@
 # EvolveQuality
 
-`EvolveQuality` is a `SingletonTemplate` task that evolves the quality of a response to a prompt through rewriting based on a specified method.
+`EvolveQuality` is a `Singleton` task that evolves the quality of a response to a prompt through rewriting based on a specified method.
 
 #### Inputs
 - prompt (`str`): The original prompt.
