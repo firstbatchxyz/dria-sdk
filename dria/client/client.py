@@ -180,7 +180,7 @@ class Dria:
         for attempt in range(max_attempts):
             task.private_key, task.public_key = generate_task_keys()
             if not task.public_key.startswith(
-                    "0x0"
+                "0x0"
             ):  # It should not start with 0 for encoding reasons
                 break
         else:
@@ -223,11 +223,11 @@ class Dria:
         self._save_blacklist()
 
     async def fetch(
-            self,
-            pipeline: Optional[Any] = None,
-            task: Union[Optional[Task], Optional[List[Task]]] = None,
-            min_outputs: Optional[int] = None,
-            timeout: int = 30,
+        self,
+        pipeline: Optional[Any] = None,
+        task: Union[Optional[Task], Optional[List[Task]]] = None,
+        min_outputs: Optional[int] = None,
+        timeout: int = 30,
     ) -> List[TaskResult]:
         """
         Fetch task results from storage based on pipelines and/or task.
@@ -275,8 +275,8 @@ class Dria:
 
     @staticmethod
     def _determine_min_outputs(
-            task: Union[Optional[Task], Optional[List[Task]]],
-            min_outputs: Optional[int],
+        task: Union[Optional[Task], Optional[List[Task]]],
+        min_outputs: Optional[int],
     ) -> int:
         """
         Determine the minimum number of outputs to fetch based on the task and provided min_outputs.
@@ -309,7 +309,7 @@ class Dria:
 
     @staticmethod
     def _get_task_id(
-            task: Union[Optional[Task], Optional[List[Task]]]
+        task: Union[Optional[Task], Optional[List[Task]]]
     ) -> Union[None, str, List[str]]:
         """
         Get the task ID or list of task IDs from the provided task(s).
@@ -333,9 +333,9 @@ class Dria:
             raise ValueError("Invalid task type. Expected None, Task, or List[Task].")
 
     def _fetch_results(
-            self,
-            pipeline_id: Optional[str],
-            task_id: Union[Optional[str], Optional[List[str]]],
+        self,
+        pipeline_id: Optional[str],
+        task_id: Union[Optional[str], Optional[List[str]]],
     ) -> List[TaskResult]:
         """
         Helper method to fetch results based on pipeline_id and/or task_id.
@@ -482,14 +482,18 @@ class Dria:
                     continue
 
                 if task.processed:
-                    logger.debug(f"Task {task.id} has already been processed. Skipping processing.")
+                    logger.debug(
+                        f"Task {task.id} has already been processed. Skipping processing."
+                    )
                     continue
 
                 task.processed = True
                 self.storage.set_value(identifier, json.dumps(task.dict()))
 
                 if "error" in result:
-                    logger.debug(f"ID: {identifier} Error in result: {result['error']}. Task retrying..")
+                    logger.debug(
+                        f"ID: {identifier} Error in result: {result['error']}. Task retrying.."
+                    )
                     await self._handle_error_type(task, result["error"])
                     t = Task(
                         workflow=task.workflow,
@@ -531,7 +535,7 @@ class Dria:
                 logger.error(f"Unexpected error processing item: {e}", exc_info=True)
 
     async def execute(
-            self, task: Union[Task, List[Task]], timeout: int = 30
+        self, task: Union[Task, List[Task]], timeout: int = 30
     ) -> List[Any]:
         """
         Execute a task or list of tasks.

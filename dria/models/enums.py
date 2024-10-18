@@ -42,6 +42,14 @@ class Model(Enum):
     DEEPSEEK_CODER_6_7B = "deepseek-coder:6.7b"
     MIXTRAL_8_7B = "mixtral:8x7b"
 
+    # Gemini models
+    GEMINI_15_PRO = "gemini-1.5-pro"
+    GEMINI_15_FLASH = "gemini-1.5-flash"
+    GEMINI_10_PRO = "gemini-1.0-pro"
+    GEMMA_2_2B_IT = "gemma-2-2b-it"
+    GEMMA_2_9B_IT = "gemma-2-9b-it"
+    GEMMA_2_27B_IT = "gemma-2-27b-it"
+
     # OpenAI models
     GPT4_TURBO = "gpt-4-turbo"
     GPT4O = "gpt-4o"
@@ -80,6 +88,8 @@ class FunctionCallingModels(Enum):
     GPT4_TURBO = Model.GPT4_TURBO.value
     GPT4O = Model.GPT4O.value
     GPT4O_MINI = Model.GPT4O_MINI.value
+    GEMINI_15_PRO = Model.GEMINI_15_PRO.value
+    GEMINI_15_FLASH = Model.GEMINI_15_FLASH.value
 
 
 class OpenAIModels(Enum):
@@ -88,6 +98,15 @@ class OpenAIModels(Enum):
     GPT4O = Model.GPT4O.value
     GPT4O_MINI = Model.GPT4O_MINI.value
     GPT4_TURBO = Model.GPT4_TURBO.value
+
+
+class GeminiModels(Enum):
+    GEMINI_15_PRO = Model.GEMINI_15_PRO.value
+    GEMINI_15_FLASH = Model.GEMINI_15_FLASH.value
+    GEMINI_10_PRO = Model.GEMINI_10_PRO.value
+    GEMMA_2_2B_IT = Model.GEMMA_2_2B_IT.value
+    GEMMA_2_9B_IT = Model.GEMMA_2_9B_IT.value
+    GEMMA_2_27B_IT = Model.GEMMA_2_27B_IT.value
 
 
 class OllamaModels(Enum):

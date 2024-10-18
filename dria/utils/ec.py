@@ -108,7 +108,9 @@ def publickey_to_address(public_key: bytes) -> str:
         raise ValueError(f"Failed to convert public key to address: {e}") from e
 
 
-def get_truthful_nodes(task: Task, topic_result: Dict) -> tuple[None, None] | tuple[str | None, str]:
+def get_truthful_nodes(
+    task: Task, topic_result: Dict
+) -> tuple[None, None] | tuple[str | None, str]:
     """
     Get truthful nodes from topic results.
 

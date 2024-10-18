@@ -62,6 +62,7 @@ class GenerateCode(SingletonTemplate):
         self.params.instruction = instruction
         self.params.language = language
         builder = WorkflowBuilder(instruction=instruction, language=language)
+        builder.set_max_tokens(750)
         builder.generative_step(
             prompt="You have been given the following instruction: "
             "{{instruction}}. Write clean, commented and robust code in {{language}}. Code: ",
@@ -98,6 +99,7 @@ class IterateCode(SingletonTemplate):
         self.params.language = language
         self.params.code = code
         builder = WorkflowBuilder(instruction=instruction, code=code, language=language)
+        builder.set_max_tokens(750)
         builder.generative_step(
             prompt="Here is you previous code: {{code}}.\n Iterate your previous code based on the instruction: "
             "{{instruction}}. Write clean, commented and robust code in {{language}}. Code: ",
