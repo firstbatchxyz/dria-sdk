@@ -20,7 +20,7 @@ from dria.models.enums import (
     FunctionCallingModels,
     OllamaModels,
     OpenAIModels,
-    CoderModels,
+    CoderModels, GeminiModels,
 )
 from dria.models.exceptions import TaskPublishError
 from dria.request import RPCClient
@@ -641,6 +641,8 @@ class Dria:
                 model_list.extend(model.value for model in OllamaModels)
             elif model == "coder":
                 model_list.extend(model.value for model in CoderModels)
+            elif model == "gemini":
+                model_list.extend(model.value for model in GeminiModels)
             else:
                 model_list.append(model)
 

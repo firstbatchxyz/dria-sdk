@@ -61,6 +61,7 @@ class Model(Enum):
     OLLAMA = "ollama"
     OPENAI = "openai"
     CODER = "coder"
+    GEMINI = "gemini"
 
     @classmethod
     def default(cls):
