@@ -34,10 +34,13 @@ class RPCClient:
             "Accept": "application/json",
         }
         self.session = None
+        self.connector = None
 
     async def initialize(self):
         if self.session is None:
+            self.connector = aiohttp.TCPConnector()
             self.session = aiohttp.ClientSession(
+                connector=self.connector,
                 headers=self.headers
             )
         return self
