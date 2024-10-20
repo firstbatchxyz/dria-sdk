@@ -41,9 +41,9 @@ class StepTemplate(BaseModel, ABC):
 
     def __init__(self, config: Optional[StepConfig] = None, **kwargs):
         super().__init__(**kwargs)
-        self._map_io(**kwargs)
         if config:
             self.config = config
+        self._map_io(**kwargs)
 
     def get_params(self) -> dict:
         return vars(self.params)
