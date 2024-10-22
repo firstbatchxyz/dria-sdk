@@ -503,7 +503,7 @@ class Dria:
                 self.storage.set_value(identifier, json.dumps(task.dict()))
 
                 if "error" in result:
-                    logger.debug(
+                    logger.warn(
                         f"ID: {identifier} Error in result: {result['error']}. Task retrying.."
                     )
                     await self._handle_error_type(task, result["error"])
