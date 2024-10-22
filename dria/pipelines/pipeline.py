@@ -1,6 +1,7 @@
 import asyncio
 import json
 import time
+import traceback
 import uuid
 from typing import List, Optional, Dict, Any, Tuple, Union
 
@@ -217,7 +218,10 @@ class Pipeline:
     async def _graceful_shutdown(self, e: Optional[Exception] = None) -> None:
         """Gracefully shutdown the pipelines."""
         if e:
-            self.logger.info(f"Gracefully shutting down. Reason: {e}")
+            error_type = type(e).__name__
+            error_message = str(e)
+            error_traceback = traceback.format_exc()
+            self.logger.info(f"Pipeline error details:\nType: {error_type}\nMessage: {error_message}\nTraceback:\n{error_traceback}")
         self._update_status(PipelineStatus.FAILED)
         self._update_state(PipelineStatus.FAILED.value)
         if e:

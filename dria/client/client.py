@@ -180,7 +180,7 @@ class Dria:
         for attempt in range(max_attempts):
             task.private_key, task.public_key = generate_task_keys()
             if not task.public_key.startswith(
-                "0x0"
+                    "0x0"
             ):  # It should not start with 0 for encoding reasons
                 break
         else:
@@ -223,11 +223,11 @@ class Dria:
         self._save_blacklist()
 
     async def fetch(
-        self,
-        pipeline: Optional[Any] = None,
-        task: Union[Optional[Task], Optional[List[Task]]] = None,
-        min_outputs: Optional[int] = None,
-        timeout: int = 30,
+            self,
+            pipeline: Optional[Any] = None,
+            task: Union[Optional[Task], Optional[List[Task]]] = None,
+            min_outputs: Optional[int] = None,
+            timeout: int = 30,
     ) -> List[TaskResult]:
         """
         Fetch task results from storage based on pipelines and/or task.
@@ -275,8 +275,8 @@ class Dria:
 
     @staticmethod
     def _determine_min_outputs(
-        task: Union[Optional[Task], Optional[List[Task]]],
-        min_outputs: Optional[int],
+            task: Union[Optional[Task], Optional[List[Task]]],
+            min_outputs: Optional[int],
     ) -> int:
         """
         Determine the minimum number of outputs to fetch based on the task and provided min_outputs.
@@ -309,7 +309,7 @@ class Dria:
 
     @staticmethod
     def _get_task_id(
-        task: Union[Optional[Task], Optional[List[Task]]]
+            task: Union[Optional[Task], Optional[List[Task]]]
     ) -> Union[None, str, List[str]]:
         """
         Get the task ID or list of task IDs from the provided task(s).
@@ -333,9 +333,9 @@ class Dria:
             raise ValueError("Invalid task type. Expected None, Task, or List[Task].")
 
     def _fetch_results(
-        self,
-        pipeline_id: Optional[str],
-        task_id: Union[Optional[str], Optional[List[str]]],
+            self,
+            pipeline_id: Optional[str],
+            task_id: Union[Optional[str], Optional[List[str]]],
     ) -> List[TaskResult]:
         """
         Helper method to fetch results based on pipeline_id and/or task_id.
@@ -355,13 +355,17 @@ class Dria:
                     key = f"{pipeline_id}:{task_id}"
                     value = self.kv.pop(key)
                     if value:
-                        new_results.append(self._create_task_result(task_id, value))
+                        task_result = self._create_task_result(task_id, value)
+                        if task_result:
+                            new_results.append(task_result)
                 elif isinstance(task_id, list):
                     for tid in task_id:
                         key = f"{pipeline_id}:{tid}"
                         value = self.kv.pop(key)
                         if value:
-                            new_results.append(self._create_task_result(tid, value))
+                            task_result = self._create_task_result(tid, value)
+                            if task_result:
+                                new_results.append(task_result)
             else:
                 new_results = self._fetch_pipeline_results(pipeline_id)
         elif task_id:
@@ -389,7 +393,9 @@ class Dria:
                 value = self.kv.pop(key)
                 if value:
                     task_id = key.split(":", 1)[1]
-                    results.append(self._create_task_result(task_id, value))
+                    task_result = self._create_task_result(task_id, value)
+                    if task_result:
+                        results.append(task_result)
         return results
 
     def _fetch_task_results(self, task_id: str) -> List[TaskResult]:
@@ -408,10 +414,12 @@ class Dria:
             if key.endswith(suffix):
                 value = self.kv.pop(key)
                 if value:
-                    results.append(self._create_task_result(task_id, value))
+                    task_result = self._create_task_result(task_id, value)
+                    if task_result:
+                        results.append(task_result)
         return results
 
-    def _create_task_result(self, task_id: str, value: dict) -> TaskResult:
+    def _create_task_result(self, task_id: str, value: dict) -> TaskResult | None:
         """
         Create a TaskResult object from task_id and value.
 
@@ -428,7 +436,11 @@ class Dria:
         try:
             task_data = json.loads(self.storage.get_value(task_id))
         except json.JSONDecodeError:
-            raise ValueError(f"Task data not found or invalid for task_id: {task_id}")
+            logger.debug(f"Task data not found or invalid for task_id: {task_id}")
+            return None
+        except TypeError:
+            logger.debug(f"Task data not found or invalid for task_id: {task_id}")
+            return None
 
         step_name = self._get_step_name(task_id)
         return TaskResult(
@@ -467,7 +479,7 @@ class Dria:
                 decoded_item = base64.b64decode(item).decode("utf-8")
                 result = json.loads(decoded_item)
 
-                identifier = result["taskId"]
+                identifier = result["taskId"]  # todo: rpc auth
                 task_data = self.storage.get_value(identifier)
                 if not task_data:
                     logger.debug(f"Task data not found for identifier: {identifier}")
@@ -507,6 +519,9 @@ class Dria:
 
                 if self._is_task_valid(task, current_time):
                     processed_result, address = get_truthful_nodes(task, result)
+                    if processed_result is None:
+                        logger.debug(f"Address: {address} not valid in the given nodes.")
+                        continue
 
                     if processed_result == "":
                         logger.info(
@@ -535,7 +550,7 @@ class Dria:
                 logger.error(f"Unexpected error processing item: {e}", exc_info=True)
 
     async def execute(
-        self, task: Union[Task, List[Task]], timeout: int = 30
+            self, task: Union[Task, List[Task]], timeout: int = 30
     ) -> List[Any]:
         """
         Execute a task or list of tasks.

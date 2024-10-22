@@ -109,7 +109,7 @@ def publickey_to_address(public_key: bytes) -> str:
 
 
 def get_truthful_nodes(
-    task: Task, topic_result: Dict
+        task: Task, topic_result: Dict # todo
 ) -> tuple[None, None] | tuple[str | None, str]:
     """
     Get truthful nodes from topic results.
@@ -129,4 +129,6 @@ def get_truthful_nodes(
     )
     public_key = uncompressed_public_key(public_key)
     address = publickey_to_address(public_key)
+    if address not in task.nodes:
+        return None, None
     return result, address
