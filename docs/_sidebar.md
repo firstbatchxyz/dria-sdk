@@ -43,6 +43,8 @@
     * Search & Data Ingestion (Experimental)
     * [WebMultiChoice](factory/web_multi_choice.md)
   * Pipelines
+    * [ListExtender](factory/list_extender.md)
+    * [CSVExtender](factory/csv_extender.md)
     * [PersonaPipeline](factory/persona.md)
     * [SubTopicPipeline](factory/subtopic.md)
     * [SearchPipeline](factory/search.md)

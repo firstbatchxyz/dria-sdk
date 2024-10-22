@@ -15,6 +15,7 @@ from .model_as_a_judge import EvaluatePrediction, ValidatePrediction
 from .magpie_instruct import MagPie
 from .self_instruct import SelfInstruct
 from .simple import Simple
+from .structrag import *
 
 __all__ = [
     "Clair",
@@ -35,4 +36,14 @@ __all__ = [
     "SelfInstruct",
     "WebMultiChoice",
     "Simple",
+    "StructRAGAlgorithm",
+    "StructRAGGraph",
+    "StructRAGCatalogue",
+    "StructRAGTable",
+    "StructRAGSynthesize",
+    "StructRAGSimulate",
+    "StructRAGJudge",
+    "StructRAGAnswer",
+    "StructRAGExtract",
+    "StructRAGDecompose"
 ]
