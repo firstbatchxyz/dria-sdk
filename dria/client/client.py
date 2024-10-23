@@ -124,6 +124,10 @@ class Dria:
 
     async def _start_background_tasks(self) -> None:
         """Start and manage background tasks for monitoring and polling."""
+        if self.background_tasks.done():
+            logger.debug("Background tasks already running")
+            return
+
         try:
             await asyncio.gather(self._run_monitoring(), self.poll())
         except asyncio.CancelledError:
@@ -135,7 +139,6 @@ class Dria:
 
     async def _run_monitoring(self) -> None:
         """Run the monitoring process to track task statuses."""
-        await self.rpc.initialize()
         monitor = Monitor(self.storage, self.rpc)
         while not self.shutdown_event.is_set():
             try:
@@ -159,7 +162,6 @@ class Dria:
                     await self.background_tasks
                 except asyncio.CancelledError:
                     pass
-            await self.rpc.close()
 
     async def push(self, task: Task) -> bool:
         """
@@ -585,8 +587,6 @@ class Dria:
         except Exception as e:
             logger.error(f"Error during task execution: {str(e)}")
             raise
-        finally:
-            await self.run_cleanup()
 
     @staticmethod
     def _is_task_valid(task: Task, current_time: int) -> bool:
