@@ -22,11 +22,10 @@ class CSVExtenderPipeline:
         self.pipeline.input(csv=csv, num_samples=num_samples)
         (
             self.pipeline
-            << GetDependencies(num_samples=num_samples).set_models([Model.GPT4O, Model.GEMINI_15_FLASH,
-                                                                   Model.GEMINI_15_PRO]).custom()
+            << GetDependencies(num_samples=num_samples).set_models([Model.GPT4O, Model.GEMINI_15_PRO]).custom()
             << PopulateDependencies().set_models([Model.GPT4O, Model.GEMINI_15_FLASH, Model.GEMINI_15_PRO]).custom()
-
-            << ExtendCSV().set_models([Model.GPT4O, Model.GEMINI_15_FLASH, Model.GEMINI_15_PRO]).custom()
+            << ExtendCSV().set_models([Model.GPT4O, Model.GEMINI_15_FLASH, Model.GEMINI_15_PRO, Model.QWEN2_5_7B_FP16,
+                                       Model.LLAMA3_1_8B_FP16, Model.GEMMA2_9B_FP16, Model.QWEN2_5_32B_FP16]).custom()
         )
         return self.pipeline.build()
 

@@ -55,13 +55,15 @@ class StructRAGSimulate(SingletonTemplate):
 
     def workflow(
         self,
-        query: str
+        query: str,
+        documents_info: List[str]
     ) -> Workflow:
         """
         https://arxiv.org/pdf/2410.08815
         Generate StructRAG Algorithm
 
         :param query: The query to be used for the StructRAG algorithm.
+        :param documents_info: The documents to be used for the StructRAG algorithm.
         :return: A Task object representing the workflow.
         """
 
@@ -69,6 +71,8 @@ class StructRAGSimulate(SingletonTemplate):
         builder = WorkflowBuilder(query=query)
         builder.set_max_tokens(1000)
         # Add a generative step using the prompt string
+        self.params.query = query
+        self.params.documents_info = documents_info
         builder.generative_step(
             path=get_abs_path("simulate.md"),
             operator=Operator.GENERATION,
@@ -87,6 +91,8 @@ class StructRAGSimulate(SingletonTemplate):
         return [
             {
                 "solutions": r.result.strip(),
+                "query": self.params.query,
+                "documents_info": self.params.documents_info
             }
             for r in result
         ]
@@ -114,6 +120,9 @@ class StructRAGJudge(SingletonTemplate):
         builder = WorkflowBuilder(query=query, documents_info=documents_info, solutions=solutions)
         builder.set_max_tokens(1000)
         # Add a generative step using the prompt string
+        self.params.query = query
+        self.params.documents_info = documents_info
+        self.params.solutions = solutions
         builder.generative_step(
             path=get_abs_path("judge.md"),
             operator=Operator.GENERATION,
@@ -132,7 +141,9 @@ class StructRAGJudge(SingletonTemplate):
         return [
             {
                 "simulation": r.result.strip(),
-                "order": extract_solution_order(r.result.strip())
+                "order": extract_solution_order(r.result.strip()),
+                "query": self.params.query,
+                "documents_info": self.params.documents_info,
             }
             for r in result
         ]
