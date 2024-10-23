@@ -44,8 +44,8 @@ class RPCClient:
         try:
             async with aiohttp.ClientSession(headers=self.headers) as session:
                 async with session.get(f"{self.base_url}/health") as response:
-                    text = await response.text()
-                    return text == "Node is healthy"
+                    status = response.status
+                    return status == 200
         except aiohttp.ClientError as e:
             raise RPCConnectionError(f"Health check failed: {str(e)}")
 

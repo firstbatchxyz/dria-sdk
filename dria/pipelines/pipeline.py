@@ -175,7 +175,7 @@ class Pipeline:
             return True
         required_results = int(len(step.all_inputs) * step.config.min_compute)
         self.logger.info(
-            f"Required Output: {required_results}, processed output: {len(step.output)}"
+            f"Required Output: {required_results} ({(len(step.output)/required_results)*100:.1f}% complete)"
         )
         if len(step.output) < int(required_results) or step.name in self.proceed_steps:
             return False

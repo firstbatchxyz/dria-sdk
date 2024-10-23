@@ -6,6 +6,8 @@ import signal
 import time
 from typing import Any, List, Optional, Dict, Union
 
+from tqdm import tqdm
+
 from dria.client.monitor import Monitor
 from dria.constants import (
     OUTPUT_CONTENT_TOPIC,
@@ -100,7 +102,7 @@ class Dria:
         if address in self.blacklist:
             del self.blacklist[address]
             self._save_blacklist()
-            logger.info(f"Address {address} removed from blacklist.")
+            logger.debug(f"Address {address} removed from blacklist.")
         else:
             logger.debug(f"Address {address} not found in blacklist.")
 
@@ -129,7 +131,7 @@ class Dria:
             return
 
         try:
-            await asyncio.gather(self._run_monitoring(), self.poll())
+            await asyncio.gather(self._run_monitoring(), self.poll(), self._run_health_check())
         except asyncio.CancelledError:
             logger.info("Background tasks cancelled.")
         except Exception as e:
@@ -146,6 +148,18 @@ class Dria:
             except Exception as e:
                 raise Exception(f"Error in monitoring process: {e}")
             await asyncio.sleep(MONITORING_INTERVAL)
+        raise Exception("Received signal for closing...")
+
+    async def _run_health_check(self) -> None:
+        """Run periodic health checks to verify RPC connection."""
+        while not self.shutdown_event.is_set():
+            try:
+                is_healthy = await self.rpc.health_check()
+                if not is_healthy:
+                    raise Exception("RPC server is not healthy. Exiting...")
+            except Exception as e:
+                raise Exception(f"Error in health check process: {e}")
+            await asyncio.sleep(10)
         raise Exception("Received signal for closing...")
 
     async def run_cleanup(self, forced: bool = False) -> None:
@@ -194,7 +208,7 @@ class Dria:
             success, nodes = await self.task_manager.push_task(task, self.blacklist)
             if success:
                 await self._update_blacklist(nodes)
-                logger.info(
+                logger.debug(
                     f"Task {task.id} successfully published. Step: {task.step_name}"
                 )
                 return True
@@ -218,7 +232,7 @@ class Dria:
             wait_time = self.DEADLINE_MULTIPLIER * 60 * (4 ** (node_entry["count"] - 1))
             node_entry["deadline"] = current_time + wait_time
             self.blacklist[node] = node_entry
-            logger.info(
+            logger.debug(
                 f"Address {node} added to blacklist with deadline at {node_entry['deadline']}."
             )
 
@@ -506,7 +520,7 @@ class Dria:
 
                 if "error" in result:
                     logger.warn(
-                        f"ID: {identifier} Error in result: {result['error']}. Task retrying.."
+                        f"ID: {identifier} {result['error'].split('Workflow execution failed: ')[1]}. Task retrying.."
                     )
                     await self._handle_error_type(task, result["error"])
                     t = Task(
@@ -580,7 +594,7 @@ class Dria:
 
         try:
             tasks_ = [t.__deepcopy__() for t in tasks]
-            for t in tasks_:
+            for t in tqdm(tasks_, desc="Tasks are publishing to network..."):
                 await self.push(t)
 
             return await self.fetch(task=tasks_, timeout=timeout)

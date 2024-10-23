@@ -7,12 +7,12 @@ import string
 import time
 from typing import List, Tuple, Any, Dict, Union, Optional
 
-from dria.models.enums import Model
 from fastbloom_rs import BloomFilter
 
 from dria.constants import MONITORING_INTERVAL, INPUT_CONTENT_TOPIC, TASK_DEADLINE
 from dria.db.storage import Storage
 from dria.models import NodeModel, TaskModel, TaskInputModel, Task
+from dria.models.enums import Model
 from dria.models.exceptions import TaskFilterError, TaskPublishError
 from dria.request import RPCClient
 from dria.utils import str_to_base64
@@ -59,7 +59,7 @@ class TaskManager:
             raise TaskPublishError(f"Failed to publish task: {e}") from e
 
     async def prepare_task(
-        self, task: Task, blacklist: Dict[str, Dict[str, int]]
+            self, task: Task, blacklist: Dict[str, Dict[str, int]]
     ) -> tuple[dict[str, Any], Task]:
         """
         Prepare a task for publishing.
@@ -74,7 +74,7 @@ class TaskManager:
         task.id = self.generate_random_string()
         deadline = int(time.time_ns() + TASK_DEADLINE * 1e9)
         try:
-            picked_nodes, task_filter = await self.create_filter(task.models, blacklist)
+            picked_nodes, task_filter = await self.create_filter(task.models, blacklist, task_id=task.id)
         except Exception as e:
             raise TaskFilterError(f"{task.id}: {e}") from e
 
@@ -100,7 +100,7 @@ class TaskManager:
         )
 
     async def push_task(
-        self, task: Task, blacklist: Dict[str, Dict[str, int]]
+            self, task: Task, blacklist: Dict[str, Dict[str, int]]
     ) -> tuple[bool, Union[Optional[List[str]]]]:
         """
         Push a task to the content topic.
@@ -139,10 +139,12 @@ class TaskManager:
             return []
 
     async def create_filter(
-        self,
-        using_models: List[str],
-        blacklist: Dict[str, Dict[str, int]],
-        retry: int = 0,
+            self,
+            using_models: List[str],
+            blacklist: Dict[str, Dict[str, int]],
+            task_id: str = "",
+            retry: int = 0
+
     ) -> Tuple[List[str], dict]:
         """
         Create a filter for a given task.
@@ -151,6 +153,7 @@ class TaskManager:
             using_models (List[str]): List of models to use
             blacklist (Dict[str, Dict[str, int]]): Blacklist of nodes
             retry (int, optional): Retry count. Defaults to 0.
+            task_id (str): Task ID
 
         Returns:
             Tuple[List[str], dict]: Picked nodes and filter
@@ -177,18 +180,19 @@ class TaskManager:
         logger.debug(f"Currently available nodes: {available_nodes}")
 
         if not available_nodes:
-            logger.info(f"No available nodes for models {using_models}")
-            log_str = ""
-            for model in Model:
-                node_count = len(self.get_available_nodes(model.value))
-                if node_count > 0:
-                    log_str += f" {model.name}: {node_count} nodes, "
-            if log_str:
-                logger.debug(f"Current network state:{log_str}")
-            else:
-                logger.debug("No active nodes in the network")
+            if retry % 10 == 0:
+                logger.info(f"Searching available nodes for task {task_id}")
+                log_str = ""
+                for model in Model:
+                    node_count = len(self.get_available_nodes(model.value))
+                    if node_count > 0:
+                        log_str += f" {model.name}: {node_count} nodes, "
+                if log_str:
+                    logger.debug(f"Current network state:{log_str}")
+                else:
+                    logger.debug("No active nodes in the network")
             await asyncio.sleep(MONITORING_INTERVAL)
-            return await self.create_filter(using_models, blacklist, retry + 1)
+            return await self.create_filter(using_models, blacklist, task_id=task_id, retry=retry + 1)
 
         picked_nodes = random.sample(list(available_nodes), 1)
 

@@ -1,6 +1,9 @@
 import json
 from typing import List, Callable, Optional, Union, Dict, Any
 from abc import ABC
+
+from tqdm import tqdm
+
 from dria.utils.logging import logger
 from dria.pipelines.config import StepConfig
 from dria.client import Dria
@@ -73,7 +76,7 @@ class Step(ABC):
         self.all_inputs.extend(self.input)
         task_ids = []
         try:
-            for task_input in self.input:
+            for task_input in tqdm(self.input, desc=f"{self.name} tasks publishing: "):
                 workflow_data = self._validate_and_run_workflow(task_input)
                 task = await self._push_task(workflow_data)
                 task_ids.append(task.id)
