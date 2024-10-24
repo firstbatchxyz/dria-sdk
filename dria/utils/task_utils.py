@@ -180,7 +180,7 @@ class TaskManager:
         logger.debug(f"Currently available nodes: {available_nodes}")
 
         if not available_nodes:
-            if retry % 10 == 0:
+            if retry % 10 == 0 and retry != 0:
                 logger.info(f"Searching available nodes for task {task_id}")
                 log_str = ""
                 for model in Model:

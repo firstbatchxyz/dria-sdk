@@ -519,7 +519,7 @@ class Dria:
                 self.storage.set_value(identifier, json.dumps(task.dict()))
 
                 if "error" in result:
-                    logger.warn(
+                    logger.debug(
                         f"ID: {identifier} {result['error'].split('Workflow execution failed: ')[1]}. Task retrying.."
                     )
                     await self._handle_error_type(task, result["error"])
@@ -699,5 +699,6 @@ class Dria:
     async def _handle_error_type(self, task: Task, error: str) -> None:
         """Handle the error type."""
         if "InvalidInput" in error:
+            logger.warn(f"ID: {task.id} {error.split('Workflow execution failed: ')[1]}. Task retrying..")
             for address in task.nodes:
                 self._remove_from_blacklist(address)

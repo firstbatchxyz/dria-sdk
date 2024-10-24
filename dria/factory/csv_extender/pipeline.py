@@ -21,12 +21,12 @@ class CSVExtenderPipeline:
     def build(self, csv, num_samples=10) -> Pipeline:
         self.pipeline.input(csv=csv, num_samples=num_samples)
         (
-            self.pipeline
-            << GetDependencies(num_samples=num_samples).set_models([Model.GPT4O, Model.GEMINI_15_FLASH,
-                                                                   Model.GEMINI_15_PRO]).custom()
-            << PopulateDependencies().set_models([Model.GPT4O, Model.GEMINI_15_FLASH, Model.GEMINI_15_PRO]).custom()
+                self.pipeline
+                << GetDependencies(num_samples=num_samples).set_models([Model.GPT4O, Model.GEMINI_15_FLASH,
+                                                                        Model.GEMINI_15_PRO]).custom()
+                << PopulateDependencies().set_models([Model.GPT4O, Model.GEMINI_15_FLASH, Model.GEMINI_15_PRO]).custom()
 
-            << ExtendCSV().set_models([Model.GPT4O, Model.GEMINI_15_FLASH, Model.GEMINI_15_PRO]).custom()
+                << ExtendCSV().set_models([Model.GPT4O, Model.GEMINI_15_FLASH, Model.GEMINI_15_PRO]).custom()
         )
         return self.pipeline.build()
 
