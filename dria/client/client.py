@@ -22,7 +22,8 @@ from dria.models.enums import (
     FunctionCallingModels,
     OllamaModels,
     OpenAIModels,
-    CoderModels, GeminiModels,
+    CoderModels,
+    GeminiModels,
 )
 from dria.models.exceptions import TaskPublishError
 from dria.request import RPCClient
@@ -33,22 +34,24 @@ from dria.utils.task_utils import TaskManager
 
 class Dria:
     """
-    A client for interacting with the Dria system.
+    Client SDK for interacting with the Dria distributed AI system.
 
-    This class provides methods for pushing tasks, fetching results,
-    and managing background processes for monitoring and polling.
+    Provides high-level methods for:
+    - Submitting AI tasks to the network
+    - Retrieving task results 
+    - Managing background monitoring and polling
+    - Handling node blacklisting and retries
     """
 
     DEADLINE_MULTIPLIER: int = 10
 
     def __init__(self, rpc_token: Optional[str] = None, api_mode: bool = False):
         """
-        Initialize the Dria client with the given configuration.
+        Initialize the Dria client.
 
         Args:
-            rpc_token (Optional[str]): Authentication token for RPCClient. If not provided,
-                                       it will attempt to use the DRIA_RPC_TOKEN environment variable.
-            api_mode (bool): If True, the client will run in API mode. API mode will not clean up monitoring and polling.
+            rpc_token (Optional[str]): Authentication token for RPC. Falls back to DRIA_RPC_TOKEN env var.
+            api_mode (bool): If True, runs in API mode without cleanup of monitoring/polling.
         """
         self.rpc = RPCClient(auth_token=rpc_token or os.environ.get("DRIA_RPC_TOKEN"))
         self.storage = Storage()
@@ -59,23 +62,23 @@ class Dria:
         self.shutdown_event = asyncio.Event()
         self.api_mode = api_mode
 
+        # Set up cache directory and blacklist
         cache_dir = os.path.join(os.path.dirname(__file__), ".cache")
         os.makedirs(cache_dir, exist_ok=True)
-
         self.blacklist_file = os.path.join(cache_dir, ".blacklist")
         self._load_blacklist()
 
-        # Set up signal handlers
+        # Register signal handlers
         signal.signal(signal.SIGTERM, self._signal_handler)
         signal.signal(signal.SIGINT, self._signal_handler)
 
     def _signal_handler(self, signum: int, frame: Any) -> None:
-        """Handle SIGTERM and SIGINT signals."""
+        """Handle termination signals by initiating graceful shutdown."""
         logger.info(f"Received signal {signum}. Initiating graceful shutdown...")
         self.shutdown_event.set()
 
     def _load_blacklist(self) -> None:
-        """Load the blacklist from file or create a new one if it doesn't exist."""
+        """Load node blacklist from disk or create new if not exists."""
         try:
             with open(self.blacklist_file, "r") as f:
                 self.blacklist = {}
@@ -87,17 +90,17 @@ class Dria:
             self._save_blacklist()
 
     def _save_blacklist(self) -> None:
-        """Save the current blacklist to file."""
+        """Persist current blacklist to disk."""
         with open(self.blacklist_file, "w") as f:
             for key, value in self.blacklist.items():
                 f.write(f"{key}|{value}\n")
 
     def _remove_from_blacklist(self, address: str) -> None:
         """
-        Remove an address from the blacklist and save the updated blacklist.
+        Remove a node address from the blacklist.
 
         Args:
-            address (str): The address to remove from the blacklist.
+            address (str): Node address to remove
         """
         if address in self.blacklist:
             del self.blacklist[address]
@@ -108,40 +111,39 @@ class Dria:
 
     def set_api_mode(self, api_mode: bool) -> None:
         """
-        Set the API mode of the client.
+        Set client API mode.
 
         Args:
-            api_mode (bool): If True, the client will run in API mode.
+            api_mode (bool): If True, runs in API mode without cleanup
         """
         self.api_mode = api_mode
 
     def flush_blacklist(self) -> None:
-        """Clear the blacklist and save the empty state to file."""
+        """Clear the node blacklist."""
         self.blacklist = {}
         self._save_blacklist()
 
     async def initialize(self) -> None:
+        """Initialize background monitoring and polling tasks."""
         if self.background_tasks:
             if self.background_tasks.done():
                 logger.info("Background tasks already running")
                 return
-        """Initialize background tasks for monitoring and polling."""
         self.background_tasks = asyncio.create_task(self._start_background_tasks())
 
     async def _start_background_tasks(self) -> None:
-        """Start and manage background tasks for monitoring and polling."""
-
+        """Start and manage background monitoring and polling tasks."""
         try:
             await asyncio.gather(self._run_monitoring(), self.poll(), self._run_health_check())
         except asyncio.CancelledError:
             logger.info("Background tasks cancelled.")
         except Exception as e:
-            if self.api_mode is False:
+            if not self.api_mode:
                 await self.run_cleanup(forced=True)
                 raise Exception(f"Error in background tasks: {e}")
 
     async def _run_monitoring(self) -> None:
-        """Run the monitoring process to track task statuses."""
+        """Run task status monitoring loop."""
         monitor = Monitor(self.storage, self.rpc, self.kv)
         while not self.shutdown_event.is_set():
             try:
@@ -152,7 +154,7 @@ class Dria:
         raise Exception("Received signal for closing...")
 
     async def _run_health_check(self) -> None:
-        """Run periodic health checks to verify RPC connection."""
+        """Run periodic RPC health checks."""
         while not self.shutdown_event.is_set():
             try:
                 is_healthy = await self.rpc.health_check()
@@ -165,10 +167,10 @@ class Dria:
 
     async def run_cleanup(self, forced: bool = False) -> None:
         """
-        Run the cleanup process to remove expired tasks and pipelines.
+        Clean up background tasks.
 
         Args:
-            forced (bool): If True, the cleanup will be forced.
+            forced (bool): If True, forces cleanup regardless of API mode
         """
         if not self.api_mode or forced:
             if self.background_tasks and not self.background_tasks.done():
@@ -180,25 +182,24 @@ class Dria:
 
     async def push(self, task: Task) -> bool:
         """
-        Process and publish a single task.
+        Submit a task to the network.
 
         Args:
-            task (Task): The task to process and publish.
+            task (Task): Task to submit
 
         Returns:
-            bool: True if task was successfully published, False otherwise.
+            bool: True if successfully published
 
         Raises:
-            TaskPublishError: If there's an error during task publication.
+            TaskPublishError: If task publication fails
         """
         self._check_function_calling_models(task)
 
+        # Generate valid task keys
         max_attempts = 20
         for attempt in range(max_attempts):
             task.private_key, task.public_key = generate_task_keys()
-            if not task.public_key.startswith(
-                    "0x0"
-            ):  # It should not start with 0 for encoding reasons
+            if not task.public_key.startswith("0x0"):
                 break
         else:
             raise TaskPublishError(
@@ -209,9 +210,7 @@ class Dria:
             success, nodes = await self.task_manager.push_task(task, self.blacklist)
             if success:
                 await self._update_blacklist(nodes)
-                logger.debug(
-                    f"Task {task.id} successfully published. Step: {task.step_name}"
-                )
+                logger.debug(f"Task {task.id} successfully published. Step: {task.step_name}")
                 return True
             else:
                 logger.error(f"Failed to publish task {task.id}.")
@@ -221,10 +220,10 @@ class Dria:
 
     async def _update_blacklist(self, nodes: List[str]) -> None:
         """
-        Update the blacklist with the provided nodes.
+        Update node blacklist with exponential backoff.
 
         Args:
-            nodes (List[str]): List of node identifiers to blacklist.
+            nodes (List[str]): Node addresses to blacklist
         """
         current_time = int(time.time())
         for node in nodes:
@@ -233,9 +232,7 @@ class Dria:
             wait_time = self.DEADLINE_MULTIPLIER * 60 * (4 ** (node_entry["count"] - 1))
             node_entry["deadline"] = current_time + wait_time
             self.blacklist[node] = node_entry
-            logger.debug(
-                f"Address {node} added to blacklist with deadline at {node_entry['deadline']}."
-            )
+            logger.debug(f"Address {node} added to blacklist with deadline at {node_entry['deadline']}.")
 
         self._save_blacklist()
 
@@ -247,19 +244,19 @@ class Dria:
             timeout: int = 30,
     ) -> List[TaskResult]:
         """
-        Fetch task results from storage based on pipelines and/or task.
+        Fetch task results from storage.
 
         Args:
-            pipeline (Optional[Any]): The pipeline.
-            task (Union[Optional[Task], Optional[List[Task]]]): The task or list of tasks.
-            min_outputs (Optional[int]): The minimum number of outputs to fetch.
-            timeout (int): Timeout of fetch process in seconds.
+            pipeline (Optional[Any]): Pipeline to fetch results for
+            task (Union[Optional[Task], Optional[List[Task]]]): Task(s) to fetch results for
+            min_outputs (Optional[int]): Minimum number of outputs to fetch
+            timeout (int): Fetch timeout in seconds
 
         Returns:
-            List[TaskResult]: A list of fetched results.
+            List[TaskResult]: List of task results
 
         Raises:
-            ValueError: If both pipeline and task are None.
+            ValueError: If neither pipeline nor task provided
         """
         if not pipeline and not task:
             raise ValueError("At least one of pipeline or task must be provided.")
@@ -267,15 +264,13 @@ class Dria:
         results: List[TaskResult] = []
         start_time = time.time()
         min_outputs = self._determine_min_outputs(task, min_outputs)
+
         with tqdm(total=min_outputs, desc="Fetching results...") as pbar:
             while len(results) < min_outputs and not self.shutdown_event.is_set():
                 elapsed_time = time.time() - start_time
-                if elapsed_time > timeout:
-                    if timeout > 0:
-                        logger.debug(
-                            f"Unable to fetch {min_outputs} outputs within {timeout} seconds."
-                        )
-                        break
+                if elapsed_time > timeout and timeout > 0:
+                    logger.debug(f"Unable to fetch {min_outputs} outputs within {timeout} seconds.")
+                    break
 
                 pipeline_id = getattr(pipeline, "pipeline_id", None) if pipeline else None
                 task_id = self._get_task_id(task)
@@ -284,6 +279,7 @@ class Dria:
                 results.extend(new_results)
                 pbar.update(len(new_results))
 
+                # Update task IDs after retries
                 for key, value in new_id_map.items():
                     if isinstance(task, str):
                         task.id = value
@@ -306,49 +302,41 @@ class Dria:
             min_outputs: Optional[int],
     ) -> int:
         """
-        Determine the minimum number of outputs to fetch based on the task and provided min_outputs.
+        Determine minimum required outputs.
 
         Args:
-            task (Union[Optional[Task], Optional[List[Task]]]): The task or list of tasks.
-            min_outputs (Optional[int]): The provided minimum number of outputs.
+            task: Task(s) to determine outputs for
+            min_outputs: Requested minimum outputs
 
         Returns:
-            int: The determined minimum number of outputs.
+            int: Determined minimum outputs
         """
         if min_outputs is None:
-            if isinstance(task, list):
-                return len(task)
-            else:
-                return 1
-        else:
-            if isinstance(task, list) and min_outputs > len(task):
-                logger.warning(
-                    f"min_outputs is greater than the number of tasks. Setting min_outputs to {len(task)}"
-                )
-                return len(task)
-            elif not isinstance(task, list) and min_outputs > 1:
-                logger.warning(
-                    "min_outputs is greater than the number of tasks. Setting min_outputs to 1"
-                )
-                return 1
-            else:
-                return min_outputs
+            return len(task) if isinstance(task, list) else 1
+
+        if isinstance(task, list) and min_outputs > len(task):
+            logger.warning(f"min_outputs exceeds task count. Setting to {len(task)}")
+            return len(task)
+        elif not isinstance(task, list) and min_outputs > 1:
+            logger.warning("min_outputs exceeds task count. Setting to 1")
+            return 1
+        return min_outputs
 
     @staticmethod
     def _get_task_id(
             task: Union[Optional[Task], Optional[List[Task]]]
     ) -> Union[None, str, List[str]]:
         """
-        Get the task ID or list of task IDs from the provided task(s).
+        Get task ID(s) from task object(s).
 
         Args:
-            task (Union[Optional[Task], Optional[List[Task]]]): The task or list of tasks.
+            task: Task object(s)
 
         Returns:
-            Union[None, str, List[str]]: The task ID, list of task IDs, or None.
+            Task ID(s) or None
 
         Raises:
-            ValueError: If the task is of an invalid type.
+            ValueError: If invalid task type
         """
         if task is None:
             return None
@@ -365,15 +353,14 @@ class Dria:
             task_id: Union[Optional[str], Optional[List[str]]],
     ) -> Tuple[List[TaskResult], Dict[str, str]]:
         """
-        Helper method to fetch results based on pipeline_id and/or task_id.
+        Fetch results for pipeline and/or tasks.
 
         Args:
-            pipeline_id (Optional[str]): The ID of the pipeline.
-            task_id (Union[Optional[str], Optional[List[str]]]): The ID or list of IDs of the task(s).
+            pipeline_id: Pipeline ID
+            task_id: Task ID(s)
 
         Returns:
-            List[TaskResult]: A list of fetched results.
-            Dict[str, str]: A dictionary of new IDs after task retrying.
+            Tuple of results list and ID mapping dict
         """
         new_results: List[TaskResult] = []
         new_id_map: Dict[str, str] = {}
@@ -410,13 +397,13 @@ class Dria:
 
     def _fetch_pipeline_results(self, pipeline_id: str) -> List[TaskResult]:
         """
-        Fetch results for a specific pipeline.
+        Fetch all results for a pipeline.
 
         Args:
-            pipeline_id (str): The ID of the pipeline.
+            pipeline_id: Pipeline ID
 
         Returns:
-            List[TaskResult]: A list of fetched results.
+            List of task results
         """
         results: List[TaskResult] = []
         for key in self.kv.keys():
@@ -434,11 +421,10 @@ class Dria:
         Fetch results for a specific task.
 
         Args:
-            task_id (str): The ID of the task.
+            task_id: Task ID
 
         Returns:
-            List[TaskResult]: A list of fetched results.
-            Dict: New Ids after task retrying
+            Tuple of results list and new ID mapping
         """
         results: List[TaskResult] = []
         new_ids = {}
@@ -457,26 +443,22 @@ class Dria:
 
     def _create_task_result(self, task_id: str, value: dict) -> TaskResult | None:
         """
-        Create a TaskResult object from task_id and value.
+        Create TaskResult object from raw data.
 
         Args:
-            task_id (str): The ID of the task.
-            value (dict): The result value.
+            task_id: Task ID
+            value: Raw result value
 
         Returns:
-            TaskResult: A TaskResult object.
+            TaskResult object or None
 
         Raises:
-            ValueError: If task data is not found or is invalid.
+            ValueError: If task data invalid
         """
         try:
             task_data = json.loads(self.storage.get_value(task_id))
-
-        except json.JSONDecodeError:
-            logger.debug(f"Task data not found or invalid for task_id: {task_id}")
-            return None
-        except TypeError:
-            logger.debug(f"Task data not found or invalid for task_id: {task_id}")
+        except (json.JSONDecodeError, TypeError):
+            logger.debug(f"Invalid task data for task_id: {task_id}")
             return None
 
         step_name = self._get_step_name(task_id)
@@ -489,14 +471,14 @@ class Dria:
         )
 
     async def poll(self) -> None:
-        """Continuously process tasks from the output content topic."""
+        """Poll output content topic for results."""
         while not self.shutdown_event.is_set():
             try:
                 topic_results = await self.rpc.get_content_topic(OUTPUT_CONTENT_TOPIC)
                 if topic_results:
                     await self._process_results(list(set(topic_results)))
                 else:
-                    logger.debug("No results found in the output content topic.")
+                    logger.debug("No results in output content topic.")
             except Exception as e:
                 raise Exception(f"Error fetching content topic: {e}")
             finally:
@@ -504,10 +486,10 @@ class Dria:
 
     async def _process_results(self, topic_results: List[str]) -> None:
         """
-        Process results from the output content topic.
+        Process results from output content topic.
 
         Args:
-            topic_results (List[str]): List of results from the output content topic.
+            topic_results: Raw results from topic
         """
         current_time = int(time.time())
 
@@ -534,18 +516,14 @@ class Dria:
                     continue
 
                 if task.processed:
-                    logger.debug(
-                        f"Task {task.id} has already been processed. Skipping processing."
-                    )
+                    logger.debug(f"Task {task.id} already processed. Skipping.")
                     continue
 
                 task.processed = True
                 self.storage.set_value(identifier, json.dumps(task.dict()))
 
                 if "error" in result:
-                    logger.debug(
-                        f"ID: {identifier} {result['error'].split('Workflow execution failed: ')[1]}. Task retrying.."
-                    )
+                    logger.debug(f"ID: {identifier} {result['error'].split('Workflow execution failed: ')[1]}. Task retrying..")
                     await self._handle_error_type(task, result["error"])
                     t = Task(
                         id=task.id,
@@ -561,13 +539,11 @@ class Dria:
                 if self._is_task_valid(task, current_time):
                     processed_result, address = get_truthful_nodes(task, result, rpc_auth)
                     if processed_result is None:
-                        logger.debug(f"Address: {address} not valid in the given nodes.")
+                        logger.debug(f"Address: {address} not valid in nodes.")
                         continue
 
                     if processed_result == "":
-                        logger.info(
-                            "Task result is not valid, retrying with another node..."
-                        )
+                        logger.info("Invalid task result, retrying with another node...")
                         t = Task(
                             id=task.id,
                             workflow=task.workflow,
@@ -595,17 +571,17 @@ class Dria:
             self, task: Union[Task, List[Task]], timeout: int = 30
     ) -> List[Any]:
         """
-        Execute a task or list of tasks.
+        Execute task(s) and get results.
 
         Args:
-            task (Union[Task, List[Task]]): The task or list of tasks to execute.
-            timeout (int): Timeout for task execution in seconds.
+            task: Task(s) to execute
+            timeout: Execution timeout in seconds
 
         Returns:
-            List[Any]: A list of task results.
+            List of task results
 
         Raises:
-            ValueError: If the task is not of type Task or List[Task].
+            ValueError: If invalid task type
         """
         await self.initialize()
 
@@ -613,14 +589,14 @@ class Dria:
             tasks = [task]
         elif isinstance(task, list):
             if not all(isinstance(t, Task) for t in task):
-                raise ValueError("All elements in the list must be of type Task.")
+                raise ValueError("All elements must be Task objects")
             tasks = task
         else:
             raise ValueError("Invalid task type. Expected Task or List[Task].")
 
         try:
             tasks_ = [t.__deepcopy__() for t in tasks]
-            for t in tqdm(tasks_, desc="Tasks are publishing to network..."):
+            for t in tqdm(tasks_, desc="Publishing tasks to network..."):
                 await self.push(t)
 
             return await self.fetch(task=tasks_, timeout=timeout)
@@ -631,18 +607,18 @@ class Dria:
     @staticmethod
     def _is_task_valid(task: Task, current_time: int) -> bool:
         """
-        Check if the task is valid based on its deadline.
+        Check if task is within deadline.
 
         Args:
-            task (Task): The task to check.
-            current_time (int): The current time.
+            task: Task to validate
+            current_time: Current timestamp
 
         Returns:
-            bool: True if the task is valid, False otherwise.
+            bool: True if valid
         """
         task_deadline = int(task.deadline)
         if task_deadline == 0:
-            logger.debug(f"Task {task.id} has no deadline set. Skipping.")
+            logger.debug(f"Task {task.id} has no deadline. Skipping.")
             return False
         if (current_time - task_deadline) > RETURN_DEADLINE:
             logger.debug(f"Task {task.id} deadline exceeded. Skipping.")
@@ -651,16 +627,16 @@ class Dria:
 
     def _get_step_name(self, task_id: str) -> str:
         """
-        Get the step name from the task id.
+        Get step name from task metadata.
 
         Args:
-            task_id (str): The task ID.
+            task_id: Task ID
 
         Returns:
-            str: The step name.
+            Step name
 
         Raises:
-            ValueError: If task metadata is not found or is invalid.
+            ValueError: If metadata invalid/missing
         """
         task_metadata = self.storage.get_value(task_id)
         if task_metadata:
@@ -674,13 +650,13 @@ class Dria:
     @staticmethod
     def _check_function_calling_models(task: Task) -> None:
         """
-        Check if the task is using function calling models and validate the models.
+        Validate models for function calling tasks.
 
         Args:
-            task (Task): The task to check and validate.
+            task: Task to validate
 
         Raises:
-            ValueError: If no supported function calling models are found for the task.
+            ValueError: If no supported models found
         """
         has_function_calling = any(
             t.get("operator") == "function_calling"
@@ -710,7 +686,7 @@ class Dria:
             for model in model_list:
                 if model not in supported_models:
                     logger.warning(
-                        f"Model '{model}' is not supported for function calling and will be removed."
+                        f"Model '{model}' not supported for function calling and will be removed."
                     )
 
             if not filtered_models:
@@ -723,7 +699,7 @@ class Dria:
         task.models = filtered_models
 
     async def _handle_error_type(self, task: Task, error: str) -> None:
-        """Handle the error type."""
+        """Handle task error by removing nodes from blacklist."""
         if "InvalidInput" in error:
             logger.warn(f"ID: {task.id} {error.split('Workflow execution failed: ')[1]}. Task retrying..")
             for address in task.nodes:

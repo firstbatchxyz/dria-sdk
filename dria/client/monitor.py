@@ -1,11 +1,15 @@
 import asyncio
 import json
 from collections import defaultdict
-from typing import List, Dict
+from typing import Dict, List
 
 from Crypto.Hash import keccak
 
-from dria.constants import *
+from dria.constants import (
+    HEARTBEAT_OUTPUT_TOPIC,
+    HEARTBEAT_TOPIC,
+    MONITORING_INTERVAL,
+)
 from dria.db.mq import KeyValueQueue
 from dria.db.storage import Storage
 from dria.models import NodeModel
@@ -22,38 +26,55 @@ from dria.utils.task_utils import TaskManager
 
 class Monitor:
     """
-    Monitor class to handle the monitoring of the node network.
+    Monitor class that handles node network monitoring and heartbeat functionality.
+
+    Responsible for:
+    - Sending periodic heartbeats to check node availability
+    - Processing heartbeat responses to track active nodes
+    - Maintaining node address mappings by model type
+    - Updating task manager with available nodes
     """
 
     def __init__(self, storage: Storage, rpc: RPCClient, kv: KeyValueQueue):
+        """
+        Initialize Monitor.
+
+        Args:
+            storage: Storage instance for persisting data
+            rpc: RPCClient for network communication
+            kv: KeyValueQueue for message queuing
+        """
         self.task_manager = TaskManager(storage, rpc, kv)
         self.rpc = rpc
 
-    async def run(self):
+    async def run(self) -> None:
         """
-        Periodically sends a heartbeat to the node network and checks for responses.
+        Run the monitor process continuously.
+
+        Sends heartbeats and processes responses at regular intervals.
+        Handles errors gracefully and maintains monitoring loop.
         """
         while True:
             try:
                 await self._check_heartbeat()
                 await asyncio.sleep(MONITORING_INTERVAL)
             except Exception as e:
-                logger.error(f"Error during heartbeat process: {e}")
+                logger.error(f"Error during heartbeat process: {e}", exc_info=True)
                 await asyncio.sleep(MONITORING_INTERVAL)
-                raise Exception(e)
+                raise
 
     async def _send_heartbeat(self, payload: str) -> bool:
         """
-        Sends a heartbeat message to the network.
+        Send a heartbeat message to the network.
 
         Args:
-            payload (str): The heartbeat payload.
+            payload: Heartbeat message payload
 
         Returns:
-            bool: True if successful, False otherwise.
+            bool: True if heartbeat sent successfully, False otherwise
         """
         if not self.rpc:
-            logger.warning("RPC client not initialized, skipping heartbeat sending.")
+            logger.warning("RPC client not initialized, skipping heartbeat")
             return False
 
         status = await self.rpc.push_content_topic(
@@ -67,76 +88,85 @@ class Monitor:
 
     async def _check_heartbeat(self) -> bool:
         """
-        Checks for a response to a previously sent heartbeat.
+        Check for and process heartbeat responses.
 
+        Retrieves responses from heartbeat topic, decrypts node information,
+        and updates task manager with available nodes.
 
         Returns:
-            bool: True if a response is received, False otherwise.
+            bool: True if responses processed successfully, False otherwise
         """
         if not self.rpc or not self.task_manager:
-            logger.warning(
-                "RPC client or Task Manager not initialized, skipping heartbeat checking."
-            )
+            logger.warning("Required components not initialized")
             return False
 
-        topic = await self.rpc.get_content_topic(HEARTBEAT_OUTPUT_TOPIC)
-        if topic:
-            try:
-                nodes_as_address = self._decrypt_nodes(
-                    [base64_to_json(t) for t in topic]
+        topic_responses = await self.rpc.get_content_topic(HEARTBEAT_OUTPUT_TOPIC)
+        if not topic_responses:
+            return False
+
+        try:
+            nodes_by_model = self._decrypt_nodes(
+                [base64_to_json(response) for response in topic_responses]
+            )
+            logger.debug(f"Active nodes by model: {nodes_by_model}")
+
+            model_counts: Dict[str, int] = {}
+            for model, addresses in nodes_by_model.items():
+                unique_addresses = list(set(addresses))
+                self.task_manager.add_available_nodes(
+                    NodeModel(uuid="", nodes=unique_addresses),
+                    model
                 )
-                logger.debug(f"Current nodes: {nodes_as_address}")
+                model_counts[model] = len(unique_addresses)
 
-                model_d = {}
-                for model, addresses in nodes_as_address.items():
-                    addresses = list(set(addresses))
-                    self.task_manager.add_available_nodes(
-                        NodeModel(uuid="", nodes=addresses), model
-                    )
-                    model_d[model] = model_d.get(model, 0) + len(addresses)
+            return True
 
-                return True
-            except Exception as e:
-                logger.error(f"Error processing heartbeat response: {e}", exc_info=True)
-
-        return False
+        except Exception as e:
+            logger.error(f"Failed to process heartbeat responses: {e}", exc_info=True)
+            return False
 
     @staticmethod
-    def _decrypt_nodes(available_nodes: List[str]) -> Dict[str, List[str]]:
+    def _decrypt_nodes(node_responses: List[str]) -> Dict[str, List[str]]:
         """
-        Decrypts the available nodes to get the address.
+        Decrypt node responses to extract addresses.
 
         Args:
-            available_nodes (List[str]): Encrypted node identifiers.
+            node_responses: List of encrypted node response strings
 
         Returns:
-            Dict[str, List[str]]: Mapping of models to lists of decrypted node addresses.
+            Dict mapping model names/IDs to lists of node addresses
         """
-        node_addresses = defaultdict(list)
+        node_addresses: Dict[str, List[str]] = defaultdict(list)
 
-        for node in available_nodes:
+        for response in node_responses:
             try:
-                signature, metadata_json = node[:130], node[130:]
+                signature, metadata_json = response[:130], response[130:]
                 metadata = json.loads(metadata_json)
 
                 public_key = recover_public_key(
-                    bytes.fromhex(signature), metadata_json.encode()
+                    bytes.fromhex(signature),
+                    metadata_json.encode()
                 )
                 public_key = uncompressed_public_key(public_key)
+
+                # Generate Keccak hash of public key to get address
                 address = (
                     keccak.new(digest_bits=256)
                     .update(public_key[1:])
                     .digest()[-20:]
                     .hex()
                 )
+
+                # Map address to both model ID and name
                 for model_id, model_name in metadata["models"]:
                     node_addresses[model_name].append(address)
                     node_addresses[model_id].append(address)
 
             except Exception as e:
-                logger.error(f"Failed to decrypt node: {e}", exc_info=True)
+                logger.error(f"Failed to decrypt node response: {e}", exc_info=True)
+                continue
 
-        for i, v in node_addresses.items():
-            node_addresses[i] = list(set(v))
-
-        return dict(node_addresses)
+        return {
+            model: list(set(addresses))
+            for model, addresses in node_addresses.items()
+        }

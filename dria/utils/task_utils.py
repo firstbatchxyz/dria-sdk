@@ -7,10 +7,10 @@ import string
 import time
 from typing import List, Tuple, Any, Dict, Union, Optional
 
-from dria.db.mq import KeyValueQueue
 from fastbloom_rs import BloomFilter
 
 from dria.constants import MONITORING_INTERVAL, INPUT_CONTENT_TOPIC, TASK_DEADLINE
+from dria.db.mq import KeyValueQueue
 from dria.db.storage import Storage
 from dria.models import NodeModel, TaskModel, TaskInputModel, Task
 from dria.models.enums import Model
@@ -21,7 +21,25 @@ from dria.utils.logging import logger
 
 
 class TaskManager:
+    """
+    Manages task lifecycle including creation, publishing, and node selection.
+    
+    Handles:
+    - Task preparation and publishing to network
+    - Node selection and filtering
+    - Task state management
+    - Node availability tracking
+    """
+
     def __init__(self, storage: Storage, rpc: RPCClient, kv: KeyValueQueue):
+        """
+        Initialize TaskManager.
+
+        Args:
+            storage: Storage backend for persisting task/node data
+            rpc: RPC client for network communication
+            kv: Key-value queue for task messaging
+        """
         self.storage = storage
         self.rpc = rpc
         self.kv = kv
@@ -29,116 +47,135 @@ class TaskManager:
     @staticmethod
     def generate_random_string(length: int = 32) -> str:
         """
-        Generate a random string of a given length.
+        Generate a cryptographically secure random string.
 
         Args:
-            length (int, optional): Length of the random string. Defaults to 32.
+            length: Length of string to generate, defaults to 32
 
         Returns:
-            str: Random string
+            Random string of specified length
         """
         return "".join(
-            secrets.choice(string.ascii_letters + string.digits) for _ in range(length)
+            secrets.choice(string.ascii_letters + string.digits) 
+            for _ in range(length)
         )
 
     async def publish_message(self, task: str, content_topic: str) -> bool:
         """
-        Publish a message to a content topic.
+        Publish a task message to specified content topic.
 
         Args:
-            task (str): Task to publish
-            content_topic (str): Content topic to publish to
+            task: Task data to publish
+            content_topic: Topic to publish to
 
         Returns:
-            bool: True if the message was published successfully, False otherwise
+            True if published successfully
+
+        Raises:
+            TaskPublishError: If publishing fails
         """
         try:
-            success = await self.rpc.push_content_topic(
-                data=str_to_base64(task), content_topic=content_topic
+            return await self.rpc.push_content_topic(
+                data=str_to_base64(task),
+                content_topic=content_topic
             )
-            return success
         except Exception as e:
             raise TaskPublishError(f"Failed to publish task: {e}") from e
 
     async def prepare_task(
-            self, task: Task, blacklist: Dict[str, Dict[str, int]]
-    ) -> tuple[dict[str, Any], Task]:
+        self, 
+        task: Task,
+        blacklist: Dict[str, Dict[str, int]]
+    ) -> Tuple[Dict[str, Any], Task]:
         """
-        Prepare a task for publishing.
+        Prepare task for publishing by generating ID, deadline and selecting nodes.
 
         Args:
-            task (Task): Task to prepare
-            blacklist: The blacklisted nodes
+            task: Task to prepare
+            blacklist: Dict of blacklisted nodes
 
         Returns:
-            Tuple[dict, dict]: Task model and task
+            Tuple of task model dict and prepared task
+
+        Raises:
+            TaskFilterError: If node selection fails
         """
         task.id = self.generate_random_string()
         deadline = int(time.time_ns() + TASK_DEADLINE * 1e9)
+
         try:
-            picked_nodes, task_filter = await self.create_filter(task.models, blacklist, task_id=task.id)
+            picked_nodes, task_filter = await self.create_filter(
+                task.models, 
+                blacklist,
+                task_id=task.id
+            )
         except Exception as e:
             raise TaskFilterError(f"{task.id}: {e}") from e
 
-        task.id = task.id
         task.deadline = deadline
         task.nodes = picked_nodes
 
         task_input = TaskInputModel(
             workflow=task.workflow,
-            model=task.models,
+            model=task.models
         ).dict()
+
         return (
             TaskModel(
                 taskId=task.id,
-                filter=task_filter,
+                filter=task_filter, 
                 input=task_input,
                 pickedNodes=picked_nodes,
                 deadline=deadline,
                 publicKey=task.public_key.lstrip("0x"),
-                privateKey=task.private_key,
+                privateKey=task.private_key
             ).dict(),
-            task,
+            task
         )
 
     async def push_task(
-            self, task: Task, blacklist: Dict[str, Dict[str, int]]
-    ) -> tuple[bool, Union[Optional[List[str]]]]:
+        self,
+        task: Task, 
+        blacklist: Dict[str, Dict[str, int]]
+    ) -> Tuple[bool, Optional[List[str]]]:
         """
-        Push a task to the content topic.
+        Push prepared task to network.
 
         Args:
-            task (Task): Task to push
-            blacklist: The blacklisted nodes
+            task: Task to push
+            blacklist: Dict of blacklisted nodes
 
         Returns:
-            bool: True if the task was pushed successfully, False otherwise
+            Tuple of (success bool, list of selected nodes if successful)
         """
         is_retried = False
         if task.id is not None:
             is_retried = True
             old_task_id = task.__deepcopy__().id
+
         task_model, task = await self.prepare_task(task, blacklist)
         task_model_str = json.dumps(task_model, ensure_ascii=False)
+
         if await self.publish_message(task_model_str, INPUT_CONTENT_TOPIC):
             self.storage.set_value(
-                f"{task.id}", json.dumps(task.dict(), ensure_ascii=False)
+                f"{task.id}",
+                json.dumps(task.dict(), ensure_ascii=False)
             )
             if is_retried:
                 self.kv.push(f":{old_task_id}", {"new_task_id": task.id})
-
             return True, task.nodes
+
         return False, None
 
     def get_available_nodes(self, model_type: str) -> List[str]:
         """
-        Get available nodes for a given model type.
+        Get list of available nodes for specified model type.
 
         Args:
-            model_type (str): Model type to get available nodes for
+            model_type: Type of model to get nodes for
 
         Returns:
-            List[str]: List of available nodes
+            List of available node addresses
         """
         try:
             available_nodes = self.storage.get_value(f"available-nodes-{model_type}")
@@ -148,39 +185,29 @@ class TaskManager:
             return []
 
     async def create_filter(
-            self,
-            using_models: List[str],
-            blacklist: Dict[str, Dict[str, int]],
-            task_id: str = "",
-            retry: int = 0
-
-    ) -> Tuple[List[str], dict]:
+        self,
+        using_models: List[str],
+        blacklist: Dict[str, Dict[str, int]],
+        task_id: str = "",
+        retry: int = 0
+    ) -> Tuple[List[str], Dict]:
         """
-        Create a filter for a given task.
+        Create Bloom filter for node selection.
 
         Args:
-            using_models (List[str]): List of models to use
-            blacklist (Dict[str, Dict[str, int]]): Blacklist of nodes
-            retry (int, optional): Retry count. Defaults to 0.
-            task_id (str): Task ID
+            using_models: List of models needed
+            blacklist: Dict of blacklisted nodes
+            task_id: ID of task for logging
+            retry: Number of retries attempted
 
         Returns:
-            Tuple[List[str], dict]: Picked nodes and filter
+            Tuple of (selected nodes, Bloom filter params)
         """
-
-        """
-        # TODO: Add retry
-        if retry > constants.MAX_RETRIES_FOR_AVAILABILITY:
-            raise TaskFilterError(
-                f"No available nodes for models {using_models}. Try with a different model or retry later."
-            )
-        """
-
         available_nodes = set()
         for model in using_models:
             available_nodes_for_model = self.get_available_nodes(model)
             filtered_nodes = [
-                node
+                node 
                 for node in available_nodes_for_model
                 if int(time.time()) > blacklist.get(node, {"deadline": 0})["deadline"]
             ]
@@ -201,42 +228,49 @@ class TaskManager:
                 else:
                     logger.debug("No active nodes in the network")
             await asyncio.sleep(MONITORING_INTERVAL)
-            return await self.create_filter(using_models, blacklist, task_id=task_id, retry=retry + 1)
+            return await self.create_filter(
+                using_models, 
+                blacklist,
+                task_id=task_id,
+                retry=retry + 1
+            )
 
         picked_nodes = random.sample(list(available_nodes), 1)
 
         for model in using_models:
             try:
                 self.storage.remove_from_list(
-                    f"available-nodes-{model}", None, picked_nodes
+                    f"available-nodes-{model}",
+                    None,
+                    picked_nodes
                 )
             except ValueError:
                 logger.debug(
-                    f"Node {picked_nodes} not found in available nodes for model {model}. Passing this node for remove request."
+                    f"Node {picked_nodes} not found in available nodes for model {model}"
                 )
 
         bf = BloomFilter(len(picked_nodes) * 2 + 1, 0.001)
         for node in picked_nodes:
             bf.add(bytes.fromhex(node))
 
-        logger.debug(f"Sending to: {picked_nodes}")
+        logger.debug(f"Selected nodes: {picked_nodes}")
         return picked_nodes, {"hex": bf.get_bytes().hex(), "hashes": bf.hashes()}
 
     def add_available_nodes(self, node_model: NodeModel, model_type: str) -> bool:
         """
-        Add available nodes to the storage.
+        Add nodes to available pool for specified model type.
 
         Args:
-            node_model (NodeModel): Node model to add
-            model_type (str): Model type to add the nodes for
+            node_model: Node model containing nodes to add
+            model_type: Type of model nodes support
 
         Returns:
-            bool: True if the nodes were added successfully, False otherwise
+            True if nodes added successfully
         """
         try:
             self.storage.set_value(
                 f"available-nodes-{model_type}",
-                json.dumps(node_model.nodes, ensure_ascii=False),
+                json.dumps(node_model.nodes, ensure_ascii=False)
             )
             return True
         except Exception as e:
@@ -244,32 +278,29 @@ class TaskManager:
             return False
 
 
-def parse_json(text: Union[str, List]) -> Union[list[dict], dict]:
-    """Parse the JSON text.
+def parse_json(text: Union[str, List]) -> Union[List[Dict], Dict]:
+    """
+    Parse JSON from text, handling various formats.
+
+    Supports:
+    - Raw JSON
+    - JSON in code blocks
+    - JSON in <JSON> tags
+    - Lists of JSON strings
 
     Args:
-        text (str): The text to parse.
+        text: Text containing JSON to parse
 
     Returns:
-        dict: JSON output.
+        Parsed JSON as dict or list of dicts
+
+    Raises:
+        ValueError: If JSON parsing fails
     """
-
-    def parse_single_json(result: str) -> dict:
-        """Parse JSON text from a string, extracting from code blocks or <json> tags if present.
-
-        Args:
-            result (str): The text to parse.
-
-        Returns:
-            dict: Parsed JSON output.
-
-        Raises:
-            ValueError: If JSON cannot be parsed.
-        """
-        # Patterns to match code blocks with optional 'json' and <json> tags
+    def parse_single_json(result: str) -> Dict:
         patterns = [
-            r"```(?:JSON)?\s*(.*?)\s*```",  # Code block with or without 'json'
-            r"<JSON>\s*(.*?)\s*</JSON>",  # <json>...</json> tags
+            r"```(?:JSON)?\s*(.*?)\s*```",
+            r"<JSON>\s*(.*?)\s*</JSON>",
         ]
 
         for pattern in patterns:
@@ -283,9 +314,8 @@ def parse_json(text: Union[str, List]) -> Union[list[dict], dict]:
         try:
             return json.loads(json_text)
         except json.JSONDecodeError as e:
-            raise ValueError(f"Could not parse JSON from result: {json_text}") from e
+            raise ValueError(f"Invalid JSON format: {json_text}") from e
 
     if isinstance(text, list):
         return [parse_single_json(item) for item in text]
-    else:
-        return parse_single_json(text)
+    return parse_single_json(text)
