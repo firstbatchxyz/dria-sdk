@@ -38,7 +38,7 @@ class Dria:
 
     Provides high-level methods for:
     - Submitting AI tasks to the network
-    - Retrieving task results 
+    - Retrieving task results
     - Managing background monitoring and polling
     - Handling node blacklisting and retries
     """
@@ -265,10 +265,10 @@ class Dria:
         start_time = time.time()
         min_outputs = self._determine_min_outputs(task, min_outputs)
 
-        with tqdm(total=min_outputs, desc="Fetching results...") as pbar:
+        with tqdm(total=min_outputs, desc="Fetching results...", disable=len(results) == 0) as pbar:
             while len(results) < min_outputs and not self.shutdown_event.is_set():
                 elapsed_time = time.time() - start_time
-                if elapsed_time > timeout and timeout > 0:
+                if elapsed_time > timeout > 0:
                     logger.debug(f"Unable to fetch {min_outputs} outputs within {timeout} seconds.")
                     break
 
@@ -523,7 +523,8 @@ class Dria:
                 self.storage.set_value(identifier, json.dumps(task.dict()))
 
                 if "error" in result:
-                    logger.debug(f"ID: {identifier} {result['error'].split('Workflow execution failed: ')[1]}. Task retrying..")
+                    logger.debug(
+                        f"ID: {identifier} {result['error'].split('Workflow execution failed: ')[1]}. Task retrying..")
                     await self._handle_error_type(task, result["error"])
                     t = Task(
                         id=task.id,
