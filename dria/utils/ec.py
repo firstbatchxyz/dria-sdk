@@ -109,7 +109,8 @@ def publickey_to_address(public_key: bytes) -> str:
 
 
 def get_truthful_nodes(
-        task: Task, topic_result: Dict # todo
+        task: Task, topic_result: Dict,
+        rpc_auth: str
 ) -> tuple[None, None] | tuple[str | None, str]:
     """
     Get truthful nodes from topic results.
@@ -117,6 +118,7 @@ def get_truthful_nodes(
     Args:
         task (Task): Task data
         topic_result (Dict): Topic result
+        rpc_auth (str): User's RPC ID for network
 
     Returns:
         Tuple[List[Dict], List[str]]: List of truthful nodes and results
@@ -125,7 +127,7 @@ def get_truthful_nodes(
         topic_result["ciphertext"] = bytes.fromhex(topic_result["ciphertext"])
     result = decrypt_message(task.private_key[2:], topic_result["ciphertext"])
     public_key = recover_public_key(
-        bytes.fromhex(topic_result["signature"]), (task.id + result).encode()
+        bytes.fromhex(topic_result["signature"]), (task.id+"--"+rpc_auth + result).encode()
     )
     public_key = uncompressed_public_key(public_key)
     address = publickey_to_address(public_key)

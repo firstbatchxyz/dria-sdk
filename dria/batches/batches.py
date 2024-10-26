@@ -3,6 +3,7 @@ from typing import List, Dict, Any
 from dria.client import Dria
 from dria.factory.workflows.template import SingletonTemplate
 from dria.models import Task, Model
+from dria.utils.logging import logger
 
 MAX_CONCURRENT: int = 1000
 
@@ -19,7 +20,23 @@ class ParallelSingletonExecutor:
         self.timeout = 60
 
     def load_instructions(self, inputs: List[Dict[str, Any]]):
-        [self.instructions.append(self._create_task(inp)) for inp in inputs]
+        for inp in inputs:
+            self.instructions.append(self._create_task(inp))
+        ratio = len(self.instructions) / 10
+        if ratio > self.timeout:
+            if ratio > 30:
+                new_timeout = int(ratio)
+                logger.warning(
+                    f"Instruction size is too large for setting timeout {self.timeout}."
+                    f" Setting timeout to {new_timeout} seconds."
+                )
+                self.timeout = new_timeout
+            else:
+                logger.warning(
+                    f"Instruction size is too large for setting timeout {self.timeout}."
+                    f"Setting timeout to 30 seconds."
+                )
+                self.timeout = 30
 
     def set_models(self, models: List[Model]):
         self.models = models
@@ -45,6 +62,5 @@ class ParallelSingletonExecutor:
         return self.singleton.parse_result(results)
 
     async def run(self):
-        await self.dria.initialize()
         results = await self.execute_workflows()
         return results

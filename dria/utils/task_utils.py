@@ -7,6 +7,7 @@ import string
 import time
 from typing import List, Tuple, Any, Dict, Union, Optional
 
+from dria.db.mq import KeyValueQueue
 from fastbloom_rs import BloomFilter
 
 from dria.constants import MONITORING_INTERVAL, INPUT_CONTENT_TOPIC, TASK_DEADLINE
@@ -20,9 +21,10 @@ from dria.utils.logging import logger
 
 
 class TaskManager:
-    def __init__(self, storage: Storage, rpc=RPCClient):
+    def __init__(self, storage: Storage, rpc: RPCClient, kv: KeyValueQueue):
         self.storage = storage
         self.rpc = rpc
+        self.kv = kv
 
     @staticmethod
     def generate_random_string(length: int = 32) -> str:
@@ -112,12 +114,19 @@ class TaskManager:
         Returns:
             bool: True if the task was pushed successfully, False otherwise
         """
+        is_retried = False
+        if task.id is not None:
+            is_retried = True
+            old_task_id = task.__deepcopy__().id
         task_model, task = await self.prepare_task(task, blacklist)
         task_model_str = json.dumps(task_model, ensure_ascii=False)
         if await self.publish_message(task_model_str, INPUT_CONTENT_TOPIC):
             self.storage.set_value(
                 f"{task.id}", json.dumps(task.dict(), ensure_ascii=False)
             )
+            if is_retried:
+                self.kv.push(f":{old_task_id}", {"new_task_id": task.id})
+
             return True, task.nodes
         return False, None
 
