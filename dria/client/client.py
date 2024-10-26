@@ -265,7 +265,7 @@ class Dria:
         start_time = time.time()
         min_outputs = self._determine_min_outputs(task, min_outputs)
 
-        with tqdm(total=min_outputs, desc="Fetching results...", disable=len(results) == 0) as pbar:
+        with tqdm(total=min_outputs, desc="Fetching results...") as pbar:
             while len(results) < min_outputs and not self.shutdown_event.is_set():
                 elapsed_time = time.time() - start_time
                 if elapsed_time > timeout > 0:
