@@ -242,6 +242,7 @@ class Dria:
             task: Union[Optional[Task], Optional[List[Task]]] = None,
             min_outputs: Optional[int] = None,
             timeout: int = 30,
+            is_disabled: bool = False
     ) -> List[TaskResult]:
         """
         Fetch task results from storage.
@@ -251,6 +252,7 @@ class Dria:
             task (Union[Optional[Task], Optional[List[Task]]]): Task(s) to fetch results for
             min_outputs (Optional[int]): Minimum number of outputs to fetch
             timeout (int): Fetch timeout in seconds
+            is_disabled (bool): TQDM Display
 
         Returns:
             List[TaskResult]: List of task results
@@ -265,7 +267,7 @@ class Dria:
         start_time = time.time()
         min_outputs = self._determine_min_outputs(task, min_outputs)
 
-        with tqdm(total=min_outputs, desc="Fetching results...") as pbar:
+        with tqdm(total=min_outputs, desc="Fetching results...", disable=is_disabled) as pbar:
             while len(results) < min_outputs and not self.shutdown_event.is_set():
                 elapsed_time = time.time() - start_time
                 if elapsed_time > timeout > 0:
@@ -279,7 +281,6 @@ class Dria:
                 results.extend(new_results)
                 pbar.update(len(new_results))
 
-                # Update task IDs after retries
                 for key, value in new_id_map.items():
                     if isinstance(task, str):
                         task.id = value

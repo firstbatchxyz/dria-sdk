@@ -144,7 +144,7 @@ class Pipeline:
                     return
 
                 results: List[TaskResult] = await self.client.fetch(
-                    pipeline=self, timeout=0
+                    pipeline=self, timeout=0, is_disabled=True
                 )
                 for result in results:
                     step = self.get_step(result.step_name)
