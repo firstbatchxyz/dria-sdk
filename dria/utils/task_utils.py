@@ -5,7 +5,7 @@ import re
 import secrets
 import string
 import time
-from typing import List, Tuple, Any, Dict, Union, Optional
+from typing import List, Tuple, Any, Dict, Union
 
 from fastbloom_rs import BloomFilter
 
@@ -23,7 +23,7 @@ from dria.utils.logging import logger
 class TaskManager:
     """
     Manages task lifecycle including creation, publishing, and node selection.
-    
+
     Handles:
     - Task preparation and publishing to network
     - Node selection and filtering
@@ -56,7 +56,7 @@ class TaskManager:
             Random string of specified length
         """
         return "".join(
-            secrets.choice(string.ascii_letters + string.digits) 
+            secrets.choice(string.ascii_letters + string.digits)
             for _ in range(length)
         )
 
@@ -83,10 +83,10 @@ class TaskManager:
             raise TaskPublishError(f"Failed to publish task: {e}") from e
 
     async def prepare_task(
-        self, 
-        task: Task,
-        blacklist: Dict[str, Dict[str, int]]
-    ) -> Tuple[Dict[str, Any], Task]:
+            self,
+            task: Task,
+            blacklist: Dict[str, Dict[str, int]]
+    ) -> tuple[dict[str, Any], Task, str]:
         """
         Prepare task for publishing by generating ID, deadline and selecting nodes.
 
@@ -104,8 +104,8 @@ class TaskManager:
         deadline = int(time.time_ns() + TASK_DEADLINE * 1e9)
 
         try:
-            picked_nodes, task_filter = await self.create_filter(
-                task.models, 
+            picked_nodes, selected_model, task_filter = await self.create_filter(
+                task.models,
                 blacklist,
                 task_id=task.id
             )
@@ -117,27 +117,28 @@ class TaskManager:
 
         task_input = TaskInputModel(
             workflow=task.workflow,
-            model=task.models
+            model=[selected_model]
         ).dict()
 
         return (
             TaskModel(
                 taskId=task.id,
-                filter=task_filter, 
+                filter=task_filter,
                 input=task_input,
                 pickedNodes=picked_nodes,
                 deadline=deadline,
                 publicKey=task.public_key.lstrip("0x"),
                 privateKey=task.private_key
             ).dict(),
-            task
+            task,
+            selected_model
         )
 
     async def push_task(
-        self,
-        task: Task, 
-        blacklist: Dict[str, Dict[str, int]]
-    ) -> Tuple[bool, Optional[List[str]]]:
+            self,
+            task: Task,
+            blacklist: Dict[str, Dict[str, int]]
+    ) -> tuple[bool, list[str], str] | tuple[bool, None, None]:
         """
         Push prepared task to network.
 
@@ -153,7 +154,7 @@ class TaskManager:
             is_retried = True
             old_task_id = task.__deepcopy__().id
 
-        task_model, task = await self.prepare_task(task, blacklist)
+        task_model, task, selected_model = await self.prepare_task(task, blacklist)
         task_model_str = json.dumps(task_model, ensure_ascii=False)
 
         if await self.publish_message(task_model_str, INPUT_CONTENT_TOPIC):
@@ -163,9 +164,9 @@ class TaskManager:
             )
             if is_retried:
                 self.kv.push(f":{old_task_id}", {"new_task_id": task.id})
-            return True, task.nodes
+            return True, task.nodes, selected_model
 
-        return False, None
+        return False, None, None
 
     def get_available_nodes(self, model_type: str) -> List[str]:
         """
@@ -185,12 +186,12 @@ class TaskManager:
             return []
 
     async def create_filter(
-        self,
-        using_models: List[str],
-        blacklist: Dict[str, Dict[str, int]],
-        task_id: str = "",
-        retry: int = 0
-    ) -> Tuple[List[str], Dict]:
+            self,
+            using_models: List[str],
+            blacklist: Dict[str, Dict[str, int]],
+            task_id: str = "",
+            retry: int = 0
+    ) -> Tuple[List[str], str, Dict]:
         """
         Create Bloom filter for node selection.
 
@@ -201,22 +202,22 @@ class TaskManager:
             retry: Number of retries attempted
 
         Returns:
-            Tuple of (selected nodes, Bloom filter params)
+            Tuple of (selected nodes, selected model, Bloom filter params)
         """
-        available_nodes = set()
+        # Get all available nodes for all models
+        all_model_nodes = {}
         for model in using_models:
-            available_nodes_for_model = self.get_available_nodes(model)
+            nodes = self.get_available_nodes(model)
             filtered_nodes = [
-                node 
-                for node in available_nodes_for_model
-                if int(time.time()) > blacklist.get(node, {"deadline": 0})["deadline"]
+                node
+                for node in nodes
+                if int(time.time()) > blacklist.get(node + ":" + model, {"deadline": 0})["deadline"]
             ]
-            available_nodes.update(filtered_nodes)
+            if filtered_nodes:
+                all_model_nodes[model] = filtered_nodes
 
-        logger.debug(f"Currently available nodes: {available_nodes}")
-
-        if not available_nodes:
-            if retry % 10 == 0 and retry != 0:
+        if not all_model_nodes:
+            if retry % 20 == 0 and retry != 0:
                 logger.info(f"Searching available nodes for task {task_id}")
                 log_str = ""
                 for model in Model:
@@ -229,13 +230,14 @@ class TaskManager:
                     logger.debug("No active nodes in the network")
             await asyncio.sleep(MONITORING_INTERVAL)
             return await self.create_filter(
-                using_models, 
+                using_models,
                 blacklist,
                 task_id=task_id,
                 retry=retry + 1
             )
 
-        picked_nodes = random.sample(list(available_nodes), 1)
+        selected_model = random.choice(list(all_model_nodes.keys()))
+        picked_nodes = random.sample(all_model_nodes[selected_model], 1)
 
         for model in using_models:
             try:
@@ -254,7 +256,7 @@ class TaskManager:
             bf.add(bytes.fromhex(node))
 
         logger.debug(f"Selected nodes: {picked_nodes}")
-        return picked_nodes, {"hex": bf.get_bytes().hex(), "hashes": bf.hashes()}
+        return picked_nodes, selected_model, {"hex": bf.get_bytes().hex(), "hashes": bf.hashes()}
 
     def add_available_nodes(self, node_model: NodeModel, model_type: str) -> bool:
         """
@@ -297,6 +299,7 @@ def parse_json(text: Union[str, List]) -> Union[List[Dict], Dict]:
     Raises:
         ValueError: If JSON parsing fails
     """
+
     def parse_single_json(result: str) -> Dict:
         patterns = [
             r"```(?:JSON)?\s*(.*?)\s*```",

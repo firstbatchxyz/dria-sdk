@@ -95,15 +95,17 @@ class Dria:
             for key, value in self.blacklist.items():
                 f.write(f"{key}|{value}\n")
 
-    def _remove_from_blacklist(self, address: str) -> None:
+    def _remove_from_blacklist(self, address: str, model: str = "") -> None:
         """
         Remove a node address from the blacklist.
 
         Args:
             address (str): Node address to remove
+            model (str): Model info for blacklist
         """
-        if address in self.blacklist:
-            del self.blacklist[address]
+        mid = address + ":" + model
+        if mid in self.blacklist:
+            del self.blacklist[mid]
             self._save_blacklist()
             logger.debug(f"Address {address} removed from blacklist.")
         else:
@@ -207,9 +209,9 @@ class Dria:
             )
 
         try:
-            success, nodes = await self.task_manager.push_task(task, self.blacklist)
+            success, nodes, selected_model = await self.task_manager.push_task(task, self.blacklist)
             if success:
-                await self._update_blacklist(nodes)
+                await self._update_blacklist(nodes, selected_model)
                 logger.debug(f"Task {task.id} successfully published. Step: {task.step_name}")
                 return True
             else:
@@ -218,15 +220,17 @@ class Dria:
         except Exception as e:
             raise TaskPublishError(f"Failed to publish task {task.id}: {e}") from e
 
-    async def _update_blacklist(self, nodes: List[str]) -> None:
+    async def _update_blacklist(self, nodes: List[str], selected_model: str) -> None:
         """
         Update node blacklist with exponential backoff.
 
         Args:
             nodes (List[str]): Node addresses to blacklist
+            selected_model (str): Selected model
         """
         current_time = int(time.time())
         for node in nodes:
+            node = node + ":" + selected_model
             node_entry = self.blacklist.get(node, {"count": 0})
             node_entry["count"] += 1
             wait_time = self.DEADLINE_MULTIPLIER * 60 * (4 ** (node_entry["count"] - 1))
@@ -557,8 +561,7 @@ class Dria:
                         asyncio.create_task(self.push(t))
                         continue
                     else:
-                        if address in self.blacklist:
-                            self._remove_from_blacklist(address)
+                        self._remove_from_blacklist(address, result["model"])
                     pipeline_id = task.pipeline_id or ""
                     self.kv.push(
                         f"{pipeline_id}:{identifier}",
@@ -702,7 +705,7 @@ class Dria:
 
     async def _handle_error_type(self, task: Task, error: str) -> None:
         """Handle task error by removing nodes from blacklist."""
-        if "InvalidInput" in error:
+        if "InvalidInput" in error or "tcp open error" in error:
             logger.warn(f"ID: {task.id} {error.split('Workflow execution failed: ')[1]}. Task retrying..")
             for address in task.nodes:
                 self._remove_from_blacklist(address)
