@@ -45,5 +45,5 @@ __all__ = [
     "StructRAGJudge",
     "StructRAGAnswer",
     "StructRAGExtract",
-    "StructRAGDecompose"
+    "StructRAGDecompose",
 ]

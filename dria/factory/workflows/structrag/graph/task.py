@@ -22,10 +22,7 @@ class StructRAGGraph(SingletonTemplate):
         """
 
         # Initialize the workflow with variables to be used in the prompt
-        builder = WorkflowBuilder(
-            documents=documents,
-            query=query
-        )
+        builder = WorkflowBuilder(documents=documents, query=query)
         self.params.documents = documents
         self.params.query = query
         builder.set_max_tokens(1000)

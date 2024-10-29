@@ -56,8 +56,7 @@ class TaskManager:
             Random string of specified length
         """
         return "".join(
-            secrets.choice(string.ascii_letters + string.digits)
-            for _ in range(length)
+            secrets.choice(string.ascii_letters + string.digits) for _ in range(length)
         )
 
     async def publish_message(self, task: str, content_topic: str) -> bool:
@@ -76,16 +75,13 @@ class TaskManager:
         """
         try:
             return await self.rpc.push_content_topic(
-                data=str_to_base64(task),
-                content_topic=content_topic
+                data=str_to_base64(task), content_topic=content_topic
             )
         except Exception as e:
             raise TaskPublishError(f"Failed to publish task: {e}") from e
 
     async def prepare_task(
-            self,
-            task: Task,
-            blacklist: Dict[str, Dict[str, int]]
+        self, task: Task, blacklist: Dict[str, Dict[str, int]]
     ) -> tuple[dict[str, Any], Task, str]:
         """
         Prepare task for publishing by generating ID, deadline and selecting nodes.
@@ -105,9 +101,7 @@ class TaskManager:
 
         try:
             picked_nodes, selected_model, task_filter = await self.create_filter(
-                task.models,
-                blacklist,
-                task_id=task.id
+                task.models, blacklist, task_id=task.id
             )
         except Exception as e:
             raise TaskFilterError(f"{task.id}: {e}") from e
@@ -116,8 +110,7 @@ class TaskManager:
         task.nodes = picked_nodes
 
         task_input = TaskInputModel(
-            workflow=task.workflow,
-            model=[selected_model]
+            workflow=task.workflow, model=[selected_model]
         ).dict()
 
         return (
@@ -128,16 +121,14 @@ class TaskManager:
                 pickedNodes=picked_nodes,
                 deadline=deadline,
                 publicKey=task.public_key.lstrip("0x"),
-                privateKey=task.private_key
+                privateKey=task.private_key,
             ).dict(),
             task,
-            selected_model
+            selected_model,
         )
 
     async def push_task(
-            self,
-            task: Task,
-            blacklist: Dict[str, Dict[str, int]]
+        self, task: Task, blacklist: Dict[str, Dict[str, int]]
     ) -> tuple[bool, list[str], str] | tuple[bool, None, None]:
         """
         Push prepared task to network.
@@ -159,8 +150,7 @@ class TaskManager:
 
         if await self.publish_message(task_model_str, INPUT_CONTENT_TOPIC):
             self.storage.set_value(
-                f"{task.id}",
-                json.dumps(task.dict(), ensure_ascii=False)
+                f"{task.id}", json.dumps(task.dict(), ensure_ascii=False)
             )
             if is_retried:
                 self.kv.push(f":{old_task_id}", {"new_task_id": task.id})
@@ -186,11 +176,11 @@ class TaskManager:
             return []
 
     async def create_filter(
-            self,
-            using_models: List[str],
-            blacklist: Dict[str, Dict[str, int]],
-            task_id: str = "",
-            retry: int = 0
+        self,
+        using_models: List[str],
+        blacklist: Dict[str, Dict[str, int]],
+        task_id: str = "",
+        retry: int = 0,
     ) -> Tuple[List[str], str, Dict]:
         """
         Create Bloom filter for node selection.
@@ -211,7 +201,8 @@ class TaskManager:
             filtered_nodes = [
                 node
                 for node in nodes
-                if int(time.time()) > blacklist.get(node + ":" + model, {"deadline": 0})["deadline"]
+                if int(time.time())
+                > blacklist.get(node + ":" + model, {"deadline": 0})["deadline"]
             ]
             if filtered_nodes:
                 all_model_nodes[model] = filtered_nodes
@@ -230,10 +221,7 @@ class TaskManager:
                     logger.debug("No active nodes in the network")
             await asyncio.sleep(MONITORING_INTERVAL)
             return await self.create_filter(
-                using_models,
-                blacklist,
-                task_id=task_id,
-                retry=retry + 1
+                using_models, blacklist, task_id=task_id, retry=retry + 1
             )
 
         selected_model = random.choice(list(all_model_nodes.keys()))
@@ -242,9 +230,7 @@ class TaskManager:
         for model in using_models:
             try:
                 self.storage.remove_from_list(
-                    f"available-nodes-{model}",
-                    None,
-                    picked_nodes
+                    f"available-nodes-{model}", None, picked_nodes
                 )
             except ValueError:
                 logger.debug(
@@ -256,7 +242,11 @@ class TaskManager:
             bf.add(bytes.fromhex(node))
 
         logger.debug(f"Selected nodes: {picked_nodes}")
-        return picked_nodes, selected_model, {"hex": bf.get_bytes().hex(), "hashes": bf.hashes()}
+        return (
+            picked_nodes,
+            selected_model,
+            {"hex": bf.get_bytes().hex(), "hashes": bf.hashes()},
+        )
 
     def add_available_nodes(self, node_model: NodeModel, model_type: str) -> bool:
         """
@@ -272,7 +262,7 @@ class TaskManager:
         try:
             self.storage.set_value(
                 f"available-nodes-{model_type}",
-                json.dumps(node_model.nodes, ensure_ascii=False)
+                json.dumps(node_model.nodes, ensure_ascii=False),
             )
             return True
         except Exception as e:

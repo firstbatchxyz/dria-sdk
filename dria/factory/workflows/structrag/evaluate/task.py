@@ -22,10 +22,7 @@ class StructRAGDecompose(SingletonTemplate):
         """
 
         # Initialize the workflow with variables to be used in the prompt
-        builder = WorkflowBuilder(
-            knowledge_info=knowledge_info,
-            query=query
-        )
+        builder = WorkflowBuilder(knowledge_info=knowledge_info, query=query)
         self.params.knowledge_info = knowledge_info
         self.params.query = query
         builder.set_max_tokens(1000)
@@ -73,8 +70,7 @@ class StructRAGExtract(SingletonTemplate):
 
         # Initialize the workflow with variables to be used in the prompt
         builder = WorkflowBuilder(
-            sub_question=sub_question,
-            knowledge=structured_knowledge
+            sub_question=sub_question, knowledge=structured_knowledge
         )
         self.params.sub_question = sub_question
         self.params.structured_knowledge = structured_knowledge
@@ -127,7 +123,7 @@ class StructRAGAnswer(SingletonTemplate):
         builder = WorkflowBuilder(
             question=question,
             sub_questions=sub_questions,
-            precise_knowledge=precise_knowledge
+            precise_knowledge=precise_knowledge,
         )
         self.params.question = question
         self.params.sub_questions = sub_questions

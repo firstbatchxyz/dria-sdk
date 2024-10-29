@@ -221,7 +221,9 @@ class Pipeline:
             error_type = type(e).__name__
             error_message = str(e)
             error_traceback = traceback.format_exc()
-            self.logger.info(f"Pipeline error details:\nType: {error_type}\nMessage: {error_message}\nTraceback:\n{error_traceback}")
+            self.logger.info(
+                f"Pipeline error details:\nType: {error_type}\nMessage: {error_message}\nTraceback:\n{error_traceback}"
+            )
         self._update_status(PipelineStatus.FAILED)
         self._update_state(PipelineStatus.FAILED.value)
         if e:

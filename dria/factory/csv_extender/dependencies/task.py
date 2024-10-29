@@ -79,16 +79,15 @@ class GetDependencies(StepTemplate):
                     dep = dep.replace("-> independent", "").strip()
                     independent_dependencies.append(dep)
 
-        return [TaskInput(**{"independent_columns": val, "csv": step.input[0].csv}) for val in independent_dependencies]
+        return [
+            TaskInput(**{"independent_columns": val, "csv": step.input[0].csv})
+            for val in independent_dependencies
+        ]
 
 
 class PopulateDependencies(StepTemplate):
 
-    def create_workflow(
-            self,
-            independent_columns: str,
-            csv: str
-    ) -> Workflow:
+    def create_workflow(self, independent_columns: str, csv: str) -> Workflow:
         """Generate random variables for simulation
 
         Args:
@@ -136,17 +135,20 @@ class PopulateDependencies(StepTemplate):
         examples = data[column_name]
         # populate multiple csvs, with a column filled and rest empty. Fill the rest to AI
 
-        return [TaskInput(**{"csv": step.input[0].csv, "seed_column": ex}) for ex in examples]
+        return [
+            TaskInput(**{"csv": step.input[0].csv, "seed_column": ex})
+            for ex in examples
+        ]
 
     @staticmethod
-    def get_columns(csv: str, column:str) -> List[str]:
+    def get_columns(csv: str, column: str) -> List[str]:
         lines = csv.split("\n")
         column_index = lines[0].split(",").index(column)
         for i in range(1, len(lines)):
             yield lines[i].split(",")[column_index]
 
     @staticmethod
-    def add_colums(csv: str, column:str, columns: List[str]) -> str:
+    def add_colums(csv: str, column: str, columns: List[str]) -> str:
         lines = csv.split("\n")
         num_columns = len(columns)
         column_index = lines[0].split(",").index(column)

@@ -17,10 +17,7 @@ logger = logging.getLogger(__name__)
 
 class ListExtender(StepTemplate):
 
-    def create_workflow(
-        self,
-        e_list: List[str]
-    ) -> Workflow:
+    def create_workflow(self, e_list: List[str]) -> Workflow:
         """Generate random variables for simulation
 
         Args:
@@ -61,7 +58,7 @@ class ListExtender(StepTemplate):
         """
 
         output = step.output[0].result
-        new_list = parse_json(get_tags(output, "extended_list")[0].replace("\n", "").replace("'", '"'))
+        new_list = parse_json(
+            get_tags(output, "extended_list")[0].replace("\n", "").replace("'", '"')
+        )
         return [TaskInput(**{"topic": el}) for el in new_list + step.input[0].e_list]
-
-

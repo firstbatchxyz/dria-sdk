@@ -136,7 +136,9 @@ class Dria:
     async def _start_background_tasks(self) -> None:
         """Start and manage background monitoring and polling tasks."""
         try:
-            await asyncio.gather(self._run_monitoring(), self.poll(), self._run_health_check())
+            await asyncio.gather(
+                self._run_monitoring(), self.poll(), self._run_health_check()
+            )
         except asyncio.CancelledError:
             logger.info("Background tasks cancelled.")
         except Exception as e:
@@ -209,10 +211,14 @@ class Dria:
             )
 
         try:
-            success, nodes, selected_model = await self.task_manager.push_task(task, self.blacklist)
+            success, nodes, selected_model = await self.task_manager.push_task(
+                task, self.blacklist
+            )
             if success:
                 await self._update_blacklist(nodes, selected_model)
-                logger.debug(f"Task {task.id} successfully published. Step: {task.step_name}")
+                logger.debug(
+                    f"Task {task.id} successfully published. Step: {task.step_name}"
+                )
                 return True
             else:
                 logger.error(f"Failed to publish task {task.id}.")
@@ -236,17 +242,19 @@ class Dria:
             wait_time = self.DEADLINE_MULTIPLIER * 60 * (4 ** (node_entry["count"] - 1))
             node_entry["deadline"] = current_time + wait_time
             self.blacklist[node] = node_entry
-            logger.debug(f"Address {node} added to blacklist with deadline at {node_entry['deadline']}.")
+            logger.debug(
+                f"Address {node} added to blacklist with deadline at {node_entry['deadline']}."
+            )
 
         self._save_blacklist()
 
     async def fetch(
-            self,
-            pipeline: Optional[Any] = None,
-            task: Union[Optional[Task], Optional[List[Task]]] = None,
-            min_outputs: Optional[int] = None,
-            timeout: int = 30,
-            is_disabled: bool = False
+        self,
+        pipeline: Optional[Any] = None,
+        task: Union[Optional[Task], Optional[List[Task]]] = None,
+        min_outputs: Optional[int] = None,
+        timeout: int = 30,
+        is_disabled: bool = False,
     ) -> List[TaskResult]:
         """
         Fetch task results from storage.
@@ -271,14 +279,20 @@ class Dria:
         start_time = time.time()
         min_outputs = self._determine_min_outputs(task, min_outputs)
 
-        with tqdm(total=min_outputs, desc="Fetching results...", disable=is_disabled) as pbar:
+        with tqdm(
+            total=min_outputs, desc="Fetching results...", disable=is_disabled
+        ) as pbar:
             while len(results) < min_outputs and not self.shutdown_event.is_set():
                 elapsed_time = time.time() - start_time
                 if elapsed_time > timeout > 0:
-                    logger.debug(f"Unable to fetch {min_outputs} outputs within {timeout} seconds.")
+                    logger.debug(
+                        f"Unable to fetch {min_outputs} outputs within {timeout} seconds."
+                    )
                     break
 
-                pipeline_id = getattr(pipeline, "pipeline_id", None) if pipeline else None
+                pipeline_id = (
+                    getattr(pipeline, "pipeline_id", None) if pipeline else None
+                )
                 task_id = self._get_task_id(task)
 
                 new_results, new_id_map = self._fetch_results(pipeline_id, task_id)
@@ -303,8 +317,8 @@ class Dria:
 
     @staticmethod
     def _determine_min_outputs(
-            task: Union[Optional[Task], Optional[List[Task]]],
-            min_outputs: Optional[int],
+        task: Union[Optional[Task], Optional[List[Task]]],
+        min_outputs: Optional[int],
     ) -> int:
         """
         Determine minimum required outputs.
@@ -329,7 +343,7 @@ class Dria:
 
     @staticmethod
     def _get_task_id(
-            task: Union[Optional[Task], Optional[List[Task]]]
+        task: Union[Optional[Task], Optional[List[Task]]]
     ) -> Union[None, str, List[str]]:
         """
         Get task ID(s) from task object(s).
@@ -353,9 +367,9 @@ class Dria:
             raise ValueError("Invalid task type. Expected None, Task, or List[Task].")
 
     def _fetch_results(
-            self,
-            pipeline_id: Optional[str],
-            task_id: Union[Optional[str], Optional[List[str]]],
+        self,
+        pipeline_id: Optional[str],
+        task_id: Union[Optional[str], Optional[List[str]]],
     ) -> Tuple[List[TaskResult], Dict[str, str]]:
         """
         Fetch results for pipeline and/or tasks.
@@ -421,7 +435,9 @@ class Dria:
                         results.append(task_result)
         return results
 
-    def _fetch_task_results(self, task_id: str) -> tuple[list[TaskResult], dict[str, Any]]:
+    def _fetch_task_results(
+        self, task_id: str
+    ) -> tuple[list[TaskResult], dict[str, Any]]:
         """
         Fetch results for a specific task.
 
@@ -529,7 +545,8 @@ class Dria:
 
                 if "error" in result:
                     logger.debug(
-                        f"ID: {identifier} {result['error'].split('Workflow execution failed: ')[1]}. Task retrying..")
+                        f"ID: {identifier} {result['error'].split('Workflow execution failed: ')[1]}. Task retrying.."
+                    )
                     await self._handle_error_type(task, result["error"])
                     t = Task(
                         id=task.id,
@@ -543,13 +560,17 @@ class Dria:
                     continue
 
                 if self._is_task_valid(task, current_time):
-                    processed_result, address = get_truthful_nodes(task, result, rpc_auth)
+                    processed_result, address = get_truthful_nodes(
+                        task, result, rpc_auth
+                    )
                     if processed_result is None:
                         logger.debug(f"Address: {address} not valid in nodes.")
                         continue
 
                     if processed_result == "":
-                        logger.info("Invalid task result, retrying with another node...")
+                        logger.info(
+                            "Invalid task result, retrying with another node..."
+                        )
                         t = Task(
                             id=task.id,
                             workflow=task.workflow,
@@ -573,7 +594,7 @@ class Dria:
                 logger.error(f"Unexpected error processing item: {e}", exc_info=True)
 
     async def execute(
-            self, task: Union[Task, List[Task]], timeout: int = 30
+        self, task: Union[Task, List[Task]], timeout: int = 30
     ) -> List[Any]:
         """
         Execute task(s) and get results.
@@ -706,6 +727,8 @@ class Dria:
     async def _handle_error_type(self, task: Task, error: str) -> None:
         """Handle task error by removing nodes from blacklist."""
         if "InvalidInput" in error or "tcp open error" in error:
-            logger.debug(f"ID: {task.id} {error.split('Workflow execution failed: ')[1]}. Task retrying..")
+            logger.debug(
+                f"ID: {task.id} {error.split('Workflow execution failed: ')[1]}. Task retrying.."
+            )
             for address in task.nodes:
                 self._remove_from_blacklist(address)

@@ -1,2 +1,1 @@
 from .pipeline import CSVExtenderPipeline
-

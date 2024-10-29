@@ -62,7 +62,7 @@ class RPCClient:
         try:
             async with aiohttp.ClientSession(headers=self.headers) as session:
                 async with session.get(
-                        f"{self.base_url}/rpc/{content_topic}"
+                    f"{self.base_url}/rpc/{content_topic}"
                 ) as response:
                     if response.status == 401:
                         raise RPCAuthenticationError()
@@ -81,7 +81,7 @@ class RPCClient:
             raise
 
     async def push_content_topic(
-            self, data: Union[str, bytes], content_topic: str
+        self, data: Union[str, bytes], content_topic: str
     ) -> bool:
         """
         Push content to a topic.
@@ -102,9 +102,9 @@ class RPCClient:
             logger.debug("Pushing content to topic: %s", content_topic)
             async with aiohttp.ClientSession(headers=self.headers) as session:
                 async with session.post(
-                        f"{self.base_url}/rpc/{content_topic}",
-                        json={"value": {"payload": data}},
-                        headers={"Content-Type": "application/json"},
+                    f"{self.base_url}/rpc/{content_topic}",
+                    json={"value": {"payload": data}},
+                    headers={"Content-Type": "application/json"},
                 ) as response:
                     if response.status == 401:
                         raise RPCAuthenticationError()

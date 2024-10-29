@@ -23,9 +23,9 @@ logger = logging.getLogger(__name__)
 class ExtendCSV(StepTemplate):
 
     def create_workflow(
-            self,
-            csv: str,
-            seed_column: str,
+        self,
+        csv: str,
+        seed_column: str,
     ) -> Workflow:
         """Generate random variables for simulation
 

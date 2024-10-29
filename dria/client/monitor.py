@@ -114,8 +114,7 @@ class Monitor:
             for model, addresses in nodes_by_model.items():
                 unique_addresses = list(set(addresses))
                 self.task_manager.add_available_nodes(
-                    NodeModel(uuid="", nodes=unique_addresses),
-                    model
+                    NodeModel(uuid="", nodes=unique_addresses), model
                 )
                 model_counts[model] = len(unique_addresses)
 
@@ -144,8 +143,7 @@ class Monitor:
                 metadata = json.loads(metadata_json)
 
                 public_key = recover_public_key(
-                    bytes.fromhex(signature),
-                    metadata_json.encode()
+                    bytes.fromhex(signature), metadata_json.encode()
                 )
                 public_key = uncompressed_public_key(public_key)
 
@@ -167,6 +165,5 @@ class Monitor:
                 continue
 
         return {
-            model: list(set(addresses))
-            for model, addresses in node_addresses.items()
+            model: list(set(addresses)) for model, addresses in node_addresses.items()
         }

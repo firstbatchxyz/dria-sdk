@@ -38,5 +38,5 @@ __all__ = [
     "StructRAGDecompose",
     "StructRAGAnswer",
     "CSVExtenderPipeline",
-    "ListExtenderPipeline"
+    "ListExtenderPipeline",
 ]

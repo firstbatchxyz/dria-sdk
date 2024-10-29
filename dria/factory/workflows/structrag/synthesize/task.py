@@ -9,10 +9,7 @@ import re
 
 class StructRAGSynthesize(SingletonTemplate):
 
-    def workflow(
-        self,
-        seed: str
-    ) -> Workflow:
+    def workflow(self, seed: str) -> Workflow:
         """
         https://arxiv.org/pdf/2410.08815
         Generate StructRAG Algorithm
@@ -40,24 +37,22 @@ class StructRAGSynthesize(SingletonTemplate):
     def parse_result(self, result: List[TaskResult]):
         output = []
         for r in result:
-            matches = re.findall(r'DOCUMENTS_INFO:\n(.+)\nQUERY:\n(.+?)\n', r.result)
-            output.append([
-                {
-                    'documents_info': [doc.strip('"') for doc in docs.split(', ')],
-                    'query': query.strip()
-                }
-                for docs, query in matches
-            ])
+            matches = re.findall(r"DOCUMENTS_INFO:\n(.+)\nQUERY:\n(.+?)\n", r.result)
+            output.append(
+                [
+                    {
+                        "documents_info": [doc.strip('"') for doc in docs.split(", ")],
+                        "query": query.strip(),
+                    }
+                    for docs, query in matches
+                ]
+            )
         return output
 
 
 class StructRAGSimulate(SingletonTemplate):
 
-    def workflow(
-        self,
-        query: str,
-        documents_info: List[str]
-    ) -> Workflow:
+    def workflow(self, query: str, documents_info: List[str]) -> Workflow:
         """
         https://arxiv.org/pdf/2410.08815
         Generate StructRAG Algorithm
@@ -92,7 +87,7 @@ class StructRAGSimulate(SingletonTemplate):
             {
                 "solutions": r.result.strip(),
                 "query": self.params.query,
-                "documents_info": self.params.documents_info
+                "documents_info": self.params.documents_info,
             }
             for r in result
         ]
@@ -101,10 +96,7 @@ class StructRAGSimulate(SingletonTemplate):
 class StructRAGJudge(SingletonTemplate):
 
     def workflow(
-        self,
-        query: str,
-        documents_info: List[str],
-        solutions: str
+        self, query: str, documents_info: List[str], solutions: str
     ) -> Workflow:
         """
         https://arxiv.org/pdf/2410.08815
@@ -117,7 +109,9 @@ class StructRAGJudge(SingletonTemplate):
         """
 
         # Initialize the workflow with variables to be used in the prompt
-        builder = WorkflowBuilder(query=query, documents_info=documents_info, solutions=solutions)
+        builder = WorkflowBuilder(
+            query=query, documents_info=documents_info, solutions=solutions
+        )
         builder.set_max_tokens(1000)
         # Add a generative step using the prompt string
         self.params.query = query
