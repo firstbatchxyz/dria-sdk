@@ -1,6 +1,7 @@
-import json
 import re
 from typing import Union, List
+
+from json_repair import repair_json
 
 
 def get_tags(text: str, tag: str) -> List[str]:
@@ -27,8 +28,7 @@ def parse_json(text: Union[str, List]) -> Union[list[dict], dict]:
     """
 
     def parse_single_json(result: str) -> dict:
-        """Parse JSON text from a string, extracting from code blocks or <json> tags if present.
-
+        """Parse JSON text from a string, use json_repair to fix the JSON.
         Args:
             result (str): The text to parse.
 
@@ -38,24 +38,10 @@ def parse_json(text: Union[str, List]) -> Union[list[dict], dict]:
         Raises:
             ValueError: If JSON cannot be parsed.
         """
-        # Patterns to match code blocks with optional 'json' and <json> tags
-        patterns = [
-            r"```(?:JSON)?\s*(.*?)\s*```",  # Code block with or without 'json'
-            r"<JSON>\s*(.*?)\s*</JSON>",  # <json>...</json> tags
-        ]
-
-        for pattern in patterns:
-            match = re.search(pattern, result, re.DOTALL | re.IGNORECASE)
-            if match:
-                json_text = match.group(1)
-                break
-        else:
-            json_text = result
-
-        try:
-            return json.loads(json_text)
-        except json.JSONDecodeError as e:
-            raise ValueError(f"Could not parse JSON from result: {json_text}") from e
+        json_text = repair_json(result)
+        if json_text == "":
+            raise ValueError(f"Could not parse JSON from result: {result}")
+        return json_text
 
     if isinstance(text, list):
         return [parse_single_json(item) for item in text]
