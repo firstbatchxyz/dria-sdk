@@ -55,8 +55,8 @@ def batch_run(instructions, instance, models: Optional[List[Model]] = None):
 if __name__ == "__main__":
 
     synthesize = False
-    simulate = True
-    judge = False
+    simulate = False
+    judge = True
 
     if synthesize:
 
