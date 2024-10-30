@@ -187,7 +187,7 @@ async def get_pipeline_status(pipeline_id: str):
 
 ```
 
-For more detailed API documentation, see on our [documentation site](https://docs.dria.ai).
+For more detailed API documentation, see on our [documentation site](https://docs.dria.co).
 
 ## License
 
