@@ -44,8 +44,6 @@ from dria.client import Dria
 # Initialize the Dria client
 dria = Dria(rpc_token=os.environ["DRIA_RPC_TOKEN"])
 
-# Initialize the client (should be called before using any other methods)
-await dria.initialize()
 ```
 
 
@@ -57,64 +55,77 @@ await dria.initialize()
 Here's an example of creating a simple workflow for generating a poem:
 
 ```python
+import os
 import asyncio
-
+from dria.factory import Simple
 from dria.client import Dria
-from dria.models import Task, TaskResult
-from dria.models.enums import Model
-from dria.workflows.lib.poem_generator import poem
+from dria.models import Task, Model
 
-dria = Dria()
+dria = Dria(rpc_token=os.environ["DRIA_RPC_TOKEN"])
 
-async def generate_poem(prompt: str) -> list[TaskResult]:
-    task = Task(
-        workflow=poem(prompt),
-        models=[Model.QWEN2_5_7B_FP16]
+
+async def evaluate():
+    simple = Simple()
+    res = await dria.execute(
+        Task(
+            workflow=simple.workflow(prompt="Write a poem about love").model_dump(),
+            models=[Model.GEMMA2_9B_FP16],
+        ),
+        timeout=45,
     )
-    await dria.push(task)
-    return await dria.fetch(task_id=task.id)
+    return simple.parse_result(res)
 
-async def main():
-    
-    await dria.initialize()
-    result = await generate_poem("Write a poem about love")
 
-if __name__ == "__main__":
-    asyncio.run(main())
+def main():
+    result = asyncio.run(evaluate())
+    print(result)
 ```
 
 ### Building a Complex Pipeline
 
 For more complex scenarios, you can use the `PipelineBuilder` to create multi-step pipelines:
 
+Here's an example of a pipeline that extends a list.
+
 ```python
+import logging
+from typing import Optional, List, Union
+
 from dria.client import Dria
-from dria.models import Model, TaskInput
-from dria.pipeline import PipelineConfig, StepConfig, PipelineBuilder, StepBuilder
-from workflows import generate_entries, generate_subtopics
+from dria.models import Model
+from dria.pipelines import Pipeline, PipelineConfig
+from dria.pipelines.builder import PipelineBuilder
+from .extender import ListExtender
+from .generate_subtopics import GenerateSubtopics
+
+logger = logging.getLogger(__name__)
 
 
-async def create_subtopic_pipeline(dria: Dria, topic, config: PipelineConfig = PipelineConfig(), max_depth=1):
-    pipeline = PipelineBuilder(config, dria)
-    depth = 0
+class ListExtenderPipeline:
 
-    # handles single topic output
-    subtopics = StepBuilder(input=TaskInput(topics=[topic]), config=StepConfig(models=[Model.QWEN2_5_7B_FP16,
-                                                                                       Model.GPT4O]),
-                            workflow=generate_subtopics).broadcast().build()
-    pipeline.add_step(subtopics)
+    def __init__(
+            self,
+            dria: Dria,
+            config: PipelineConfig,
+            models: Optional[Union[List[Model], List[List[Model]]]] = None,
+    ):
+        self.pipeline_config: PipelineConfig = config or PipelineConfig()
+        self.pipeline = PipelineBuilder(self.pipeline_config, dria)
+        self.models_list = models or [
+            [Model.GEMMA2_9B_FP16],
+            [Model.GPT4O],
+        ]
 
-    while depth < max_depth:
-        # handles multiple topics
-        subtopics = StepBuilder(workflow=generate_subtopics,
-                                config=StepConfig(models=[Model.QWEN2_5_7B_FP16, Model.GPT4O])).scatter().build()
-        pipeline.add_step(subtopics)
-        depth += 1
+    def build(self, list: List[str], granularize: bool = False) -> Pipeline:
+        self.pipeline.input(e_list=list)
+        self.pipeline << ListExtender().set_models(self.models_list[0]).custom()
+        if granularize:
+            (
+                    self.pipeline
+                    << GenerateSubtopics().set_models(self.models_list[1]).custom()
+            )
+        return self.pipeline.build()
 
-    # entry generation
-    entries = StepBuilder(workflow=generate_entries, config=StepConfig(min_compute=0.8)).build()
-    pipeline.add_step(entries)
-    return pipeline.build()
 
 ```
 
