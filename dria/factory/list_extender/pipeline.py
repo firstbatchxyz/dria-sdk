@@ -52,7 +52,7 @@ class ListExtenderPipeline:
             if isinstance(models[0], list):
                 if len(models) != 2:
                     raise ValueError(
-                        "Models should be a list of two lists for CSVExtenderPipeline"
+                        "Models should be a list of two lists for ListExtenderPipeline"
                     )
                 self.models_list = models
             else:
