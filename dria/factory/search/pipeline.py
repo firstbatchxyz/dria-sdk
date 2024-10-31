@@ -30,12 +30,13 @@ class SearchPipeline:
                 Model.QWEN2_5_32B_FP16,
                 Model.QWEN2_5_7B_FP16,
                 Model.GPT4O,
+                Model.GEMINI_15_FLASH,
             ],
             [
                 Model.QWEN2_5_7B_FP16,
                 Model.LLAMA3_1_8B_FP16,
                 Model.QWEN2_5_32B_FP16,
-                Model.LLAMA3_2_1B,
+                Model.GEMINI_15_FLASH,
             ],
         ]
 

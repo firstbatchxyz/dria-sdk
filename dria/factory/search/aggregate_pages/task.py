@@ -14,6 +14,7 @@ from dria_workflows import (
     Expression,
 )
 import random
+import json
 from typing import Dict, List
 from dria.pipelines import Step, StepTemplate
 
@@ -72,29 +73,37 @@ class PageAggregator(StepTemplate):
         return self.parse(step.output[0].result)
 
     @staticmethod
-    def parse(result: str) -> Any:
-        lines = result.strip().split("\n")
+    def parse(result: str) -> List[TaskInput]:
+        """
+        Parse input string into a list of TaskInput objects.
 
-        # Initialize list for storing parsed articles
-        articles = []
+        Args:
+            result (str): Input string in either JSON format or newline-separated format
 
-        # Process each article (5 lines per article)
-        for i in range(0, len(lines), 5):
-            title = lines[i].strip()
-            url = lines[i + 1].strip()
-            summary = lines[i + 2].strip()
-            date = lines[i + 3].strip()
-            article_id = int(lines[i + 4].strip())
-
-            articles.append(
+        Returns:
+            List[TaskInput]: List of parsed TaskInput objects
+        """
+        try:
+            # Try parsing as JSON first
+            data = json.loads(result)
+            return [
                 TaskInput(
-                    **{
-                        "title": title,
-                        "url": url,
-                        "summary": summary,
-                        "date": date,
-                        "id": article_id,
-                    }
+                    title=item["title"],
+                    url=f"https://{item['link']}",
+                    summary=item["snippet"],
+                    id=str(random.randint(10000, 99999))
                 )
-            )
-        return articles
+                for item in data
+            ]
+        except json.JSONDecodeError:
+            # Fall back to parsing newline-separated format
+            lines = result.strip().split("\n")
+            return [
+                TaskInput(
+                    title=lines[i].strip(),
+                    url=lines[i + 1].strip(),
+                    summary=lines[i + 2].strip(),
+                    id=int(lines[i + 4].strip())
+                )
+                for i in range(0, len(lines), 5)
+            ]
