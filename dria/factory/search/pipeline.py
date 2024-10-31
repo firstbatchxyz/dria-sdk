@@ -1,11 +1,11 @@
 import logging
 from typing import Optional, List, Union, Literal
 from dria.client import Dria
-from dria.pipelines import Pipeline, PipelineConfig
+from dria.pipelines import Pipeline, PipelineConfig, StepConfig
 from dria.pipelines.builder import PipelineBuilder
 from dria.models import Model
 from .aggregate_pages import PageAggregator
-from .summarize import PageSummarizer
+from .scrape import PageScraper
 
 logger = logging.getLogger(__name__)
 
@@ -26,15 +26,15 @@ class SearchPipeline:
         self.models_list = [
             [
                 Model.LLAMA3_1_8B_FP16,
-                Model.LLAMA3_1_8BQ8,
                 Model.QWEN2_5_32B_FP16,
                 Model.QWEN2_5_7B_FP16,
-                Model.GPT4O,
-                Model.GEMINI_15_FLASH,
+                Model.GPT4O_MINI,
+                Model.GEMINI_15_FLASH
             ],
             [
                 Model.QWEN2_5_7B_FP16,
                 Model.LLAMA3_1_8B_FP16,
+                Model.GPT4O_MINI,
                 Model.QWEN2_5_32B_FP16,
                 Model.GEMINI_15_FLASH,
             ],
@@ -57,6 +57,9 @@ class SearchPipeline:
         (
             self.pipeline
             << PageAggregator().set_models(self.models_list[0])
-            << PageSummarizer(summarize=summarize).set_models(self.models_list[1])
+            << PageScraper(config=StepConfig(min_compute=0.85)).set_models(self.models_list[1])
         )
+
+        if summarize:
+            pass
         return self.pipeline.build()

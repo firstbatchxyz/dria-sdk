@@ -16,7 +16,7 @@ class Article(TypedDict):
     id: int
 
 
-class PageSummarizer(StepTemplate):
+class PageScraper(StepTemplate):
 
     def create_workflow(
         self,
@@ -44,26 +44,10 @@ class PageSummarizer(StepTemplate):
             ],
             outputs=[Push.new("content")],
         )
-        if self.params.summarize:
-            builder.generative_step(
-                id="summarize",
-                prompt="Read the following content: {{content}}\n\n Summarize it in 1 or 2 paragraphs. "
-                "Output summary and nothing else.Summary:",
-                operator=Operator.GENERATION,
-                inputs=[
-                    Peek.new(key="content", index=0, required=True),
-                ],
-                outputs=[Push.new("content")],
-            )
 
-            flow = [
-                Edge(source="search", target="summarize", fallback="0"),
-                Edge(source="summarize", target="_end"),
-            ]
-        else:
-            flow = [
-                Edge(source="search", target="_end", fallback="0"),
-            ]
+        flow = [
+            Edge(source="search", target="_end", fallback="0"),
+        ]
         builder.flow(flow)
         builder.set_return_value("content")
         return builder.build()
