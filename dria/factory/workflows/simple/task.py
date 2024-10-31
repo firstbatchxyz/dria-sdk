@@ -8,6 +8,7 @@ class Simple(SingletonTemplate):
 
     def workflow(self, prompt: str) -> Workflow:
         builder = WorkflowBuilder()
+        builder.set_max_tokens(1000)
         builder.generative_step(
             prompt=prompt, operator=Operator.GENERATION, outputs=[Write.new("response")]
         )
