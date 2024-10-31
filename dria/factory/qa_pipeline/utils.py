@@ -1,11 +1,12 @@
 import json
 import random
 import re
-from typing import Any, Dict, List, Union
 import time
-from requests.exceptions import RequestException
+from typing import Any, Dict, List, Union
 
 import requests
+from requests.exceptions import RequestException
+
 from dria import constants
 from dria.factory.utilities import parse_json
 
@@ -33,7 +34,7 @@ def sample_variable(variable: Dict[str, Any]) -> Any:
 
 
 def scrape_file(
-    file: str, max_retries: int = 10, retry_delay: int = 10
+        file: str, max_retries: int = 10, retry_delay: int = 10
 ) -> dict[str, Any]:
     for attempt in range(max_retries):
         try:
@@ -52,7 +53,7 @@ def scrape_file(
 
 
 def scrape(
-    source: Any, chunk_size: int = 100, min_chunk_size: int = 28
+        source: Any, chunk_size: int = 100, min_chunk_size: int = 28
 ) -> List[Dict[str, Any]]:
     """Scrape the given websites or fetch file.
 
@@ -91,7 +92,7 @@ def scrape(
     context_text = json.loads(json.dumps(context_text, ensure_ascii=False))
 
     chunks = [
-        context_text[i : i + chunk_size]
+        context_text[i: i + chunk_size]
         for i in range(0, len(context_text), chunk_size)
     ]
 
@@ -134,18 +135,21 @@ def get_text_between_tags(text: str, tag: str) -> Union[None, str]:
         tag (str): The tag to extract the text between.
 
     Returns:
-        List[str]: The extracted text between the tags.
+        Union[None, str]: The extracted text between the tags, or None if no match found.
     """
-    pattern = f"<{tag}>(.*?)(?:</{tag}>|$)"
-    matches = [
-        match.strip() for match in re.findall(pattern, text, re.DOTALL) if match.strip()
-    ]
-    if len(matches) == 0:
+    if not text or not tag:
         return None
-    return matches[0]
+
+    pattern = f"<{tag}>(.*?)</{tag}>"
+    match = re.search(pattern, text, re.DOTALL)
+    if not match:
+        return None
+
+    content = match.group(1).strip()
+    return content if content else None
 
 
-def remove_text_between_tags(text: str, tag: str) -> str:
+def remove_text_between_tags(text: str, tag: str) -> Union[None, str]:
     """Remove the text between the given tags.
 
     Args:
@@ -153,9 +157,14 @@ def remove_text_between_tags(text: str, tag: str) -> str:
         tag (str): The tag to remove the text between.
 
     Returns:
-        str: The text with the text between the tags removed.
+        Union[None, str]: The text with the text between tags removed, or None if empty/None.
     """
-    return re.sub(f"<{tag}>.*?</{tag}>", "", text, flags=re.DOTALL)
+    if not text or not tag:
+        return None
+
+    pattern = f"<{tag}>.*?</{tag}>"
+    result = re.sub(pattern, "", text, flags=re.DOTALL).strip()
+    return result if result else None
 
 
 def parse_backstory(backstory_json: str) -> str:

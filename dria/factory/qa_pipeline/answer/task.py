@@ -79,12 +79,10 @@ class AnswerStep(StepTemplate):
         returns = []
         for a in step.output:
             answer = get_text_between_tags(a.result, "answer")
-            if answer is None or answer == "":
-                continue
             entry = remove_text_between_tags(answer, "rationale")
 
             if entry is None:
-                raise ValueError("No valid answer generated")
+                continue
 
             returns.append(
                 TaskInput(question=a.task_input["question"], answer=entry.strip())
