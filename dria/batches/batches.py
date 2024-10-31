@@ -12,7 +12,7 @@ class ParallelSingletonExecutor:
     MIN_TIMEOUT = 15
 
     def __init__(
-            self, dria_client: Dria, singleton: SingletonTemplate, batch_size: int = 100
+        self, dria_client: Dria, singleton: SingletonTemplate, batch_size: int = 100
     ):
         self.dria = dria_client
         self.singleton = singleton
@@ -34,8 +34,10 @@ class ParallelSingletonExecutor:
     async def execute_workflows(self):
         all_results = []
         for i in range(0, len(self.instructions), self.batch_size):
-            batch = self.instructions[i: i + self.batch_size]
-            self.timeout = max(int(math.log(len(batch)) * self.timeout), self.MIN_TIMEOUT)
+            batch = self.instructions[i : i + self.batch_size]
+            self.timeout = max(
+                int(math.log(len(batch)) * self.timeout), self.MIN_TIMEOUT
+            )
             # Execute tasks in batches, respecting the max_concurrent limit
             results = await self.dria.execute(batch, timeout=self.timeout)
             parsed_results = self._parse_results(results)

@@ -38,7 +38,7 @@ def parse_json(text: Union[str, List]) -> Union[list[dict], dict]:
         Raises:
             ValueError: If JSON cannot be parsed.
         """
-        json_text = repair_json(result)
+        json_text = repair_json(result, return_objects=True)
         if json_text == "":
             raise ValueError(f"Could not parse JSON from result: {result}")
         return json_text
@@ -51,7 +51,8 @@ def parse_json(text: Union[str, List]) -> Union[list[dict], dict]:
 
 if __name__ == "__main__":
     text = "<json>{'key': 'value'}</json>"
+    text2 = "```json{'key': 'value'}```"
     print(get_tags(text, "json"))
-    print(parse_json(text))
+    print(parse_json(text2))
     t = "['Web Browser', 'Scheduling', 'Daily Life', 'File System', 'Communication', 'Note Taking', 'Productivity', 'Data Management', 'Security', 'Entertainment']"
     print(parse_json(t))
