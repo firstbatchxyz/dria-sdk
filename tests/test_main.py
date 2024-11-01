@@ -19,7 +19,7 @@ async def evaluate():
     res = await dria.execute(
         Task(
             workflow=mhop.workflow(chunks=chunks).model_dump(),
-            models=[Model.GEMINI_15_FLASH],
+            models=[Model.MIXTRAL_8_7B],
         ),
         timeout=45,
     )
@@ -28,7 +28,7 @@ async def evaluate():
 
 def main():
     result = asyncio.run(evaluate())
-    print(result)
+    print(json.dumps(result, indent=2))
 
 
 if __name__ == "__main__":

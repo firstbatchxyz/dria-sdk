@@ -21,7 +21,7 @@ class MultiHopQuestion(SingletonTemplate):
         self,
         chunks: List[str]
     ) -> Workflow:
-        """Generate questions for a given context and backstory.
+        """Generate questions for a 3 documents and backstory.
 
         Args:
             chunks (List[str]): The input data to be used in the workflow.

@@ -12,49 +12,48 @@ Document 2: {{document_2}}
 
 Document 3: {{document_3}}
 
-## Guidelines:
+## Objective:
 
-Use information from each document to craft the question.
-ensure the question logically connects details from all documents.
-The question should be complex and require multi-step reasoning to answer.
-The question must correspond accurately to the provided answer.
+Create three versions of a question that arrive at the same answer but require different levels of reasoning complexity (1-hop, 2-hop, and 3-hop).
 
-Start by generating question starting form 1-hop
+## Requirements
 
-1-hop question:
-- Use information from single document to create a simple question leading to the answer.
+Each question must:
+    Lead to the same answer
+    Be answerable using the provided documents
+    Avoid directly referencing the source documents (e.g., "according to Document 1...")
+    Be written in clear, natural language
 
-2-hop question:
-- Use information from 2 documents to create a question that requires two logical steps to answer.
 
-3-hop question:
-- Use information from all 3 documents to create a question that requires three logical steps to answer.
+Reasoning complexity:
+
+1-hop: Requires single-step reasoning using information from one document
+2-hop: Requires two logical steps connecting information from two documents
+3-hop: Requires three logical steps connecting information from all three documents
+
+
+Output Format
+Please provide your response in this exact format:
+<answer>[State the correct answer here]</answer>
+<1hop>[Your single-step question]</1hop>
+<2hop>[Your two-step question]</2hop>
+<3hop>[Your three-step question]</3hop>
 
 
 #### Example:
 
-Document 1:
-"Dunkirk is a 2017 historical war thriller film written, directed, and produced by Christopher Nolan that depicts the Dunkirk evacuation of World War II from the perspectives of the land, sea, and air."
-
-Document 2:
-"Interstellar is a 2014 epic science fiction film co-written, directed, and produced by Christopher Nolan."
-
-Document C:
-"Kip Thorne is an American theoretical physicist known for his contributions in gravitational physics and astrophysics. He consulted on the science fiction film ‘Interstellar’."
-
-Answer: <answer>Dunkirk</answer>
-
-1-hop question:
+Given these documents:
+Document 1: "Dunkirk is a 2017 historical war thriller film written, directed, and produced by Christopher Nolan."
+Document 2: "Interstellar is a 2014 epic science fiction film directed by Christopher Nolan."
+Document 3: "Kip Thorne, an American theoretical physicist, consulted on the science fiction film 'Interstellar'."
+<answer>Dunkirk</answer>
 <1hop>What is the title of the war film directed by Christopher Nolan?</1hop>
-
-2-hop question:
-<2hop>What is the title of the war film directed by the director of Interstellar</2hop>
-
-3-hop question:
-<3hop>What is the title of the war film directed by the director who received advice from Kip Thorne in making a science fiction movie?<3hop>
-
+<2hop>What is the title of the war film directed by the director of Interstellar?</2hop>
+<3hop>What is the title of the war film directed by the filmmaker who worked with physicist Kip Thorne on a science fiction movie?</3hop>
 ---end of example---
 
-Now generate the questions based on the provided documents. Use tags described in example to ouput 1,2,3 hop questions and the answer.
-Output:
+
+Use tags described in example to output 1,2,3 hop questions and the answer.
+Don't reference to documents in your questions i.e. "as mentioned in document 1,2,3..."
+Now, using the provided documents, please generate your questions following this format.
 
