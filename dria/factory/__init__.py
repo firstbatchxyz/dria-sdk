@@ -31,4 +31,5 @@ __all__ = [
     "CSVExtenderPipeline",
     "ListExtenderPipeline",
     "QAPipeline",
+    "MultiHopQuestion"
 ]

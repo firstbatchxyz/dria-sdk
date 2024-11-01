@@ -16,12 +16,7 @@ logger = logging.getLogger(__name__)
 
 class QAPipeline:
     """
-    A pipelines for generating personas.
-
-    It is a simple pipelines that generates personas based on a simulation description.
-    Pipeline would create random variables that fit into the simulation description.
-    Then it would generate a backstory for each sample.
-    Number of samples can be specified to determine the number of personas to be generated.
+    A pipeline for generating QA pairs
     """
 
     def __init__(self, dria: Dria, config: PipelineConfig):
