@@ -212,7 +212,7 @@ class TaskManager:
                 logger.info(f"Searching available nodes for task {task_id}")
                 log_str = ""
                 for model in Model:
-                    node_count = len(self.get_available_nodes(model.value))
+                    node_count = len(await self.get_available_nodes(model.value))
                     if node_count > 0:
                         log_str += f" {model.name}: {node_count} nodes, "
                 if log_str:
