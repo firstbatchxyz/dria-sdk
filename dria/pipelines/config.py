@@ -20,12 +20,18 @@ class PipelineConfig(BaseModel):
         ge=0,
     )
     pipeline_timeout: int = Field(
-        default=100,
-        description="Maximum allowed duration for the entire pipelines execution, in seconds",
+        default=0,
+        description="Maximum allowed duration for the entire pipelines execution, in seconds. It's dynamic by "
+                    "task execution.",
+        ge=1,
+    )
+    task_timeout: int = Field(
+        default=60,
+        description="Maximum allowed duration for a task execution, in seconds",
         ge=1,
     )
 
-    @field_validator("retry_interval", "pipeline_timeout")
+    @field_validator("retry_interval", "pipeline_timeout", "task_timeout")
     def validate_positive_values(cls, value, field):
         if value < 0:
             raise ValueError(f"{field.name} must be a non-negative integer")

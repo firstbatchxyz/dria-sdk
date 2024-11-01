@@ -1,5 +1,6 @@
 import asyncio
 import json
+import math
 import time
 import traceback
 import uuid
@@ -101,7 +102,12 @@ class Pipeline:
         if not step:
             raise ValueError(f"Step '{step_name}' not found in the pipelines.")
 
+        if isinstance(step.input, TaskInput):
+            step.input = [step.input]
+
         self.logger.info(f"Running step: {step.name}")
+        self.config.pipeline_timeout += int(max(math.log(len(step.input)) * self.config.task_timeout,
+                                            self.config.task_timeout))
         try:
             asyncio.create_task(step.run())
             self.logger.info(f"Step '{step.name}' completed successfully.")
