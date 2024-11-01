@@ -197,7 +197,7 @@ class TaskManager:
         # Get all available nodes for all models
         all_model_nodes = {}
         for model in using_models:
-            nodes = self.get_available_nodes(model)
+            nodes = await self.get_available_nodes(model)
             filtered_nodes = [
                 node
                 for node in nodes
