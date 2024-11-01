@@ -149,16 +149,16 @@ class TaskManager:
         task_model_str = json.dumps(task_model, ensure_ascii=False)
 
         if await self.publish_message(task_model_str, INPUT_CONTENT_TOPIC):
-            self.storage.set_value(
+            await self.storage.set_value(
                 f"{task.id}", json.dumps(task.dict(), ensure_ascii=False)
             )
             if is_retried:
-                self.kv.push(f":{old_task_id}", {"new_task_id": task.id})
+                await self.kv.push(f":{old_task_id}", {"new_task_id": task.id})
             return True, task.nodes, selected_model
 
         return False, None, None
 
-    def get_available_nodes(self, model_type: str) -> List[str]:
+    async def get_available_nodes(self, model_type: str) -> List[str]:
         """
         Get list of available nodes for specified model type.
 
@@ -169,7 +169,7 @@ class TaskManager:
             List of available node addresses
         """
         try:
-            available_nodes = self.storage.get_value(f"available-nodes-{model_type}")
+            available_nodes = await self.storage.get_value(f"available-nodes-{model_type}")
             return json.loads(available_nodes) if available_nodes else []
         except Exception as e:
             logger.error(f"Error getting available nodes for {model_type}: {e}")
@@ -229,7 +229,7 @@ class TaskManager:
 
         for model in using_models:
             try:
-                self.storage.remove_from_list(
+                await self.storage.remove_from_list(
                     f"available-nodes-{model}", None, picked_nodes
                 )
             except ValueError:
@@ -248,7 +248,7 @@ class TaskManager:
             {"hex": bf.get_bytes().hex(), "hashes": bf.hashes()},
         )
 
-    def add_available_nodes(self, node_model: NodeModel, model_type: str) -> bool:
+    async def add_available_nodes(self, node_model: NodeModel, model_type: str) -> bool:
         """
         Add nodes to available pool for specified model type.
 
@@ -260,7 +260,7 @@ class TaskManager:
             True if nodes added successfully
         """
         try:
-            self.storage.set_value(
+            await self.storage.set_value(
                 f"available-nodes-{model_type}",
                 json.dumps(node_model.nodes, ensure_ascii=False),
             )

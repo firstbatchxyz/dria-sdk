@@ -69,8 +69,8 @@ class Pipeline:
             raise ValueError("Pipeline has no steps.")
 
         first_step = self.steps[0]
-        self._update_state(first_step.name)
-        self._update_status(PipelineStatus.RUNNING)
+        await self._update_state(first_step.name)
+        await self._update_status(PipelineStatus.RUNNING)
         self.logger.info(
             f"Executing pipeline '{self.pipeline_id}' starting with step '{first_step.name}'."
         )
@@ -80,7 +80,7 @@ class Pipeline:
 
         if return_output:
             while True:
-                _, status, output = self.poll()
+                _, status, output = await self.poll()
                 if status == PipelineStatus.COMPLETED.value:
                     await self._graceful_shutdown()
                     return output
@@ -133,46 +133,49 @@ class Pipeline:
 
     async def _poll(self) -> None:
         """Poll for results and process them."""
-        start_time = time.time()
-        while True:
-            try:
-                if (
-                    self.client.background_tasks is None
-                    or self.client.background_tasks.done()
-                ):
-                    if self.client.api_mode:
-                        logger.debug("Background tasks closed. Reinitializing..")
-                        await self.client.initialize()
-                    else:
-                        raise Exception("Dria client is not initialized")
-                if time.time() - start_time > self.config.pipeline_timeout:
-                    await self._handle_deadline_exceeded()
-                    return
-
-                results: List[TaskResult] = await self.client.fetch(
-                    pipeline=self, timeout=0, is_disabled=True
-                )
-                for result in results:
-                    step = self.get_step(result.step_name)
-                    if not step:
-                        self.logger.warning(
-                            f"Received result for unknown step '{result.step_name}'."
-                        )
-                        continue
-
-                    step.output.append(result)
-                    if not self._check_step_requirements(step):
-                        continue
-                    if self._is_final_step(step):
-                        self._finalize_pipeline(step)
+        try:
+            start_time = time.time()
+            while True:
+                try:
+                    if (
+                        self.client.background_tasks is None
+                        or self.client.background_tasks.done()
+                    ):
+                        if self.client.api_mode:
+                            logger.debug("Background tasks closed. Reinitializing..")
+                            await self.client.initialize()
+                        else:
+                            raise Exception("Dria client is not initialized")
+                    if time.time() - start_time > self.config.pipeline_timeout:
+                        await self._handle_deadline_exceeded()
                         return
 
-                    await self._run_next_step(step, self.steps.index(step) + 1)
+                    results: List[TaskResult] = await self.client.fetch(
+                        pipeline=self, timeout=0, is_disabled=True
+                    )
+                    for result in results:
+                        step = self.get_step(result.step_name)
+                        if not step:
+                            self.logger.warning(
+                                f"Received result for unknown step '{result.step_name}'."
+                            )
+                            continue
 
-            except Exception as e:
-                return await self._graceful_shutdown(e)
+                        step.output.append(result)
+                        if not self._check_step_requirements(step):
+                            continue
+                        if self._is_final_step(step):
+                            await self._finalize_pipeline(step)
+                            return
 
-            await asyncio.sleep(self.config.retry_interval)
+                        await self._run_next_step(step, self.steps.index(step) + 1)
+
+                except Exception as e:
+                    return await self._graceful_shutdown(e)
+
+                await asyncio.sleep(self.config.retry_interval)
+        finally:
+            await self._graceful_shutdown()
 
     def _check_step_requirements(self, step: Step) -> bool:
         """Check if the step requirements are met."""
@@ -192,10 +195,10 @@ class Pipeline:
         """Check if the step is the final step in the pipelines."""
         return step == self.steps[-1]
 
-    def _finalize_pipeline(self, final_step: Step) -> None:
+    async def _finalize_pipeline(self, final_step: Step) -> None:
         """Finalize the pipelines execution."""
         self.output = final_step.callback(final_step)
-        self._save_output()
+        await self._save_output()
         self.logger.info("Pipeline execution completed.")
 
     async def _handle_deadline_exceeded(self) -> None:
@@ -209,17 +212,17 @@ class Pipeline:
             )
         )
 
-    def _update_state(self, state: str) -> None:
+    async def _update_state(self, state: str) -> None:
         """Update the pipelines state in storage."""
-        self.storage.set_value(f"{self.pipeline_id}_state", state)
+        await self.storage.set_value(f"{self.pipeline_id}_state", state)
 
-    def _update_status(self, status: PipelineStatus) -> None:
+    async def _update_status(self, status: PipelineStatus) -> None:
         """Update the pipelines status in storage."""
-        self.storage.set_value(f"{self.pipeline_id}_status", status.value)
+        await self.storage.set_value(f"{self.pipeline_id}_status", status.value)
 
-    def _update_error_reason(self, e: Exception) -> None:
+    async def _update_error_reason(self, e: Exception) -> None:
         """Update the pipelines error reason in storage."""
-        self.storage.set_value(f"{self.pipeline_id}_error_reason", e)
+        await self.storage.set_value(f"{self.pipeline_id}_error_reason", e)
 
     async def _graceful_shutdown(self, e: Optional[Exception] = None) -> None:
         """Gracefully shutdown the pipelines."""
@@ -237,12 +240,12 @@ class Pipeline:
 
         latest_step = self.steps[-1] if self.steps else None
         if latest_step:
-            self._finalize_pipeline(latest_step)
+            await self._finalize_pipeline(latest_step)
         else:
             self.logger.warning("No steps were executed before shutdown")
         await self.client.run_cleanup()
 
-    def _save_output(self, output: Optional[Union[str, Dict]] = None) -> None:
+    async def _save_output(self, output: Optional[Union[str, Dict]] = None) -> None:
         """Save the pipelines output to storage."""
         try:
             if output:
@@ -257,10 +260,10 @@ class Pipeline:
                 output_data = json.dumps(self.output)
         except IndexError as e:
             output_data = []
-        self.storage.set_value(f"{self.pipeline_id}_output", output_data)
+        await self.storage.set_value(f"{self.pipeline_id}_output", output_data)
         self._update_status(PipelineStatus.COMPLETED)
 
-    def poll(self) -> Tuple[str, str, Optional[Dict[str, Any]]]:
+    async def poll(self) -> Tuple[str, str, Optional[Dict[str, Any]]]:
         """
         Poll for pipelines results.
 
@@ -270,12 +273,12 @@ class Pipeline:
         Raises:
             ValueError: If the pipelines is not found.
         """
-        output = self.storage.get_value(f"{self.pipeline_id}_output")
-        status = self.storage.get_value(f"{self.pipeline_id}_status")
-        state = self.storage.get_value(f"{self.pipeline_id}_state")
+        output = await self.storage.get_value(f"{self.pipeline_id}_output")
+        status = await self.storage.get_value(f"{self.pipeline_id}_status")
+        state = await self.storage.get_value(f"{self.pipeline_id}_state")
 
         if status == PipelineStatus.FAILED.value:
-            error_reason = self.storage.get_value(f"{self.pipeline_id}_error_reason")
+            error_reason = await self.storage.get_value(f"{self.pipeline_id}_error_reason")
             raise Exception(f"Pipeline execution failed: {error_reason}")
 
         if not status or not state:

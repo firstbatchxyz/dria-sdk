@@ -131,7 +131,7 @@ class Step(ABC):
         if not self.storage:
             raise RuntimeError(f"Storage is not initialized for step '{self.name}'.")
 
-        self.storage.set_value(task.id, json.dumps(task.dict(), ensure_ascii=False))
+        await self.storage.set_value(task.id, json.dumps(task.dict(), ensure_ascii=False))
         self.logger.debug(
             f"Task pushed and stored for step '{self.name}': task_id={task.id}"
         )

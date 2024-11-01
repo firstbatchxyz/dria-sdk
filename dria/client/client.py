@@ -435,7 +435,7 @@ class Dria:
                         results.append(task_result)
         return results
 
-    def _fetch_task_results(
+    async def _fetch_task_results(
         self, task_id: str
     ) -> tuple[list[TaskResult], dict[str, Any]]:
         """
@@ -457,12 +457,12 @@ class Dria:
                     if "new_task_id" in value.keys():
                         new_ids[key] = value["new_task_id"]
                     else:
-                        task_result = self._create_task_result(task_id, value)
+                        task_result = await self._create_task_result(task_id, value)
                         if task_result:
                             results.append(task_result)
         return results, new_ids
 
-    def _create_task_result(self, task_id: str, value: dict) -> TaskResult | None:
+    async def _create_task_result(self, task_id: str, value: dict) -> TaskResult | None:
         """
         Create TaskResult object from raw data.
 
@@ -477,7 +477,7 @@ class Dria:
             ValueError: If task data invalid
         """
         try:
-            task_data = json.loads(self.storage.get_value(task_id))
+            task_data = json.loads(await self.storage.get_value(task_id))
         except (json.JSONDecodeError, TypeError):
             logger.debug(f"Invalid task data for task_id: {task_id}")
             return None
@@ -520,7 +520,7 @@ class Dria:
                 result = json.loads(decoded_item)
 
                 identifier, rpc_auth = result["taskId"].split("--")
-                task_data = self.storage.get_value(identifier)
+                task_data = await self.storage.get_value(identifier)
                 if not task_data:
                     logger.debug(f"Task data not found for identifier: {identifier}")
                     continue
@@ -541,7 +541,7 @@ class Dria:
                     continue
 
                 task.processed = True
-                self.storage.set_value(identifier, json.dumps(task.dict()))
+                await self.storage.set_value(identifier, json.dumps(task.dict()))
 
                 if "error" in result:
                     logger.debug(
@@ -555,7 +555,7 @@ class Dria:
                         step_name=task.step_name,
                         pipeline_id=task.pipeline_id,
                     )
-                    self.storage.delete_key(task.id)
+                    await self.storage.delete_key(task.id)
                     asyncio.create_task(self.push(t))
                     continue
 
@@ -578,13 +578,13 @@ class Dria:
                             step_name=task.step_name,
                             pipeline_id=task.pipeline_id,
                         )
-                        self.storage.delete_key(task.id)
+                        await self.storage.delete_key(task.id)
                         asyncio.create_task(self.push(t))
                         continue
                     else:
                         self._remove_from_blacklist(address, result["model"])
                     pipeline_id = task.pipeline_id or ""
-                    self.kv.push(
+                    await self.kv.push(
                         f"{pipeline_id}:{identifier}",
                         {"result": processed_result, "model": result["model"]},
                     )
@@ -651,7 +651,7 @@ class Dria:
             return False
         return True
 
-    def _get_step_name(self, task_id: str) -> str:
+    async def _get_step_name(self, task_id: str) -> str:
         """
         Get step name from task metadata.
 
@@ -664,7 +664,7 @@ class Dria:
         Raises:
             ValueError: If metadata invalid/missing
         """
-        task_metadata = self.storage.get_value(task_id)
+        task_metadata = await self.storage.get_value(task_id)
         if task_metadata:
             try:
                 return json.loads(task_metadata)["step_name"]

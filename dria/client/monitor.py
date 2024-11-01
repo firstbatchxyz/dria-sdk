@@ -54,14 +54,17 @@ class Monitor:
         Sends heartbeats and processes responses at regular intervals.
         Handles errors gracefully and maintains monitoring loop.
         """
-        while True:
-            try:
-                await self._check_heartbeat()
-                await asyncio.sleep(MONITORING_INTERVAL)
-            except Exception as e:
-                logger.error(f"Error during heartbeat process: {e}", exc_info=True)
-                await asyncio.sleep(MONITORING_INTERVAL)
-                raise
+        try:
+            while True:
+                try:
+                    await self._check_heartbeat()
+                    await asyncio.sleep(MONITORING_INTERVAL)
+                except Exception as e:
+                    logger.error(f"Error during heartbeat process: {e}", exc_info=True)
+                    await asyncio.sleep(MONITORING_INTERVAL)
+                    raise
+        except:
+            logger.info("Monitor shutting down")
 
     async def _send_heartbeat(self, payload: str) -> bool:
         """
@@ -113,7 +116,7 @@ class Monitor:
             model_counts: Dict[str, int] = {}
             for model, addresses in nodes_by_model.items():
                 unique_addresses = list(set(addresses))
-                self.task_manager.add_available_nodes(
+                await self.task_manager.add_available_nodes(
                     NodeModel(uuid="", nodes=unique_addresses), model
                 )
                 model_counts[model] = len(unique_addresses)
