@@ -70,8 +70,6 @@ class Step(ABC):
         Raises:
             RuntimeError: If pushing any task fails.
         """
-        if isinstance(self.input, TaskInput):
-            self.input = [self.input]
 
         self.all_inputs.extend(self.input)
         task_ids = []

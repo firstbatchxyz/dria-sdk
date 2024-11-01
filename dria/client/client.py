@@ -726,7 +726,7 @@ class Dria:
 
     async def _handle_error_type(self, task: Task, error: str) -> None:
         """Handle task error by removing nodes from blacklist."""
-        if "InvalidInput" in error or "tcp open error" in error:
+        if "InvalidInput" in error or "tcp open error" in error or "FunctionCallFailed" in error:
             logger.debug(
                 f"ID: {task.id} {error.split('Workflow execution failed: ')[1]}. Task retrying.."
             )
