@@ -54,17 +54,14 @@ class Monitor:
         Sends heartbeats and processes responses at regular intervals.
         Handles errors gracefully and maintains monitoring loop.
         """
-        try:
-            while True:
-                try:
-                    await self._check_heartbeat()
-                    await asyncio.sleep(MONITORING_INTERVAL)
-                except Exception as e:
-                    logger.error(f"Error during heartbeat process: {e}", exc_info=True)
-                    await asyncio.sleep(MONITORING_INTERVAL)
-                    raise
-        except:
-            logger.info("Monitor shutting down")
+        while True:
+            try:
+                await self._check_heartbeat()
+                await asyncio.sleep(MONITORING_INTERVAL)
+            except Exception as e:
+                logger.error(f"Error during heartbeat process: {e}", exc_info=True)
+                await asyncio.sleep(MONITORING_INTERVAL)
+                raise
 
     async def _send_heartbeat(self, payload: str) -> bool:
         """

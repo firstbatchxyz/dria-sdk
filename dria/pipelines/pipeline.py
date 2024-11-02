@@ -106,8 +106,8 @@ class Pipeline:
             step.input = [step.input]
 
         self.logger.info(f"Running step: {step.name}")
-        self.config.pipeline_timeout += int(max(math.log(len(step.input)) * self.config.task_timeout,
-                                            self.config.task_timeout))
+        self.config.pipeline_timeout += int(max(math.log(max(1, len(step.input))) * self.config.step_timeout,
+                                            self.config.step_timeout))
         try:
             asyncio.create_task(step.run())
             self.logger.info(f"Step '{step.name}' completed successfully.")
@@ -123,7 +123,7 @@ class Pipeline:
 
         next_step = self.steps[next_step_index]
         input_data = current_step.callback(current_step)
-        self._update_state(next_step.name)
+        await self._update_state(next_step.name)
 
         next_step.input = (
             [input_data] if isinstance(input_data, TaskInput) else input_data
@@ -233,10 +233,10 @@ class Pipeline:
             self.logger.info(
                 f"Pipeline error details:\nType: {error_type}\nMessage: {error_message}\nTraceback:\n{error_traceback}"
             )
-        self._update_status(PipelineStatus.FAILED)
-        self._update_state(PipelineStatus.FAILED.value)
+        await self._update_status(PipelineStatus.FAILED)
+        await self._update_state(PipelineStatus.FAILED.value)
         if e:
-            self._update_error_reason(e)
+            await self._update_error_reason(e)
 
         latest_step = self.steps[-1] if self.steps else None
         if latest_step:
@@ -261,7 +261,7 @@ class Pipeline:
         except IndexError as e:
             output_data = []
         await self.storage.set_value(f"{self.pipeline_id}_output", output_data)
-        self._update_status(PipelineStatus.COMPLETED)
+        await self._update_status(PipelineStatus.COMPLETED)
 
     async def poll(self) -> Tuple[str, str, Optional[Dict[str, Any]]]:
         """

@@ -70,7 +70,7 @@ class QuestionStep(StepTemplate):
                 condition=ConditionBuilder.build(
                     input=Size.new("history", required=True),
                     expression=Expression.GREATER_THAN,
-                    expected="3",
+                    expected="1",
                     target_if_not="question_generation",
                 ),
             )

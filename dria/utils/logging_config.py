@@ -1,12 +1,10 @@
 import logging
 import sys
 
-from dria import constants
 
-
-def configure_logging(level=constants.LOG_LEVEL):
+def configure_logging():
     root_logger = logging.getLogger("dria")
-    root_logger.setLevel(level or "INFO")
+    root_logger.setLevel("ERROR")
 
     formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
 

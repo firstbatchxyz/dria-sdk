@@ -81,7 +81,7 @@ class TaskManager:
             raise TaskPublishError(f"Failed to publish task: {e}") from e
 
     async def prepare_task(
-        self, task: Task, blacklist: Dict[str, Dict[str, int]]
+            self, task: Task, blacklist: Dict[str, Dict[str, int]]
     ) -> tuple[dict[str, Any], Task, str]:
         """
         Prepare task for publishing by generating ID, deadline and selecting nodes.
@@ -128,7 +128,7 @@ class TaskManager:
         )
 
     async def push_task(
-        self, task: Task, blacklist: Dict[str, Dict[str, int]]
+            self, task: Task, blacklist: Dict[str, Dict[str, int]]
     ) -> tuple[bool, list[str], str] | tuple[bool, None, None]:
         """
         Push prepared task to network.
@@ -176,11 +176,11 @@ class TaskManager:
             return []
 
     async def create_filter(
-        self,
-        using_models: List[str],
-        blacklist: Dict[str, Dict[str, int]],
-        task_id: str = "",
-        retry: int = 0,
+            self,
+            using_models: List[str],
+            blacklist: Dict[str, Dict[str, int]],
+            task_id: str = "",
+            retry: int = 0,
     ) -> Tuple[List[str], str, Dict]:
         """
         Create Bloom filter for node selection.
@@ -197,12 +197,12 @@ class TaskManager:
         # Get all available nodes for all models
         all_model_nodes = {}
         for model in using_models:
-            nodes = self.get_available_nodes(model)
+            nodes = await self.get_available_nodes(model)
             filtered_nodes = [
                 node
                 for node in nodes
                 if int(time.time())
-                > blacklist.get(node + ":" + model, {"deadline": 0})["deadline"]
+                   > blacklist.get(node + ":" + model, {"deadline": 0})["deadline"]
             ]
             if filtered_nodes:
                 all_model_nodes[model] = filtered_nodes
@@ -212,7 +212,7 @@ class TaskManager:
                 logger.info(f"Searching available nodes for task {task_id}")
                 log_str = ""
                 for model in Model:
-                    node_count = len(self.get_available_nodes(model.value))
+                    node_count = len(await self.get_available_nodes(model.value))
                     if node_count > 0:
                         log_str += f" {model.name}: {node_count} nodes, "
                 if log_str:

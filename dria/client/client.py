@@ -1,6 +1,7 @@
 import asyncio
 import base64
 import json
+import logging
 import os
 import signal
 import time
@@ -45,7 +46,7 @@ class Dria:
 
     DEADLINE_MULTIPLIER: int = 10
 
-    def __init__(self, rpc_token: Optional[str] = None, api_mode: bool = False):
+    def __init__(self, rpc_token: Optional[str] = None, api_mode: bool = False, log_level = logging.INFO):
         """
         Initialize the Dria client.
 
@@ -53,6 +54,7 @@ class Dria:
             rpc_token (Optional[str]): Authentication token for RPC. Falls back to DRIA_RPC_TOKEN env var.
             api_mode (bool): If True, runs in API mode without cleanup of monitoring/polling.
         """
+        logging.getLogger("dria").setLevel(log_level)
         self.rpc = RPCClient(auth_token=rpc_token or os.environ.get("DRIA_RPC_TOKEN"))
         self.storage = Storage()
         self.kv = KeyValueQueue()
@@ -61,6 +63,7 @@ class Dria:
         self.blacklist: Dict[str, Dict[str, int]] = {}
         self.shutdown_event = asyncio.Event()
         self.api_mode = api_mode
+
 
         # Set up cache directory and blacklist
         cache_dir = os.path.join(os.path.dirname(__file__), ".cache")
@@ -75,6 +78,10 @@ class Dria:
     def _signal_handler(self, signum: int, frame: Any) -> None:
         """Handle termination signals by initiating graceful shutdown."""
         logger.info(f"Received signal {signum}. Initiating graceful shutdown...")
+        asyncio.create_task(self._set_shutdown())
+
+    async def _set_shutdown(self):
+        """Set shutdown event asynchronously"""
         self.shutdown_event.set()
 
     def _load_blacklist(self) -> None:
@@ -197,7 +204,7 @@ class Dria:
         Raises:
             TaskPublishError: If task publication fails
         """
-        self._check_function_calling_models(task)
+        await self._check_function_calling_models(task)
 
         # Generate valid task keys
         max_attempts = 20
@@ -249,12 +256,12 @@ class Dria:
         self._save_blacklist()
 
     async def fetch(
-        self,
-        pipeline: Optional[Any] = None,
-        task: Union[Optional[Task], Optional[List[Task]]] = None,
-        min_outputs: Optional[int] = None,
-        timeout: int = 30,
-        is_disabled: bool = False,
+            self,
+            pipeline: Optional[Any] = None,
+            task: Union[Optional[Task], Optional[List[Task]]] = None,
+            min_outputs: Optional[int] = None,
+            timeout: int = 30,
+            is_disabled: bool = False,
     ) -> List[TaskResult]:
         """
         Fetch task results from storage.
@@ -280,7 +287,7 @@ class Dria:
         min_outputs = self._determine_min_outputs(task, min_outputs)
 
         with tqdm(
-            total=min_outputs, desc="Fetching results...", disable=is_disabled
+                total=min_outputs, desc="Fetching results...", disable=is_disabled
         ) as pbar:
             while len(results) < min_outputs and not self.shutdown_event.is_set():
                 elapsed_time = time.time() - start_time
@@ -295,7 +302,7 @@ class Dria:
                 )
                 task_id = self._get_task_id(task)
 
-                new_results, new_id_map = self._fetch_results(pipeline_id, task_id)
+                new_results, new_id_map = await self._fetch_results(pipeline_id, task_id)
                 results.extend(new_results)
                 pbar.update(len(new_results))
 
@@ -317,8 +324,8 @@ class Dria:
 
     @staticmethod
     def _determine_min_outputs(
-        task: Union[Optional[Task], Optional[List[Task]]],
-        min_outputs: Optional[int],
+            task: Union[Optional[Task], Optional[List[Task]]],
+            min_outputs: Optional[int],
     ) -> int:
         """
         Determine minimum required outputs.
@@ -343,7 +350,7 @@ class Dria:
 
     @staticmethod
     def _get_task_id(
-        task: Union[Optional[Task], Optional[List[Task]]]
+            task: Union[Optional[Task], Optional[List[Task]]]
     ) -> Union[None, str, List[str]]:
         """
         Get task ID(s) from task object(s).
@@ -366,10 +373,10 @@ class Dria:
         else:
             raise ValueError("Invalid task type. Expected None, Task, or List[Task].")
 
-    def _fetch_results(
-        self,
-        pipeline_id: Optional[str],
-        task_id: Union[Optional[str], Optional[List[str]]],
+    async def _fetch_results(
+            self,
+            pipeline_id: Optional[str],
+            task_id: Union[Optional[str], Optional[List[str]]],
     ) -> Tuple[List[TaskResult], Dict[str, str]]:
         """
         Fetch results for pipeline and/or tasks.
@@ -388,33 +395,33 @@ class Dria:
             if task_id:
                 if isinstance(task_id, str):
                     key = f"{pipeline_id}:{task_id}"
-                    value = self.kv.pop(key)
+                    value = await self.kv.pop(key)
                     if value:
-                        task_result = self._create_task_result(task_id, value)
+                        task_result = await self._create_task_result(task_id, value)
                         if task_result:
                             new_results.append(task_result)
                 elif isinstance(task_id, list):
                     for tid in task_id:
                         key = f"{pipeline_id}:{tid}"
-                        value = self.kv.pop(key)
+                        value = await self.kv.pop(key)
                         if value:
-                            task_result = self._create_task_result(tid, value)
+                            task_result = await self._create_task_result(tid, value)
                             if task_result:
                                 new_results.append(task_result)
             else:
-                new_results = self._fetch_pipeline_results(pipeline_id)
+                new_results = await self._fetch_pipeline_results(pipeline_id)
         elif task_id:
             if isinstance(task_id, str):
-                new_results, new_ids = self._fetch_task_results(task_id)
+                new_results, new_ids = await self._fetch_task_results(task_id)
             elif isinstance(task_id, list):
                 for tid in task_id:
-                    new_res, new_ids = self._fetch_task_results(tid)
+                    new_res, new_ids = await self._fetch_task_results(tid)
                     new_results.extend(new_res)
                     new_id_map.update(new_ids)
 
         return new_results, new_id_map
 
-    def _fetch_pipeline_results(self, pipeline_id: str) -> List[TaskResult]:
+    async def _fetch_pipeline_results(self, pipeline_id: str) -> List[TaskResult]:
         """
         Fetch all results for a pipeline.
 
@@ -425,18 +432,18 @@ class Dria:
             List of task results
         """
         results: List[TaskResult] = []
-        for key in self.kv.keys():
+        for key in await self.kv.keys():
             if key.startswith(f"{pipeline_id}:"):
-                value = self.kv.pop(key)
+                value = await self.kv.pop(key)
                 if value:
                     task_id = key.split(":", 1)[1]
-                    task_result = self._create_task_result(task_id, value)
+                    task_result = await self._create_task_result(task_id, value)
                     if task_result:
                         results.append(task_result)
         return results
 
     async def _fetch_task_results(
-        self, task_id: str
+            self, task_id: str
     ) -> tuple[list[TaskResult], dict[str, Any]]:
         """
         Fetch results for a specific task.
@@ -450,9 +457,9 @@ class Dria:
         results: List[TaskResult] = []
         new_ids = {}
         suffix = f":{task_id}"
-        for key in self.kv.keys():
+        for key in await self.kv.keys():
             if key.endswith(suffix):
-                value = self.kv.pop(key)
+                value = await self.kv.pop(key)
                 if value:
                     if "new_task_id" in value.keys():
                         new_ids[key] = value["new_task_id"]
@@ -462,7 +469,7 @@ class Dria:
                             results.append(task_result)
         return results, new_ids
 
-    async def _create_task_result(self, task_id: str, value: dict) -> TaskResult | None:
+    async def _create_task_result(self, task_id: str, value: dict) -> Optional[TaskResult]:
         """
         Create TaskResult object from raw data.
 
@@ -482,7 +489,7 @@ class Dria:
             logger.debug(f"Invalid task data for task_id: {task_id}")
             return None
 
-        step_name = self._get_step_name(task_id)
+        step_name = await self._get_step_name(task_id)
         return TaskResult(
             id=task_id,
             step_name=step_name,
@@ -594,7 +601,7 @@ class Dria:
                 logger.error(f"Unexpected error processing item: {e}", exc_info=True)
 
     async def execute(
-        self, task: Union[Task, List[Task]], timeout: int = 30
+            self, task: Union[Task, List[Task]], timeout: int = 30
     ) -> List[Any]:
         """
         Execute task(s) and get results.
@@ -674,7 +681,7 @@ class Dria:
         raise ValueError(f"Task metadata not found for task id: {task_id}")
 
     @staticmethod
-    def _check_function_calling_models(task: Task) -> None:
+    async def _check_function_calling_models(task: Task) -> None:
         """
         Validate models for function calling tasks.
 
