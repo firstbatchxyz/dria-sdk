@@ -69,7 +69,6 @@ class Dria:
         cache_dir = os.path.join(os.path.dirname(__file__), ".cache")
         os.makedirs(cache_dir, exist_ok=True)
         self.blacklist_file = os.path.join(cache_dir, ".blacklist")
-        self._load_blacklist()
 
         # Register signal handlers
         signal.signal(signal.SIGTERM, self._signal_handler)
@@ -84,7 +83,7 @@ class Dria:
         """Set shutdown event asynchronously"""
         self.shutdown_event.set()
 
-    def _load_blacklist(self) -> None:
+    async def _load_blacklist(self) -> None:
         """Load node blacklist from disk or create new if not exists."""
         try:
             with open(self.blacklist_file, "r") as f:
@@ -94,15 +93,15 @@ class Dria:
                     self.blacklist[key] = eval(value)
         except FileNotFoundError:
             self.blacklist = {}
-            self._save_blacklist()
+            await self._save_blacklist()
 
-    def _save_blacklist(self) -> None:
+    async def _save_blacklist(self) -> None:
         """Persist current blacklist to disk."""
         with open(self.blacklist_file, "w") as f:
             for key, value in self.blacklist.items():
                 f.write(f"{key}|{value}\n")
 
-    def _remove_from_blacklist(self, address: str, model: str = "") -> None:
+    async def _remove_from_blacklist(self, address: str, model: str = "") -> None:
         """
         Remove a node address from the blacklist.
 
@@ -113,7 +112,7 @@ class Dria:
         mid = address + ":" + model
         if mid in self.blacklist:
             del self.blacklist[mid]
-            self._save_blacklist()
+            await self._save_blacklist()
             logger.debug(f"Address {address} removed from blacklist.")
         else:
             logger.debug(f"Address {address} not found in blacklist.")
@@ -127,13 +126,14 @@ class Dria:
         """
         self.api_mode = api_mode
 
-    def flush_blacklist(self) -> None:
+    async def flush_blacklist(self) -> None:
         """Clear the node blacklist."""
         self.blacklist = {}
-        self._save_blacklist()
+        await self._save_blacklist()
 
     async def initialize(self) -> None:
         """Initialize background monitoring and polling tasks."""
+        await self._load_blacklist()
         if self.background_tasks:
             if self.background_tasks.done():
                 logger.info("Background tasks already running")
@@ -253,7 +253,7 @@ class Dria:
                 f"Address {node} added to blacklist with deadline at {node_entry['deadline']}."
             )
 
-        self._save_blacklist()
+        await self._save_blacklist()
 
     async def fetch(
             self,
@@ -589,7 +589,7 @@ class Dria:
                         asyncio.create_task(self.push(t))
                         continue
                     else:
-                        self._remove_from_blacklist(address, result["model"])
+                        await self._remove_from_blacklist(address, result["model"])
                     pipeline_id = task.pipeline_id or ""
                     await self.kv.push(
                         f"{pipeline_id}:{identifier}",
@@ -738,4 +738,4 @@ class Dria:
                 f"ID: {task.id} {error.split('Workflow execution failed: ')[1]}. Task retrying.."
             )
             for address in task.nodes:
-                self._remove_from_blacklist(address)
+                await self._remove_from_blacklist(address)

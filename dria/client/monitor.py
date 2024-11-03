@@ -108,7 +108,6 @@ class Monitor:
             nodes_by_model = self._decrypt_nodes(
                 [base64_to_json(response) for response in topic_responses]
             )
-            logger.debug(f"Active nodes by model: {nodes_by_model}")
 
             model_counts: Dict[str, int] = {}
             for model, addresses in nodes_by_model.items():

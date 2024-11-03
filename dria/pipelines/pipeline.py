@@ -6,6 +6,8 @@ import traceback
 import uuid
 from typing import List, Optional, Dict, Any, Tuple, Union
 
+from tqdm import tqdm
+
 from dria.client import Dria
 from dria.db.storage import Storage
 from dria.models import TaskResult, TaskInput
@@ -107,7 +109,7 @@ class Pipeline:
 
         self.logger.info(f"Running step: {step.name}")
         self.config.pipeline_timeout += int(max(math.log(max(1, len(step.input))) * self.config.step_timeout,
-                                            self.config.step_timeout))
+                                                self.config.step_timeout))
         try:
             asyncio.create_task(step.run())
             self.logger.info(f"Step '{step.name}' completed successfully.")
@@ -138,8 +140,8 @@ class Pipeline:
             while True:
                 try:
                     if (
-                        self.client.background_tasks is None
-                        or self.client.background_tasks.done()
+                            self.client.background_tasks is None
+                            or self.client.background_tasks.done()
                     ):
                         if self.client.api_mode:
                             logger.debug("Background tasks closed. Reinitializing..")
@@ -183,9 +185,14 @@ class Pipeline:
             self.proceed_steps.append(step.name)
             return True
         required_results = int(len(step.all_inputs) * step.config.min_compute)
-        self.logger.info(
-            f"Required Output: {required_results} ({(len(step.output)/required_results)*100:.1f}% complete)"
+        progress = tqdm(
+            total=required_results,
+            desc=f"Step {step.name}",
+            initial=len(step.output),
+            unit="results"
         )
+        progress.update(0)
+        progress.close()
         if len(step.output) < int(required_results) or step.name in self.proceed_steps:
             return False
         self.proceed_steps.append(step.name)
@@ -253,7 +260,7 @@ class Pipeline:
             if isinstance(self.output, TaskInput):
                 output_data = json.dumps(self.output.dict())
             elif isinstance(self.output, list) and isinstance(
-                self.output[0], TaskInput
+                    self.output[0], TaskInput
             ):
                 output_data = json.dumps([i.dict() for i in self.output])
             else:

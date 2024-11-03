@@ -23,8 +23,7 @@ class Storage:
         Set a JSON value for a key in the local dictionary.
         The value should be a Python object that can be serialized to JSON.
         """
-        async with self.lock:
-            await self.set_value(key, json.dumps(value))
+        await self.set_value(key, json.dumps(value))
 
     async def get_value(self, key: str) -> Optional[str]:
         """
@@ -43,27 +42,25 @@ class Storage:
         """
         Update the value of a key in the local dictionary.
         """
-        async with self.lock:
-            current_value = json.loads(await self.get_value(key) or "{}")
-            if current_value:
-                current_value[field] = value
-                await self.set_value(key, json.dumps(current_value))
-            else:
-                await self.set_value(key, json.dumps({field: value}))
+        current_value = json.loads(await self.get_value(key) or "{}")
+        if current_value:
+            current_value[field] = value
+            await self.set_value(key, json.dumps(current_value))
+        else:
+            await self.set_value(key, json.dumps({field: value}))
 
     async def append_value(self, key: str, field: str, value: Any) -> None:
         """
         Append a value to a list in the local dictionary.
         """
-        async with self.lock:
-            current_value = json.loads(await self.get_value(key) or "{}")
-            if current_value:
-                if field not in current_value:
-                    current_value[field] = []
-                current_value[field].append(value)
-                await self.set_value(key, json.dumps(current_value))
-            else:
-                await self.set_value(key, json.dumps({field: [value]}))
+        current_value = json.loads(await self.get_value(key) or "{}")
+        if current_value:
+            if field not in current_value:
+                current_value[field] = []
+            current_value[field].append(value)
+            await self.set_value(key, json.dumps(current_value))
+        else:
+            await self.set_value(key, json.dumps({field: [value]}))
 
     async def remove_from_list(self, key: str, field: Optional[str], values: list) -> None:
         """

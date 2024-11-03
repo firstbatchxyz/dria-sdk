@@ -167,7 +167,9 @@ class Step(ABC):
                 workflow_result = self.workflow
                 workflow_result.external_memory.update(
                     {
-                        key: input_dict[key]
+                        key: str(input_dict[key]) if isinstance(input_dict[key], (int, float)) 
+                        else [str(x) for x in input_dict[key]] if isinstance(input_dict[key], list) and all(isinstance(x, (int, float)) for x in input_dict[key])
+                        else input_dict[key]
                         for key in self.input_keys
                         if key in input_dict
                     }
