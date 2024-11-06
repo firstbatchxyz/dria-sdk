@@ -304,8 +304,12 @@ class Dria:
                 task_id = self._get_task_id(task)
 
                 new_results, new_id_map = await self._fetch_results(pipeline_id, task_id)
-                results.extend(new_results)
+
+                results.extend(new_results.values())
                 pbar.update(len(new_results))
+                if isinstance(task, str):
+                    task = [task]
+                task = [t for t in task if t.id not in new_results.keys()]
 
                 for key, value in new_id_map.items():
                     if isinstance(task, str):
@@ -378,7 +382,7 @@ class Dria:
             self,
             pipeline_id: Optional[str],
             task_id: Union[Optional[str], Optional[List[str]]],
-    ) -> Tuple[List[TaskResult], Dict[str, str]]:
+    ) -> Tuple[Dict[str, TaskResult], Dict[str, str]]:
         """
         Fetch results for pipeline and/or tasks.
 
@@ -387,9 +391,9 @@ class Dria:
             task_id: Task ID(s)
 
         Returns:
-            Tuple of results list and ID mapping dict
+            Tuple of results dict and ID mapping dict
         """
-        new_results: List[TaskResult] = []
+        new_results: Dict[str, TaskResult] = {}
         new_id_map: Dict[str, str] = {}
 
         if pipeline_id:
@@ -400,7 +404,7 @@ class Dria:
                     if value:
                         task_result = await self._create_task_result(task_id, value)
                         if task_result:
-                            new_results.append(task_result)
+                            new_results[task_id] = task_result
                 elif isinstance(task_id, list):
                     for tid in task_id:
                         key = f"{pipeline_id}:{tid}"
@@ -408,7 +412,7 @@ class Dria:
                         if value:
                             task_result = await self._create_task_result(tid, value)
                             if task_result:
-                                new_results.append(task_result)
+                                new_results[tid] = task_result
             else:
                 new_results = await self._fetch_pipeline_results(pipeline_id)
         elif task_id:
@@ -417,12 +421,12 @@ class Dria:
             elif isinstance(task_id, list):
                 for tid in task_id:
                     new_res, new_ids = await self._fetch_task_results(tid)
-                    new_results.extend(new_res)
+                    new_results.update(new_res)
                     new_id_map.update(new_ids)
 
         return new_results, new_id_map
 
-    async def _fetch_pipeline_results(self, pipeline_id: str) -> List[TaskResult]:
+    async def _fetch_pipeline_results(self, pipeline_id: str) -> Dict[str, TaskResult]:
         """
         Fetch all results for a pipeline.
 
@@ -430,9 +434,9 @@ class Dria:
             pipeline_id: Pipeline ID
 
         Returns:
-            List of task results
+            Dict of task results
         """
-        results: List[TaskResult] = []
+        results: Dict[str, TaskResult] = {}
         for key in await self.kv.keys():
             if key.startswith(f"{pipeline_id}:"):
                 value = await self.kv.pop(key)
@@ -440,12 +444,12 @@ class Dria:
                     task_id = key.split(":", 1)[1]
                     task_result = await self._create_task_result(task_id, value)
                     if task_result:
-                        results.append(task_result)
+                        results[task_id] = task_result
         return results
 
     async def _fetch_task_results(
             self, task_id: str
-    ) -> tuple[list[TaskResult], dict[str, Any]]:
+    ) -> Tuple[Dict[str, TaskResult], Dict[str, Any]]:
         """
         Fetch results for a specific task.
 
@@ -453,9 +457,9 @@ class Dria:
             task_id: Task ID
 
         Returns:
-            Tuple of results list and new ID mapping
+            Tuple of results dict and new ID mapping
         """
-        results: List[TaskResult] = []
+        results: Dict[str, TaskResult] = {}
         new_ids = {}
         suffix = f":{task_id}"
         for key in await self.kv.keys():
@@ -467,7 +471,7 @@ class Dria:
                     else:
                         task_result = await self._create_task_result(task_id, value)
                         if task_result:
-                            results.append(task_result)
+                            results[task_id] = task_result
         return results, new_ids
 
     async def _create_task_result(self, task_id: str, value: dict) -> Optional[TaskResult]:
@@ -553,11 +557,9 @@ class Dria:
                 task.processed = True
                 await self.storage.set_value(identifier, json.dumps(task.dict()))
                 if "error" in result:
-                    logger.debug(
-                        f"ID: {identifier} {result['error'].split('Workflow execution failed: ')[1]}. Task retrying.."
-                    )
+
                     public_key = recover_public_key(
-                        bytes.fromhex(signature), json.dumps(result).encode()
+                        bytes.fromhex(signature), metadata_json.encode()
                     )
                     public_key = uncompressed_public_key(public_key)
                     address = (
@@ -565,6 +567,12 @@ class Dria:
                         .update(public_key[1:])
                         .digest()[-20:]
                         .hex()
+                    )
+                    if address not in task.nodes:
+                        logger.debug(f"{address} not in task nodes")
+                        continue
+                    logger.debug(
+                        f"ID: {identifier} {result['error'].split('Workflow execution failed: ')[1]}. Task retrying.."
                     )
                     await self._handle_error_type(task, result["error"])
                     t = Task(
@@ -574,7 +582,6 @@ class Dria:
                         step_name=task.step_name,
                         pipeline_id=task.pipeline_id,
                     )
-                    await self.storage.delete_key(task.id)
                     asyncio.create_task(self.push(t))
                     continue
 
