@@ -1,7 +1,6 @@
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Union
 
-from dria_workflows import OpenAIParser, NousParser, LlamaParser
-
+from dria_workflows import OpenAIParser, NousParser, LlamaParser, Workflow
 from pydantic import BaseModel, Field
 
 from dria.models import Model
@@ -20,7 +19,7 @@ class NodeModel(BaseModel):
 
 
 class TaskInputModel(BaseModel):
-    workflow: Dict[str, Any]
+    workflow: Any
     model: List[str]
 
 
@@ -35,7 +34,7 @@ class TaskModel(BaseModel):
 
 
 class Task(BaseModel):
-    workflow: Dict[str, Any]
+    workflow: Any
     models: List[str]
     id: Optional[str] = None
     pipeline_id: str = ""

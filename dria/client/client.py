@@ -7,6 +7,8 @@ import signal
 import time
 from typing import Any, List, Optional, Dict, Union, Tuple
 
+from Crypto.Hash import keccak
+from dria_workflows import Workflow
 from tqdm import tqdm
 
 from dria.client.monitor import Monitor
@@ -29,7 +31,7 @@ from dria.models.enums import (
 from dria.models.exceptions import TaskPublishError
 from dria.request import RPCClient
 from dria.utils import logger
-from dria.utils.ec import get_truthful_nodes, generate_task_keys
+from dria.utils.ec import get_truthful_nodes, generate_task_keys, recover_public_key, uncompressed_public_key
 from dria.utils.task_utils import TaskManager
 
 
@@ -142,27 +144,26 @@ class Dria:
 
     async def _start_background_tasks(self) -> None:
         """Start and manage background monitoring and polling tasks."""
+        monitor = Monitor(self.storage, self.rpc, self.kv)
+
         try:
-            await asyncio.gather(
-                self._run_monitoring(), self.poll(), self._run_health_check()
-            )
+            while not self.shutdown_event.is_set():
+                try:
+                    await asyncio.gather(
+                        monitor.run(),
+                        self.poll()
+                    )
+                    await asyncio.sleep(MONITORING_INTERVAL)
+                except Exception as e:
+                    raise Exception(f"Error in monitoring process: {e}")
+            raise Exception("Shutdown event received")
+
         except asyncio.CancelledError:
             logger.info("Background tasks cancelled.")
         except Exception as e:
             if not self.api_mode:
                 await self.run_cleanup(forced=True)
                 raise Exception(f"Error in background tasks: {e}")
-
-    async def _run_monitoring(self) -> None:
-        """Run task status monitoring loop."""
-        monitor = Monitor(self.storage, self.rpc, self.kv)
-        while not self.shutdown_event.is_set():
-            try:
-                await monitor.run()
-            except Exception as e:
-                raise Exception(f"Error in monitoring process: {e}")
-            await asyncio.sleep(MONITORING_INTERVAL)
-        raise Exception("Received signal for closing...")
 
     async def _run_health_check(self) -> None:
         """Run periodic RPC health checks."""
@@ -500,17 +501,14 @@ class Dria:
 
     async def poll(self) -> None:
         """Poll output content topic for results."""
-        while not self.shutdown_event.is_set():
-            try:
-                topic_results = await self.rpc.get_content_topic(OUTPUT_CONTENT_TOPIC)
-                if topic_results:
-                    await self._process_results(list(set(topic_results)))
-                else:
-                    logger.debug("No results in output content topic.")
-            except Exception as e:
-                raise Exception(f"Error fetching content topic: {e}")
-            finally:
-                await asyncio.sleep(MONITORING_INTERVAL)
+        try:
+            topic_results = await self.rpc.get_content_topic(OUTPUT_CONTENT_TOPIC)
+            if topic_results:
+                await self._process_results(list(set(topic_results)))
+            else:
+                logger.debug("No results in output content topic.")
+        except Exception as e:
+            raise Exception(f"Error fetching content topic: {e}")
 
     async def _process_results(self, topic_results: List[str]) -> None:
         """
@@ -521,10 +519,15 @@ class Dria:
         """
         current_time = int(time.time())
 
+        signature = None
         for item in topic_results:
             try:
                 decoded_item = base64.b64decode(item).decode("utf-8")
-                result = json.loads(decoded_item)
+                try:
+                    result = json.loads(decoded_item)
+                except json.JSONDecodeError:
+                    signature, metadata_json = decoded_item[:130], decoded_item[130:]
+                    result = json.loads(metadata_json)
 
                 identifier, rpc_auth = result["taskId"].split("--")
                 task_data = await self.storage.get_value(identifier)
@@ -549,10 +552,19 @@ class Dria:
 
                 task.processed = True
                 await self.storage.set_value(identifier, json.dumps(task.dict()))
-
                 if "error" in result:
                     logger.debug(
                         f"ID: {identifier} {result['error'].split('Workflow execution failed: ')[1]}. Task retrying.."
+                    )
+                    public_key = recover_public_key(
+                        bytes.fromhex(signature), json.dumps(result).encode()
+                    )
+                    public_key = uncompressed_public_key(public_key)
+                    address = (
+                        keccak.new(digest_bits=256)
+                        .update(public_key[1:])
+                        .digest()[-20:]
+                        .hex()
                     )
                     await self._handle_error_type(task, result["error"])
                     t = Task(
@@ -574,20 +586,6 @@ class Dria:
                         logger.debug(f"Address: {address} not valid in nodes.")
                         continue
 
-                    if processed_result == "":
-                        logger.info(
-                            "Invalid task result, retrying with another node..."
-                        )
-                        t = Task(
-                            id=task.id,
-                            workflow=task.workflow,
-                            models=task.models,
-                            step_name=task.step_name,
-                            pipeline_id=task.pipeline_id,
-                        )
-                        await self.storage.delete_key(task.id)
-                        asyncio.create_task(self.push(t))
-                        continue
                     else:
                         await self._remove_from_blacklist(address, result["model"])
                     pipeline_id = task.pipeline_id or ""
@@ -691,10 +689,16 @@ class Dria:
         Raises:
             ValueError: If no supported models found
         """
-        has_function_calling = any(
-            t.get("operator") == "function_calling"
-            for t in task.workflow.get("tasks", [])
-        )
+        if isinstance(task.workflow, Workflow):
+            has_function_calling = any(
+                t.operator == "function_calling"
+                for t in task.workflow.tasks
+            )
+        else:
+            has_function_calling = any(
+                t.get("operator") == "function_calling"
+                for t in task.workflow.get("tasks", [])
+            )
         supported_models = set(model.value for model in FunctionCallingModels)
 
         model_list = []

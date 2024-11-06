@@ -9,7 +9,7 @@ INPUT_CONTENT_TOPIC: Final[str] = "task"
 OUTPUT_CONTENT_TOPIC: Final[str] = "results"
 
 RETURN_DEADLINE: Final[int] = 86400  # 24 hours in seconds
-MONITORING_INTERVAL: Final[int] = 5  # 5 seconds
+MONITORING_INTERVAL: Final[int] = 1 # 5 seconds
 TASK_DEADLINE: Final[int] = 300
 FETCH_INTERVAL: Final[int] = 1
 FETCH_DEADLINE: Final[int] = 300

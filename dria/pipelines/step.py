@@ -101,12 +101,12 @@ class Step(ABC):
             f"Pipeline parameters added to step '{self.name}': pipeline_id={pipeline_id}"
         )
 
-    async def _push_task(self, workflow_data: Dict) -> Task:
+    async def _push_task(self, workflow_data: Workflow) -> Task:
         """
         Push the workflow data as a task to the Dria.
 
         Args:
-            workflow_data (Dict): The workflow result to be pushed.
+            workflow_data (Workflow): The workflow result to be pushed.
 
         Returns:
             Task: The task that was successfully pushed.
@@ -137,7 +137,7 @@ class Step(ABC):
         )
         return task
 
-    def _validate_and_run_workflow(self, task_input: TaskInput) -> Dict:
+    def _validate_and_run_workflow(self, task_input: TaskInput) -> Workflow:
         """
         Validate the input and execute the workflow.
 
@@ -181,11 +181,10 @@ class Step(ABC):
                     max_time=self.config.max_time,
                     max_steps=self.config.max_steps,
                 )
-            result = workflow_result.model_dump(warnings=False)
             self.logger.debug(
-                f"Workflow built successfully for step '{self.name}': {result}"
+                f"Workflow built successfully for step '{self.name}'"
             )
-            return result
+            return workflow_result
         except Exception as e:
             self.logger.error(
                 f"Workflow execution failed for step '{self.name}': {e}", exc_info=True

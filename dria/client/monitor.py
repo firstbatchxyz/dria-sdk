@@ -1,4 +1,3 @@
-import asyncio
 import json
 from collections import defaultdict
 from typing import Dict, List
@@ -8,7 +7,6 @@ from Crypto.Hash import keccak
 from dria.constants import (
     HEARTBEAT_OUTPUT_TOPIC,
     HEARTBEAT_TOPIC,
-    MONITORING_INTERVAL,
 )
 from dria.db.mq import KeyValueQueue
 from dria.db.storage import Storage
@@ -54,14 +52,11 @@ class Monitor:
         Sends heartbeats and processes responses at regular intervals.
         Handles errors gracefully and maintains monitoring loop.
         """
-        while True:
-            try:
-                await self._check_heartbeat()
-                await asyncio.sleep(MONITORING_INTERVAL)
-            except Exception as e:
-                logger.error(f"Error during heartbeat process: {e}", exc_info=True)
-                await asyncio.sleep(MONITORING_INTERVAL)
-                raise
+        try:
+            await self._check_heartbeat()
+        except Exception as e:
+            logger.error(f"Error during heartbeat process: {e}", exc_info=True)
+            raise
 
     async def _send_heartbeat(self, payload: str) -> bool:
         """

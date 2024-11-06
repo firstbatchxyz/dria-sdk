@@ -132,5 +132,5 @@ def get_truthful_nodes(
     public_key = uncompressed_public_key(public_key)
     address = publickey_to_address(public_key)
     if address not in task.nodes:
-        return None, None
+        return None, address
     return result, address

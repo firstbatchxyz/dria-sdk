@@ -7,17 +7,19 @@ import string
 import time
 from typing import List, Tuple, Any, Dict, Union
 
+from dria_workflows import Workflow
 from fastbloom_rs import BloomFilter
 
 from dria.constants import MONITORING_INTERVAL, INPUT_CONTENT_TOPIC, TASK_DEADLINE
 from dria.db.mq import KeyValueQueue
 from dria.db.storage import Storage
 from dria.models import NodeModel, TaskModel, TaskInputModel, Task
-from dria.models.enums import Model
+from dria.models.enums import Model, OpenAIModels, OllamaModels, CoderModels, GeminiModels
 from dria.models.exceptions import TaskFilterError, TaskPublishError
 from dria.request import RPCClient
 from dria.utils import str_to_base64
 from dria.utils.logging import logger
+from dria.utils.schema_parser import SchemaParser
 
 
 class TaskManager:
@@ -43,6 +45,25 @@ class TaskManager:
         self.storage = storage
         self.rpc = rpc
         self.kv = kv
+
+    @staticmethod
+    def _schema_parser(workflow: Workflow, selected_model: str) -> Dict:
+        """Parse schema for task model."""
+        for t in workflow.tasks:
+            if t.schema is None:
+                continue
+            provider = None
+            if selected_model in [m.value for m in OpenAIModels]:
+                provider = Model.OPENAI.value
+            elif selected_model in [m.value for m in OllamaModels]:
+                provider = Model.OLLAMA.value
+            elif selected_model in [m.value for m in CoderModels]:
+                continue
+            elif selected_model in [m.value for m in GeminiModels]:
+                provider = Model.GEMINI.value
+            schema = SchemaParser.parse(t.schema, provider)
+            t.schema = schema
+        return workflow.model_dump(warnings=False)
 
     @staticmethod
     def generate_random_string(length: int = 32) -> str:
@@ -146,6 +167,10 @@ class TaskManager:
             old_task_id = task.__deepcopy__().id
 
         task_model, task, selected_model = await self.prepare_task(task, blacklist)
+        if isinstance(task.workflow, Workflow):
+            parsed_workflow = self._schema_parser(task.workflow, selected_model)
+            task.workflow = parsed_workflow
+            task_model["input"]["workflow"] = parsed_workflow
         task_model_str = json.dumps(task_model, ensure_ascii=False)
 
         if await self.publish_message(task_model_str, INPUT_CONTENT_TOPIC):
