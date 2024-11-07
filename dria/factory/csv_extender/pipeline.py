@@ -28,6 +28,7 @@ class CSVExtenderPipeline:
             [Model.GPT4O, Model.GEMINI_15_FLASH, Model.GEMINI_15_PRO],
             [
                 Model.GPT4O,
+                Model.GPT4O_MINI,
                 Model.GEMINI_15_FLASH,
                 Model.GEMINI_15_PRO,
                 Model.QWEN2_5_7B_FP16,
