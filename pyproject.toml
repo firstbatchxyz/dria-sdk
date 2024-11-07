@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "dria"
-version = "0.0.64"
+version = "0.0.66"
 description = "Dria SDK - A Python library for interacting with the Dria AI Network"
 authors = ["andthattoo <omer@firstbatch.xyz>", "Anil <anil@firstbatch.xyz>"]
 readme = "README.md"
@@ -28,6 +28,8 @@ fastbloom-rs = "0.5.9"
 tqdm = "4.66.5"
 json-repair = "0.30.0"
 outlines-core = "0.1.14"
+pytest = "8.3.3"
+pytest-asyncio = "0.24.0"
 
 [tool.poetry.urls]
 "Bug Tracker" = "https://github.com/firstbatchxyz/dria-sdk/issues"
