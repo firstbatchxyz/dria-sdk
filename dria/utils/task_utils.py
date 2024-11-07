@@ -14,7 +14,13 @@ from dria.constants import MONITORING_INTERVAL, INPUT_CONTENT_TOPIC, TASK_DEADLI
 from dria.db.mq import KeyValueQueue
 from dria.db.storage import Storage
 from dria.models import NodeModel, TaskModel, TaskInputModel, Task
-from dria.models.enums import Model, OpenAIModels, OllamaModels, CoderModels, GeminiModels
+from dria.models.enums import (
+    Model,
+    OpenAIModels,
+    OllamaModels,
+    CoderModels,
+    GeminiModels,
+)
 from dria.models.exceptions import TaskFilterError, TaskPublishError
 from dria.request import RPCClient
 from dria.utils import str_to_base64
@@ -102,7 +108,7 @@ class TaskManager:
             raise TaskPublishError(f"Failed to publish task: {e}") from e
 
     async def prepare_task(
-            self, task: Task, blacklist: Dict[str, Dict[str, int]]
+        self, task: Task, blacklist: Dict[str, Dict[str, int]]
     ) -> tuple[dict[str, Any], Task, str]:
         """
         Prepare task for publishing by generating ID, deadline and selecting nodes.
@@ -149,7 +155,7 @@ class TaskManager:
         )
 
     async def push_task(
-            self, task: Task, blacklist: Dict[str, Dict[str, int]]
+        self, task: Task, blacklist: Dict[str, Dict[str, int]]
     ) -> tuple[bool, list[str], str] | tuple[bool, None, None]:
         """
         Push prepared task to network.
@@ -194,18 +200,20 @@ class TaskManager:
             List of available node addresses
         """
         try:
-            available_nodes = await self.storage.get_value(f"available-nodes-{model_type}")
+            available_nodes = await self.storage.get_value(
+                f"available-nodes-{model_type}"
+            )
             return json.loads(available_nodes) if available_nodes else []
         except Exception as e:
             logger.error(f"Error getting available nodes for {model_type}: {e}")
             return []
 
     async def create_filter(
-            self,
-            using_models: List[str],
-            blacklist: Dict[str, Dict[str, int]],
-            task_id: str = "",
-            retry: int = 0,
+        self,
+        using_models: List[str],
+        blacklist: Dict[str, Dict[str, int]],
+        task_id: str = "",
+        retry: int = 0,
     ) -> Tuple[List[str], str, Dict]:
         """
         Create Bloom filter for node selection.
@@ -227,7 +235,7 @@ class TaskManager:
                 node
                 for node in nodes
                 if int(time.time())
-                   > blacklist.get(node + ":" + model, {"deadline": 0})["deadline"]
+                > blacklist.get(node + ":" + model, {"deadline": 0})["deadline"]
             ]
             if filtered_nodes:
                 all_model_nodes[model] = filtered_nodes

@@ -131,7 +131,9 @@ class Step(ABC):
         if not self.storage:
             raise RuntimeError(f"Storage is not initialized for step '{self.name}'.")
 
-        await self.storage.set_value(task.id, json.dumps(task.dict(), ensure_ascii=False))
+        await self.storage.set_value(
+            task.id, json.dumps(task.dict(), ensure_ascii=False)
+        )
         self.logger.debug(
             f"Task pushed and stored for step '{self.name}': task_id={task.id}"
         )
@@ -167,9 +169,18 @@ class Step(ABC):
                 workflow_result = self.workflow
                 workflow_result.external_memory.update(
                     {
-                        key: str(input_dict[key]) if isinstance(input_dict[key], (int, float)) 
-                        else [str(x) for x in input_dict[key]] if isinstance(input_dict[key], list) and all(isinstance(x, (int, float)) for x in input_dict[key])
-                        else input_dict[key]
+                        key: (
+                            str(input_dict[key])
+                            if isinstance(input_dict[key], (int, float))
+                            else (
+                                [str(x) for x in input_dict[key]]
+                                if isinstance(input_dict[key], list)
+                                and all(
+                                    isinstance(x, (int, float)) for x in input_dict[key]
+                                )
+                                else input_dict[key]
+                            )
+                        )
                         for key in self.input_keys
                         if key in input_dict
                     }
@@ -181,9 +192,7 @@ class Step(ABC):
                     max_time=self.config.max_time,
                     max_steps=self.config.max_steps,
                 )
-            self.logger.debug(
-                f"Workflow built successfully for step '{self.name}'"
-            )
+            self.logger.debug(f"Workflow built successfully for step '{self.name}'")
             return workflow_result
         except Exception as e:
             self.logger.error(

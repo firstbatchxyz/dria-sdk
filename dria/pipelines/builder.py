@@ -165,11 +165,11 @@ class StepTemplate(BaseModel, ABC):
         return self
 
     def set_workflow_params(
-            self,
-            min_compute: Optional[int] = None,
-            max_time: Optional[int] = None,
-            max_steps: Optional[int] = None,
-            max_tokens: Optional[int] = None,
+        self,
+        min_compute: Optional[int] = None,
+        max_time: Optional[int] = None,
+        max_steps: Optional[int] = None,
+        max_tokens: Optional[int] = None,
     ) -> "StepTemplate":
         if min_compute:
             self.config.min_compute = min_compute
@@ -200,11 +200,11 @@ class StepBuilder:
     """
 
     def __init__(
-            self,
-            name: Optional[str] = None,
-            input: Optional[Union[TaskInput, List[TaskInput]]] = None,
-            workflow: Optional[Union[Callable, Workflow]] = None,
-            config: StepConfig = StepConfig(),
+        self,
+        name: Optional[str] = None,
+        input: Optional[Union[TaskInput, List[TaskInput]]] = None,
+        workflow: Optional[Union[Callable, Workflow]] = None,
+        config: StepConfig = StepConfig(),
     ):
         """
         Initialize a new StepBuilder instance.
@@ -224,10 +224,10 @@ class StepBuilder:
         logger.debug(f"Created StepBuilder with name: {self.step.name}")
 
     def add_callback(
-            self,
-            callback: Callable,
-            callback_type: CallbackType,
-            params: Optional[Dict] = None,
+        self,
+        callback: Callable,
+        callback_type: CallbackType,
+        params: Optional[Dict] = None,
     ) -> "StepBuilder":
         """
         Set a custom callback for the step.
@@ -244,8 +244,8 @@ class StepBuilder:
             raise ValueError("Custom callback must be callable")
 
         if not any(
-                param.annotation in [Step, "Step"]
-                for param in inspect.signature(callback).parameters.values()
+            param.annotation in [Step, "Step"]
+            for param in inspect.signature(callback).parameters.values()
         ):
             raise ValueError("Custom callback must have a parameter of type Step")
 
@@ -382,9 +382,9 @@ class PipelineBuilder:
                 previous_step.next_step_input = step.input_keys
 
             if step.callback_type in (
-                    CallbackType.BROADCAST,
-                    CallbackType.AGGREGATE,
-                    CallbackType.SCATTER,
+                CallbackType.BROADCAST,
+                CallbackType.AGGREGATE,
+                CallbackType.SCATTER,
             ):
                 if len(step.input_keys) > 1:
                     raise ValueError(

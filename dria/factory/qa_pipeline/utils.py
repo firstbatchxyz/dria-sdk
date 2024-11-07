@@ -34,7 +34,7 @@ def sample_variable(variable: Dict[str, Any]) -> Any:
 
 
 def scrape_file(
-        file: str, max_retries: int = 10, retry_delay: int = 10
+    file: str, max_retries: int = 10, retry_delay: int = 10
 ) -> dict[str, Any]:
     for attempt in range(max_retries):
         try:
@@ -53,7 +53,7 @@ def scrape_file(
 
 
 def scrape(
-        source: Any, chunk_size: int = 100, min_chunk_size: int = 28
+    source: Any, chunk_size: int = 100, min_chunk_size: int = 28
 ) -> List[Dict[str, Any]]:
     """Scrape the given websites or fetch file.
 
@@ -92,7 +92,7 @@ def scrape(
     context_text = json.loads(json.dumps(context_text, ensure_ascii=False))
 
     chunks = [
-        context_text[i: i + chunk_size]
+        context_text[i : i + chunk_size]
         for i in range(0, len(context_text), chunk_size)
     ]
 

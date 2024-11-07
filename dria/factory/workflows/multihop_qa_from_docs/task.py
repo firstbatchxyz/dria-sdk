@@ -17,10 +17,7 @@ from dria.factory.workflows.template import SingletonTemplate
 
 class MultiHopQuestion(SingletonTemplate):
 
-    def workflow(
-        self,
-        chunks: List[str]
-    ) -> Workflow:
+    def workflow(self, chunks: List[str]) -> Workflow:
         """Generate questions for a 3 documents and backstory.
 
         Args:
@@ -35,7 +32,9 @@ class MultiHopQuestion(SingletonTemplate):
         if chunks is None or len(chunks) != 3:
             raise ValueError("The input documents must be a list of 3 strings.")
 
-        builder = WorkflowBuilder(document_1=chunks[0], document_2=chunks[1], document_3=chunks[2])
+        builder = WorkflowBuilder(
+            document_1=chunks[0], document_2=chunks[1], document_3=chunks[2]
+        )
 
         builder.set_max_time(60)
         builder.set_max_steps(5)
