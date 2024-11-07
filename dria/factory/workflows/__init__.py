@@ -36,5 +36,5 @@ __all__ = [
     "SelfInstruct",
     "WebMultiChoice",
     "Simple",
-    "MultiHopQuestion"
+    "MultiHopQuestion",
 ]

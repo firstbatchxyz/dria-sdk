@@ -22,7 +22,7 @@ class PipelineConfig(BaseModel):
     pipeline_timeout: int = Field(
         default=0,
         description="Maximum allowed duration for the entire pipelines execution, in seconds. It's dynamic by "
-                    "task execution.",
+        "task execution.",
         ge=1,
     )
     step_timeout: int = Field(

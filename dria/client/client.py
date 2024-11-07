@@ -31,7 +31,12 @@ from dria.models.enums import (
 from dria.models.exceptions import TaskPublishError
 from dria.request import RPCClient
 from dria.utils import logger
-from dria.utils.ec import get_truthful_nodes, generate_task_keys, recover_public_key, uncompressed_public_key
+from dria.utils.ec import (
+    get_truthful_nodes,
+    generate_task_keys,
+    recover_public_key,
+    uncompressed_public_key,
+)
 from dria.utils.task_utils import TaskManager
 
 
@@ -48,7 +53,12 @@ class Dria:
 
     DEADLINE_MULTIPLIER: int = 10
 
-    def __init__(self, rpc_token: Optional[str] = None, api_mode: bool = False, log_level = logging.INFO):
+    def __init__(
+        self,
+        rpc_token: Optional[str] = None,
+        api_mode: bool = False,
+        log_level=logging.INFO,
+    ):
         """
         Initialize the Dria client.
 
@@ -65,7 +75,6 @@ class Dria:
         self.blacklist: Dict[str, Dict[str, int]] = {}
         self.shutdown_event = asyncio.Event()
         self.api_mode = api_mode
-
 
         # Set up cache directory and blacklist
         cache_dir = os.path.join(os.path.dirname(__file__), ".cache")
@@ -149,10 +158,7 @@ class Dria:
         try:
             while not self.shutdown_event.is_set():
                 try:
-                    await asyncio.gather(
-                        monitor.run(),
-                        self.poll()
-                    )
+                    await asyncio.gather(monitor.run(), self.poll())
                     await asyncio.sleep(MONITORING_INTERVAL)
                 except Exception as e:
                     raise Exception(f"Error in monitoring process: {e}")
@@ -257,12 +263,12 @@ class Dria:
         await self._save_blacklist()
 
     async def fetch(
-            self,
-            pipeline: Optional[Any] = None,
-            task: Union[Optional[Task], Optional[List[Task]]] = None,
-            min_outputs: Optional[int] = None,
-            timeout: int = 30,
-            is_disabled: bool = False,
+        self,
+        pipeline: Optional[Any] = None,
+        task: Union[Optional[Task], Optional[List[Task]]] = None,
+        min_outputs: Optional[int] = None,
+        timeout: int = 30,
+        is_disabled: bool = False,
     ) -> List[TaskResult]:
         """
         Fetch task results from storage.
@@ -288,7 +294,7 @@ class Dria:
         min_outputs = self._determine_min_outputs(task, min_outputs)
 
         with tqdm(
-                total=min_outputs, desc="Fetching results...", disable=is_disabled
+            total=min_outputs, desc="Fetching results...", disable=is_disabled
         ) as pbar:
             while len(results) < min_outputs and not self.shutdown_event.is_set():
                 elapsed_time = time.time() - start_time
@@ -303,7 +309,9 @@ class Dria:
                 )
                 task_id = self._get_task_id(task)
 
-                new_results, new_id_map = await self._fetch_results(pipeline_id, task_id)
+                new_results, new_id_map = await self._fetch_results(
+                    pipeline_id, task_id
+                )
 
                 results.extend(new_results.values())
                 pbar.update(len(new_results))
@@ -330,8 +338,8 @@ class Dria:
 
     @staticmethod
     def _determine_min_outputs(
-            task: Union[Optional[Task], Optional[List[Task]]],
-            min_outputs: Optional[int],
+        task: Union[Optional[Task], Optional[List[Task]]],
+        min_outputs: Optional[int],
     ) -> int:
         """
         Determine minimum required outputs.
@@ -356,7 +364,7 @@ class Dria:
 
     @staticmethod
     def _get_task_id(
-            task: Union[Optional[Task], Optional[List[Task]]]
+        task: Union[Optional[Task], Optional[List[Task]]]
     ) -> Union[None, str, List[str]]:
         """
         Get task ID(s) from task object(s).
@@ -380,9 +388,9 @@ class Dria:
             raise ValueError("Invalid task type. Expected None, Task, or List[Task].")
 
     async def _fetch_results(
-            self,
-            pipeline_id: Optional[str],
-            task_id: Union[Optional[str], Optional[List[str]]],
+        self,
+        pipeline_id: Optional[str],
+        task_id: Union[Optional[str], Optional[List[str]]],
     ) -> Tuple[Dict[str, TaskResult], Dict[str, str]]:
         """
         Fetch results for pipeline and/or tasks.
@@ -449,7 +457,7 @@ class Dria:
         return results
 
     async def _fetch_task_results(
-            self, task_id: str
+        self, task_id: str
     ) -> Tuple[Dict[str, TaskResult], Dict[str, Any]]:
         """
         Fetch results for a specific task.
@@ -475,7 +483,9 @@ class Dria:
                             results[task_id] = task_result
         return results, new_ids
 
-    async def _create_task_result(self, task_id: str, value: dict) -> Optional[TaskResult]:
+    async def _create_task_result(
+        self, task_id: str, value: dict
+    ) -> Optional[TaskResult]:
         """
         Create TaskResult object from raw data.
 
@@ -607,7 +617,7 @@ class Dria:
                 logger.error(f"Unexpected error processing item: {e}", exc_info=True)
 
     async def execute(
-            self, task: Union[Task, List[Task]], timeout: int = 30
+        self, task: Union[Task, List[Task]], timeout: int = 30
     ) -> List[Any]:
         """
         Execute task(s) and get results.
@@ -699,8 +709,7 @@ class Dria:
         """
         if isinstance(task.workflow, Workflow):
             has_function_calling = any(
-                t.operator == "function_calling"
-                for t in task.workflow.tasks
+                t.operator == "function_calling" for t in task.workflow.tasks
             )
         else:
             has_function_calling = any(
@@ -745,7 +754,11 @@ class Dria:
 
     async def _handle_error_type(self, task: Task, error: str) -> None:
         """Handle task error by removing nodes from blacklist."""
-        if "InvalidInput" in error or "tcp open error" in error or "FunctionCallFailed" in error:
+        if (
+            "InvalidInput" in error
+            or "tcp open error" in error
+            or "FunctionCallFailed" in error
+        ):
             logger.debug(
                 f"ID: {task.id} {error.split('Workflow execution failed: ')[1]}. Task retrying.."
             )

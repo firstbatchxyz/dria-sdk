@@ -108,8 +108,12 @@ class Pipeline:
             step.input = [step.input]
 
         self.logger.info(f"Running step: {step.name}")
-        self.config.pipeline_timeout += int(max(math.log(max(1, len(step.input))) * self.config.step_timeout,
-                                                self.config.step_timeout))
+        self.config.pipeline_timeout += int(
+            max(
+                math.log(max(1, len(step.input))) * self.config.step_timeout,
+                self.config.step_timeout,
+            )
+        )
         try:
             asyncio.create_task(step.run())
             self.logger.info(f"Step '{step.name}' completed successfully.")
@@ -140,8 +144,8 @@ class Pipeline:
             while True:
                 try:
                     if (
-                            self.client.background_tasks is None
-                            or self.client.background_tasks.done()
+                        self.client.background_tasks is None
+                        or self.client.background_tasks.done()
                     ):
                         if self.client.api_mode:
                             logger.debug("Background tasks closed. Reinitializing..")
@@ -189,7 +193,7 @@ class Pipeline:
             total=required_results,
             desc=f"Step {step.name}",
             initial=len(step.output),
-            unit="results"
+            unit="results",
         )
         progress.update(0)
         progress.close()
@@ -260,7 +264,7 @@ class Pipeline:
             if isinstance(self.output, TaskInput):
                 output_data = json.dumps(self.output.dict())
             elif isinstance(self.output, list) and isinstance(
-                    self.output[0], TaskInput
+                self.output[0], TaskInput
             ):
                 output_data = json.dumps([i.dict() for i in self.output])
             else:
@@ -285,7 +289,9 @@ class Pipeline:
         state = await self.storage.get_value(f"{self.pipeline_id}_state")
 
         if status == PipelineStatus.FAILED.value:
-            error_reason = await self.storage.get_value(f"{self.pipeline_id}_error_reason")
+            error_reason = await self.storage.get_value(
+                f"{self.pipeline_id}_error_reason"
+            )
             raise Exception(f"Pipeline execution failed: {error_reason}")
 
         if not status or not state:

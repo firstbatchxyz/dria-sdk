@@ -91,7 +91,7 @@ class PageAggregator(StepTemplate):
                     title=item["title"],
                     url=f"https://{item['link']}",
                     summary=item["snippet"],
-                    id=str(random.randint(10000, 99999))
+                    id=str(random.randint(10000, 99999)),
                 )
                 for item in data
             ]
@@ -103,7 +103,7 @@ class PageAggregator(StepTemplate):
                     title=lines[i].strip(),
                     url=lines[i + 1].strip(),
                     summary=lines[i + 2].strip(),
-                    id=int(lines[i + 4].strip())
+                    id=int(lines[i + 4].strip()),
                 )
                 for i in range(0, len(lines), 5)
             ]
