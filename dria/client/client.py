@@ -307,9 +307,10 @@ class Dria:
 
                 results.extend(new_results.values())
                 pbar.update(len(new_results))
-                if isinstance(task, str):
-                    task = [task]
-                task = [t for t in task if t.id not in new_results.keys()]
+                if task is not None:
+                    if isinstance(task, str):
+                        task = [task]
+                    task = [t for t in task if t.id not in new_results.keys()]
 
                 for key, value in new_id_map.items():
                     if isinstance(task, str):
