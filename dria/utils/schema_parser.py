@@ -5,6 +5,8 @@ from typing import Any, Union, Type
 from outlines_core.fsm.json_schema import build_regex_from_schema
 from pydantic import BaseModel
 
+from dria.utils.parsers import type_to_response_format_param
+
 
 class SchemaParser:
     """Schema parser for different model providers."""
@@ -77,7 +79,7 @@ class SchemaParser:
     @staticmethod
     def _parse_openai(model: Type[BaseModel]) -> str:
         """Parse schema for OpenAI models."""
-        return json.dumps(model.model_json_schema())
+        return json.dumps(type_to_response_format_param(model)["json_schema"]["schema"])
 
     @staticmethod
     def _parse_ollama(model: Type[BaseModel]) -> str:
