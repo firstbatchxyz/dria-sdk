@@ -24,16 +24,14 @@ class CSVExtenderPipeline:
         self.pipeline_config: PipelineConfig = config or PipelineConfig()
         self.pipeline = PipelineBuilder(self.pipeline_config, dria)
         self.models_list = [
-            [Model.GPT4O, Model.GEMINI_15_PRO],
-            [Model.GPT4O, Model.GEMINI_15_FLASH, Model.GEMINI_15_PRO],
+            [Model.GPT4O, Model.GPT4O_MINI],
+            [Model.GEMINI_15_FLASH, Model.GPT4O_MINI],
             [
                 Model.GPT4O,
                 Model.GPT4O_MINI,
                 Model.GEMINI_15_FLASH,
                 Model.GEMINI_15_PRO,
-                Model.QWEN2_5_7B_FP16,
                 Model.LLAMA3_1_8B_FP16,
-                Model.GEMMA2_9B_FP16,
                 Model.QWEN2_5_32B_FP16,
             ],
         ]
@@ -48,14 +46,16 @@ class CSVExtenderPipeline:
             else:
                 self.models_list = [models, models, models]
 
-    def build(self, csv, num_samples=10) -> Pipeline:
-        self.pipeline.input(csv=csv, num_samples=num_samples)
+    def build(self, csv, num_rows, num_values) -> Pipeline:
+        self.pipeline.input(csv=csv)
         (
             self.pipeline
-            << GetDependencies(num_samples=num_samples)
+            << GetDependencies(num_values=num_values)
             .set_models(self.models_list[0])
             .custom()
-            << PopulateDependencies().set_models(self.models_list[1]).custom()
+            << PopulateDependencies(num_rows=num_rows)
+            .set_models(self.models_list[1])
+            .custom()
             << ExtendCSV().set_models(self.models_list[2]).custom()
         )
         return self.pipeline.build()

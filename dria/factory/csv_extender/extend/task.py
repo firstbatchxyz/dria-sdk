@@ -1,17 +1,13 @@
 import logging
 from dria.models import TaskInput
 from dria.factory.utilities import get_abs_path
-from dria.utils.task_utils import parse_json
-from typing import Any
+from dria.utils.task_utils import extract_backtick_label
 from dria_workflows import (
     WorkflowBuilder,
     Operator,
     Write,
     Edge,
-    Read,
     Workflow,
-    ConditionBuilder,
-    Expression,
 )
 import random
 from typing import Dict, List
@@ -22,21 +18,18 @@ logger = logging.getLogger(__name__)
 
 class ExtendCSV(StepTemplate):
 
-    def create_workflow(
-        self,
-        csv: str,
-        seed_column: str,
-    ) -> Workflow:
+    def create_workflow(self, csv: str, seed_column: str, num_rows: str) -> Workflow:
         """Generate random variables for simulation
 
         Args:
             :param csv: The description of the simulation.
             :param seed_column: The column to extend.
+            :param num_rows: The number of rows to extend the column by.
 
         Returns:
             dict: The generated random variables.
         """
-        builder = WorkflowBuilder(csv=csv, seed_column=seed_column)
+        builder = WorkflowBuilder(csv=csv, seed_column=seed_column, num_rows=num_rows)
         builder.set_max_time(90)
         builder.set_max_tokens(1000)
 
@@ -70,5 +63,11 @@ class ExtendCSV(StepTemplate):
         """
         extended = step.input[0].csv + "\n"
         for r in step.output:
-            extended += r.result.replace("```csv", "").replace("```", "").strip() + "\n"
+            res = extract_backtick_label(r.result, "csv")
+            if len(res) > 0:
+                extended += res[0] + "\n"
+            else:
+                extended += (
+                    r.result.replace("```csv", "").replace("```", "").strip() + "\n"
+                )
         return TaskInput(**{"extended_csv": extended})

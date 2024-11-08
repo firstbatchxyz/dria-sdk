@@ -16,5 +16,5 @@ here is the csv
 here is the seed column value 
 {{seed_column}}
 
-Only output new rows of csv and nothing else. 
+Only output {{num_rows}} new rows of csv and nothing else, no comments or anything. 
 Output:

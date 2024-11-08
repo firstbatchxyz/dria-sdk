@@ -130,7 +130,9 @@ class Pipeline:
         next_step = self.steps[next_step_index]
         input_data = current_step.callback(current_step)
         if not input_data:
-            raise ValueError(f"Step '{current_step.name}' requires at least one input to execute. Please provide input when initializing the step.")
+            raise ValueError(
+                f"Step '{current_step.name}' requires at least one input to execute. Please provide input when initializing the step."
+            )
         await self._update_state(next_step.name)
 
         next_step.input = (

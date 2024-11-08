@@ -1,15 +1,4 @@
-Analyze the CSV data and output the overall column dependency hierarchy using '->' to show relationships.
-
-Example:
-
-```
-column 1 -> independent
-column 2 -> column 1
-column 4 -> column 1
-column 3 -> column 2, column 4
-```
-
-
+Analyze the CSV data and output the overall column dependency hierarchy.
 
 Here is the sample data:
 <sample_data>

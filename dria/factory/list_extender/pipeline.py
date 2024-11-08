@@ -3,7 +3,6 @@ from dria.client import Dria
 from dria.pipelines import Pipeline, PipelineConfig
 from dria.pipelines.builder import PipelineBuilder
 from dria.models import Model
-from typing import List
 from .extender import ListExtender
 from .generate_subtopics import GenerateSubtopics
 from typing import Optional, List, Union
@@ -38,7 +37,7 @@ class ListExtenderPipeline:
             [
                 Model.GPT4O,
                 Model.GEMINI_15_FLASH,
-                Model.GEMINI_15_PRO,
+                Model.GPT4O_MINI,
                 Model.QWEN2_5_32B_FP16,
                 Model.QWEN2_5_7B_FP16,
                 Model.QWEN2_5_7B,
