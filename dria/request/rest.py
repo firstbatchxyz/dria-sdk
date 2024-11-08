@@ -99,7 +99,6 @@ class RPCClient:
                 f"Data size ({data_size} bytes) exceeds the maximum allowed size of {self.NETWORK_MAX_MESSAGE_SIZE} bytes"
             )
         try:
-            logger.debug("Pushing content to topic: %s", content_topic)
             async with aiohttp.ClientSession(headers=self.headers) as session:
                 async with session.post(
                     f"{self.base_url}/rpc/{content_topic}",
