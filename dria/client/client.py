@@ -584,9 +584,10 @@ class Dria:
                         f"ID: {identifier} {result['error'].split('Workflow execution failed: ')[1]}. Task retrying.."
                     )
                     await self._handle_error_type(task, result["error"])
+                    workflow = await self.storage.get_value(f"{task.id}:workflow")
                     t = Task(
                         id=task.id,
-                        workflow=task.workflow,
+                        workflow=workflow,
                         models=task.models,
                         step_name=task.step_name,
                         pipeline_id=task.pipeline_id,
@@ -767,7 +768,7 @@ class Dria:
 
         if any(err in error for err in user_side_errors):
             error_msg = error.split("Workflow execution failed: ")[1]
-            logger.debug(f"ID: {task.id} {error_msg}. Task retrying..")
+            logger.info(f"ID: {task.id} {error_msg}. Task retrying..")
 
             for address in task.nodes:
                 await self._remove_from_blacklist(address)

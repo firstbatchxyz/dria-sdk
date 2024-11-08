@@ -9,7 +9,7 @@ class Storage:
         self.data: Dict[str, Dict[str, Any]] = {}
         self.lock = asyncio.Lock()
 
-    async def set_value(self, key: str, value: str, ex: Optional[int] = None) -> None:
+    async def set_value(self, key: str, value: Any, ex: Optional[int] = None) -> None:
         """
         Set a key-value pair in the local dictionary.
         If `ex` is provided, set an expiration time (in seconds) for the key.

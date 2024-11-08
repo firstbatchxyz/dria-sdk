@@ -1,4 +1,5 @@
 import asyncio
+import copy
 import json
 import random
 import re
@@ -69,6 +70,7 @@ class TaskManager:
                 provider = Model.GEMINI.value
             schema = SchemaParser.parse(t.schema, provider)
             t.schema = schema
+
         return workflow.model_dump(warnings=False)
 
     @staticmethod
@@ -108,7 +110,7 @@ class TaskManager:
             raise TaskPublishError(f"Failed to publish task: {e}") from e
 
     async def prepare_task(
-        self, task: Task, blacklist: Dict[str, Dict[str, int]]
+            self, task: Task, blacklist: Dict[str, Dict[str, int]]
     ) -> tuple[dict[str, Any], Task, str]:
         """
         Prepare task for publishing by generating ID, deadline and selecting nodes.
@@ -154,8 +156,11 @@ class TaskManager:
             selected_model,
         )
 
+    async def save_workflow(self, task: Task):
+        await self.storage.set_value(f"{task.id}:workflow", copy.deepcopy(task.workflow))
+
     async def push_task(
-        self, task: Task, blacklist: Dict[str, Dict[str, int]]
+            self, task: Task, blacklist: Dict[str, Dict[str, int]]
     ) -> tuple[bool, list[str], str] | tuple[bool, None, None]:
         """
         Push prepared task to network.
@@ -174,6 +179,7 @@ class TaskManager:
 
         task_model, task, selected_model = await self.prepare_task(task, blacklist)
         if isinstance(task.workflow, Workflow):
+            await self.save_workflow(task)
             parsed_workflow = self._schema_parser(task.workflow, selected_model)
             task.workflow = parsed_workflow
             task_model["input"]["workflow"] = parsed_workflow
@@ -209,11 +215,11 @@ class TaskManager:
             return []
 
     async def create_filter(
-        self,
-        using_models: List[str],
-        blacklist: Dict[str, Dict[str, int]],
-        task_id: str = "",
-        retry: int = 0,
+            self,
+            using_models: List[str],
+            blacklist: Dict[str, Dict[str, int]],
+            task_id: str = "",
+            retry: int = 0,
     ) -> Tuple[List[str], str, Dict]:
         """
         Create Bloom filter for node selection.
@@ -235,7 +241,7 @@ class TaskManager:
                 node
                 for node in nodes
                 if int(time.time())
-                > blacklist.get(node + ":" + model, {"deadline": 0})["deadline"]
+                   > blacklist.get(node + ":" + model, {"deadline": 0})["deadline"]
             ]
             if filtered_nodes:
                 all_model_nodes[model] = filtered_nodes
