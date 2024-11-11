@@ -18,7 +18,7 @@ from dria.factory.workflows.template import SingletonTemplate
 class MultiHopQuestion(SingletonTemplate):
 
     def workflow(self, chunks: List[str]) -> Workflow:
-        """Generate questions for a 3 documents and backstory.
+        """Generate questions for 3 documents and backstory.
 
         Args:
             chunks (List[str]): The input data to be used in the workflow.

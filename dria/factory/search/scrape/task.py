@@ -19,8 +19,8 @@ class Article(TypedDict):
 class PageScraper(StepTemplate):
 
     def create_workflow(
-        self,
-        article: Article,
+            self,
+            article: Article,
     ) -> Workflow:
         """Collect web pages related to topic
 
@@ -67,7 +67,10 @@ class PageScraper(StepTemplate):
         """
         results = []
         for i, o in enumerate(step.output):
-            res = self.parse(o.result)
+            try:
+                res = self.parse(o.result)
+            except:
+                continue
             res.update({"url": step.input[i].url})
             res.update({"summary": step.input[i].summary})
             results.append(TaskInput(**res))

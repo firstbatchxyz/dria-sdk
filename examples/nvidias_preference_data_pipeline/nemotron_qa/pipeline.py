@@ -22,10 +22,12 @@ class NemotronQA:
                 Model.GEMINI_15_FLASH,
                 Model.MIXTRAL_8_7B,
                 Model.QWEN2_5_7B_FP16,
+                Model.LLAMA3_1_8B_FP16,
             ],
             [
                 Model.O1_MINI,
-                Model.LLAMA3_1_8B_FP16,
+                Model.GEMINI_15_FLASH,
+                Model.GEMINI_15_PRO,
                 Model.GPT4O,
             ],
         ]

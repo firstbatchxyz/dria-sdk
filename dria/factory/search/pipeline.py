@@ -29,14 +29,16 @@ class SearchPipeline:
                 Model.QWEN2_5_32B_FP16,
                 Model.QWEN2_5_7B_FP16,
                 Model.GEMINI_15_FLASH,
-                Model.LLAMA3_2_3B,
+                Model.GPT4O_MINI,
+                Model.GPT4O,
             ],
             [
                 Model.QWEN2_5_7B_FP16,
                 Model.LLAMA3_1_8B_FP16,
                 Model.QWEN2_5_32B_FP16,
                 Model.GEMINI_15_FLASH,
-                Model.LLAMA3_2_3B,
+                Model.GPT4O_MINI,
+                Model.GPT4O,
             ],
         ]
 
@@ -57,7 +59,7 @@ class SearchPipeline:
         (
             self.pipeline
             << PageAggregator().set_models(self.models_list[0])
-            << PageScraper(config=StepConfig(min_compute=0.85)).set_models(
+            << PageScraper(config=StepConfig(min_compute=0.9)).set_models(
                 self.models_list[1]
             )
         )
