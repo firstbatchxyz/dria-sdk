@@ -178,8 +178,8 @@ class TaskManager:
             old_task_id = task.__deepcopy__().id
 
         task_model, task, selected_model = await self.prepare_task(task, blacklist)
+        await self.save_workflow(task)
         if isinstance(task.workflow, Workflow):
-            await self.save_workflow(task)
             parsed_workflow = self._schema_parser(task.workflow, selected_model)
             task.workflow = parsed_workflow
             task_model["input"]["workflow"] = parsed_workflow

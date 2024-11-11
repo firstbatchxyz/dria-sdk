@@ -631,6 +631,8 @@ class Dria:
         Raises:
             ValueError: If invalid task type
         """
+        if not task:
+            raise ValueError("Cannot execute empty task list. At least one Task object must be provided for execution.")
         await self.initialize()
 
         if isinstance(task, Task):
