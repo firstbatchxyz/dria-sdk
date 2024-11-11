@@ -22,7 +22,9 @@ class GenerateSubtopics(StepTemplate):
         )
 
         builder = WorkflowBuilder(topic=topic)
-
+        builder.set_max_time(self.config.max_time)
+        builder.set_max_tokens(self.config.max_tokens)
+        builder.set_max_steps(self.config.max_steps)
         # Step A: GenerateSubtopics
         builder.generative_step(
             id="generate_subtopics",

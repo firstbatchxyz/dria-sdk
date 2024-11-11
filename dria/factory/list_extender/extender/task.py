@@ -26,8 +26,9 @@ class ListExtender(StepTemplate):
             dict: The generated random variables.
         """
         builder = WorkflowBuilder(e_list=e_list)
-        builder.set_max_time(30)
-        builder.set_max_tokens(900)
+        builder.set_max_time(self.config.max_time)
+        builder.set_max_tokens(self.config.max_tokens)
+        builder.set_max_steps(self.config.max_steps)
         # Step A: RandomVarGen
         builder.generative_step(
             id="extend_list",

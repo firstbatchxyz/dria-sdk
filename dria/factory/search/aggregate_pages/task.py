@@ -1,8 +1,8 @@
+import json
 import logging
-from dria.models import TaskInput
-from dria.factory.utilities import get_abs_path
-from dria.utils.task_utils import parse_json
-from typing import Any
+import random
+from typing import Dict, List
+
 from dria_workflows import (
     WorkflowBuilder,
     Operator,
@@ -10,14 +10,10 @@ from dria_workflows import (
     Edge,
     Read,
     Workflow,
-    ConditionBuilder,
-    Expression,
 )
-import random
-import json
-from typing import Dict, List
-from dria.pipelines import Step, StepTemplate
 
+from dria.models import TaskInput
+from dria.pipelines import Step, StepTemplate
 
 logger = logging.getLogger(__name__)
 
@@ -25,8 +21,8 @@ logger = logging.getLogger(__name__)
 class PageAggregator(StepTemplate):
 
     def create_workflow(
-        self,
-        topic: str,
+            self,
+            topic: str,
     ) -> Workflow:
         """Collect web pages related to topic
 
@@ -37,8 +33,9 @@ class PageAggregator(StepTemplate):
             dict: collected pages
         """
         builder = WorkflowBuilder(topic=topic)
-        builder.set_max_time(50)
-        builder.set_max_tokens(750)
+        builder.set_max_time(self.config.max_time)
+        builder.set_max_tokens(self.config.max_tokens)
+        builder.set_max_steps(self.config.max_steps)
 
         # Step A: RandomVarGen
         builder.generative_step(
