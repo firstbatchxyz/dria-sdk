@@ -159,7 +159,7 @@ class Pipeline:
                     if time.time() - start_time > self.config.pipeline_timeout:
                         """Handle the deadline exceeded error."""
                         self.logger.warn(
-                            f"Pipeline '{self.pipeline_id}' exceeded the deadline of {self.config.pipeline_timeout} seconds."
+                            f"Step exceeded the deadline of {self.config.pipeline_timeout} seconds. Next step is running..."
                         )
                         try:
                             latest_step_name = self.proceed_steps[-1]
