@@ -75,7 +75,7 @@ class BackStoryStep(StepTemplate):
 
         try:
             return [
-                TaskInput(backstory=parse_backstory(backstory.result), context=chunk)
+                TaskInput(backstory=backstory.result, context=chunk)
                 for chunk in chunked_context
                 for backstory in step.output
             ]
