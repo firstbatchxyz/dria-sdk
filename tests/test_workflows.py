@@ -39,7 +39,7 @@ async def test_simple_workflow(dria_client):
     simple = Simple()
     res = await dria_client.execute(
         Task(
-            workflow=simple.workflow(prompt="Hey there!").model_dump(),
+            workflow=simple.workflow(prompt="Hey there!"),
             models=[Model.LLAMA3_1_8B_FP16],
         ),
         timeout=45,
@@ -57,7 +57,7 @@ async def test_generate_code_workflow(dria_client):
             workflow=generate_code.workflow(
                 instruction="Write a function to calculate the factorial of a number",
                 language="python",
-            ).model_dump(),
+            ),
             models=[Model.QWEN2_5_CODER_7B_FP16],
         ),
         timeout=45,
@@ -72,7 +72,7 @@ async def test_multihop_question_workflow(dria_client, text_chunks):
     mhop = MultiHopQuestion()
     res = await dria_client.execute(
         Task(
-            workflow=mhop.workflow(chunks=text_chunks).model_dump(),
+            workflow=mhop.workflow(chunks=text_chunks),
             models=[Model.GPT4O_MINI],
         ),
         timeout=45,

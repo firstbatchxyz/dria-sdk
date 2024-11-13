@@ -1,12 +1,12 @@
 [tool.poetry]
 name = "dria"
-version = "0.0.82"
-description = "Dria SDK - A Python library for interacting with the Dria AI Network"
+version = "0.1.0"
+description = "Dria SDK - A Python library for interacting with the Dria Network"
 authors = ["andthattoo <omer@firstbatch.xyz>", "Anil <anil@firstbatch.xyz>"]
 readme = "README.md"
 homepage = "https://github.com/firstbatchxyz/dria-sdk"
 repository = "https://github.com/firstbatchxyz/dria-sdk"
-documentation = "https://github.com/firstbatchxyz/dria-sdk"
+documentation = "https://docs.dria.co"
 keywords = ["dria", "decentralized-ai", "ai", "agentic"]
 classifiers = [
     "License :: OSI Approved :: MIT License",

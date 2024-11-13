@@ -32,7 +32,7 @@ async def main():
 
     logger.info(f"Generating {node_count} poem(s) based on the prompt: '{prompt}'")
     task = Task(
-        workflow=simple_workflow(prompt).model_dump(),
+        workflow=simple_workflow(prompt),
         models=[Model.OLLAMA],
     )
     results = await dria.execute([task for _ in range(node_count)])
