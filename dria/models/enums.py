@@ -15,6 +15,7 @@ class CallbackType(Enum):
     DEFAULT = "default"
     CUSTOM = "custom"
 
+
 class Model(str, Enum):
     # Ollama models
     NOUS_THETA = "finalend/hermes-3-llama-3.1:8b-q8_0"
@@ -45,6 +46,20 @@ class Model(str, Enum):
     DEEPSEEK_CODER_6_7B = "deepseek-coder:6.7b"
     MIXTRAL_8_7B = "mixtral:8x7b"
 
+    DEEPSEEK_CHAT_OR = "deepseek/deepseek-chat"
+    LLAMA_3_1_8B_OR = "meta-llama/llama-3.1-8b-instruct"
+    LLAMA_3_1_70B_OR = "meta-llama/llama-3.1-70b-instruct"
+    LLAMA_3_1_405B_OR = "meta-llama/llama-3.1-405b-instruct"
+    LLAMA_3_1_70B_OR_F = "meta-llama/llama-3.1-70b-instruct:free"
+    ANTHROPIC_SONNET_3_5_OR = "anthropic/claude-3.5-sonnet:beta"
+    ANTHROPIC_HAIKU_3_5_OR = "anthropic/claude-3-5-haiku-20241022:beta"
+    QWEN2_5_72B_OR = "qwen/qwen-2.5-72b-instruct"
+    QWEN2_5_7B_OR = "qwen/qwen-2.5-7b-instruct"
+    QWEN2_5_CODER_32B_OR = "qwen/qwen-2.5-coder-32b-instruct"
+    QWEN2_5_EVA_32B_OR = "eva-unit-01/eva-qwen-2.5-32b"
+    DEEPSEEK_2_5_OR = "deepseek/deepseek-chat"
+    NOUS_HERMES_405B_OR = "nousresearch/hermes-3-llama-3.1-405b"
+
     # Gemini models
     GEMINI_15_PRO = "gemini-1.5-pro"
     GEMINI_15_FLASH = "gemini-1.5-flash"
@@ -65,6 +80,7 @@ class Model(str, Enum):
     OPENAI = "openai"
     CODER = "coder"
     GEMINI = "gemini"
+    OPENROUTER = "openrouter"
 
     @classmethod
     def default(cls):
@@ -94,6 +110,19 @@ class FunctionCallingModels(Enum):
     GPT4O_MINI = Model.GPT4O_MINI.value
     GEMINI_15_PRO = Model.GEMINI_15_PRO.value
     GEMINI_15_FLASH = Model.GEMINI_15_FLASH.value
+    DEEPSEEK_CHAT_OR = Model.DEEPSEEK_CHAT_OR.value
+    LLAMA_3_1_8B_OR = Model.LLAMA_3_1_8B_OR.value
+    LLAMA_3_1_70B_OR = Model.LLAMA_3_1_70B_OR.value
+    LLAMA_3_1_405B_OR = Model.LLAMA_3_1_405B_OR.value
+    LLAMA_3_1_70B_OR_F = Model.LLAMA_3_1_70B_OR_F.value
+    ANTHROPIC_SONNET_3_5_OR = Model.ANTHROPIC_SONNET_3_5_OR.value
+    ANTHROPIC_HAIKU_3_5_OR = Model.ANTHROPIC_HAIKU_3_5_OR.value
+    QWEN2_5_72B_OR = Model.QWEN2_5_72B_OR.value
+    QWEN2_5_7B_OR = Model.QWEN2_5_7B_OR.value
+    QWEN2_5_CODER_32B_OR = Model.QWEN2_5_CODER_32B_OR.value
+    QWEN2_5_EVA_32B_OR = Model.QWEN2_5_EVA_32B_OR.value
+    DEEPSEEK_2_5_OR = Model.DEEPSEEK_2_5_OR.value
+    NOUS_HERMES_405B_OR = Model.NOUS_HERMES_405B_OR.value
 
 
 class OpenAIModels(Enum):
@@ -140,3 +169,17 @@ class CoderModels(Enum):
     QWEN2_5_CODER_7B = Model.QWEN2_5_CODER_7B.value
     QWEN2_5_CODER_7B_Q8 = Model.QWEN2_5_CODER_7B_Q8.value
     QWEN2_5_CODER_7B_FP16 = Model.QWEN2_5_CODER_7B_Q8.value
+    QWEN2_5_CODER_32B_OR = Model.QWEN2_5_CODER_32B_OR.value
+
+
+class OpenRouterModels(Enum):
+    DEEPSEEK_CHAT_OR = Model.DEEPSEEK_CHAT_OR.value
+    LLAMA_3_1_8B_OR = Model.LLAMA_3_1_8B_OR.value
+    LLAMA_3_1_70B_OR = Model.LLAMA_3_1_70B_OR.value
+    LLAMA_3_1_70B_OR_F = Model.LLAMA_3_1_70B_OR_F.value
+    ANTHROPIC_SONNET_3_5_OR = Model.ANTHROPIC_SONNET_3_5_OR.value
+    ANTHROPIC_HAIKU_3_5_OR = Model.ANTHROPIC_HAIKU_3_5_OR.value
+    QWEN2_5_72B_OR = Model.QWEN2_5_72B_OR.value
+    QWEN2_5_7B_OR = Model.QWEN2_5_7B_OR.value
+    QWEN2_5_EVA_32B_OR = Model.QWEN2_5_EVA_32B_OR.value
+    DEEPSEEK_2_5_OR = Model.DEEPSEEK_2_5_OR.value

@@ -17,17 +17,23 @@ class RPCClient:
 
     Args:
         auth_token (str): The authentication token for the RPC client.
+        mode (str): Network name
     """
 
     NETWORK_MAX_MESSAGE_SIZE = 256
 
-    def __init__(self, auth_token: str):
+    def __init__(self, auth_token: str, mode="pro"):
         if not auth_token:
             raise ValueError(
                 "RPC token is required for Dria RPC. "
                 "Please set the DRIA_RPC_TOKEN environment variable."
             )
-        self.base_url = constants.RPC_BASE_URL
+        if mode == "pro":
+            self.base_url = constants.RPC_BASE_URL
+        elif mode == "community":
+            self.base_url = constants.RPC_BASE_URL_COMMUNITY
+        else:
+            raise ValueError(f"Unknown network mode: {mode}")
         self.auth_token = auth_token
         self.headers = {
             "x-api-key": self.auth_token,

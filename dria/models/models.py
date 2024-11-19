@@ -41,6 +41,8 @@ class Task(BaseModel):
     public_key: Optional[str] = None
     private_key: Optional[str] = None
     deadline: int = 0
+    created_ts: int = 0
+    filter: Dict = {}
     nodes: List[str] = []
     step_name: str = ""
     processed: bool = False
@@ -56,6 +58,7 @@ class Task(BaseModel):
             "deadline": self.deadline,
             "nodes": self.nodes,
             "step_name": self.step_name,
+            "created_ts": self.created_ts
         }
 
 
