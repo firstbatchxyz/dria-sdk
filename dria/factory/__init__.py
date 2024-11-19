@@ -5,6 +5,7 @@ from .search import *
 from .csv_extender import *
 from .list_extender import *
 from .qa_pipeline import *
+from .nemotron_qa import *
 
 __all__ = [
     "Clair",
@@ -32,4 +33,5 @@ __all__ = [
     "ListExtenderPipeline",
     "QAPipeline",
     "MultiHopQuestion",
+    "NemotronQA"
 ]

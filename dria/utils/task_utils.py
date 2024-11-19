@@ -216,7 +216,7 @@ class TaskManager:
 
     async def create_filter(
             self,
-            using_models: List[str],
+            using_models: List[Model],
             blacklist: Dict[str, Dict[str, int]],
             task_id: str = "",
             retry: int = 0,
@@ -233,9 +233,10 @@ class TaskManager:
         Returns:
             Tuple of (selected nodes, selected model, Bloom filter params)
         """
+        models = [i.value for i in using_models]
         # Get all available nodes for all models
         all_model_nodes = {}
-        for model in using_models:
+        for model in models:
             nodes = await self.get_available_nodes(model)
             filtered_nodes = [
                 node
@@ -266,7 +267,7 @@ class TaskManager:
         selected_model = random.choice(list(all_model_nodes.keys()))
         picked_nodes = random.sample(all_model_nodes[selected_model], 1)
 
-        for model in using_models:
+        for model in models:
             try:
                 await self.storage.remove_from_list(
                     f"available-nodes-{model}", None, picked_nodes

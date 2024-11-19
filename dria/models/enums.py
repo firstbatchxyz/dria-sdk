@@ -15,8 +15,7 @@ class CallbackType(Enum):
     DEFAULT = "default"
     CUSTOM = "custom"
 
-
-class Model(Enum):
+class Model(str, Enum):
     # Ollama models
     NOUS_THETA = "finalend/hermes-3-llama-3.1:8b-q8_0"
     PHI3_MEDIUM = "phi3:14b-medium-4k-instruct-q4_1"
@@ -32,6 +31,10 @@ class Model(Enum):
     LLAMA3_1_70BQ8 = "llama3.1:70b-instruct-q8_0"
     LLAMA3_2_1B = "llama3.2:1b"
     LLAMA3_2_3B = "llama3.2:3b"
+    LLAMA3_1_8BTextQ4KM = "llama3.1:8b-text-q4_K_M"
+    LLAMA3_1_8BTextQ8 = "llama3.1:8b-text-q8_0"
+    LLAMA3_1_70BTextQ4KM = "llama3.1:70b-text-q4_0"
+    LLAMA3_2_1BTextQ4KM = "llama3.2:1b-text-q4_K_M"
     QWEN2_5_7B = "qwen2.5:7b-instruct-q5_0"
     QWEN2_5_7B_FP16 = "qwen2.5:7b-instruct-fp16"
     QWEN2_5_32B_FP16 = "qwen2.5:32b-instruct-fp16"

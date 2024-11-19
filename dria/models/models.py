@@ -35,7 +35,7 @@ class TaskModel(BaseModel):
 
 class Task(BaseModel):
     workflow: Any
-    models: List[str]
+    models: List[Model]
     id: Optional[str] = None
     pipeline_id: str = ""
     public_key: Optional[str] = None

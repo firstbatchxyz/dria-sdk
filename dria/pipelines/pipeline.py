@@ -108,7 +108,7 @@ class Pipeline:
             step.input = [step.input]
 
         self.logger.info(f"Running step: {step.name}")
-        self.config.pipeline_timeout += int(
+        self.config.pipeline_timeout = int(
             max(
                 math.log(max(1, len(step.input))) * self.config.step_timeout,
                 self.config.step_timeout,
@@ -157,8 +157,25 @@ class Pipeline:
                         else:
                             raise Exception("Dria client is not initialized")
                     if time.time() - start_time > self.config.pipeline_timeout:
-                        await self._handle_deadline_exceeded()
-                        return
+                        """Handle the deadline exceeded error."""
+                        self.logger.warn(
+                            f"Step exceeded the deadline of {self.config.pipeline_timeout} seconds. Next step is running..."
+                        )
+                        try:
+                            latest_step_name = self.proceed_steps[-1]
+                            latest_step_index = self.steps.index(self.get_step(latest_step_name))
+                            next_step = self.steps[latest_step_index + 1]
+                        except IndexError:
+                            raise Exception(
+                                "No steps have been executed yet in the pipeline. Cannot determine latest step. Exiting pipeline."
+                            )
+                        if self._is_final_step(next_step):
+                            await self._finalize_pipeline(next_step)
+                            return
+
+                        await self._run_next_step(next_step, self.steps.index(next_step) + 1)
+                        start_time = time.time()
+                        continue
 
                     results: List[TaskResult] = await self.client.fetch(
                         pipeline=self, timeout=0, is_disabled=True
@@ -179,6 +196,7 @@ class Pipeline:
                             return
 
                         await self._run_next_step(step, self.steps.index(step) + 1)
+                        start_time = time.time()
 
                 except Exception as e:
                     return await self._graceful_shutdown(e)
@@ -215,17 +233,6 @@ class Pipeline:
         self.output = final_step.callback(final_step)
         await self._save_output()
         self.logger.info("Pipeline execution completed.")
-
-    async def _handle_deadline_exceeded(self) -> None:
-        """Handle the deadline exceeded error."""
-        self.logger.error(
-            f"Pipeline '{self.pipeline_id}' exceeded the deadline of {self.config.pipeline_timeout} seconds."
-        )
-        return await self._graceful_shutdown(
-            Exception(
-                f"Terminating pipelines execution due to deadline exceeded. Current pipelines deadline {self.config.pipeline_timeout}"
-            )
-        )
 
     async def _update_state(self, state: str) -> None:
         """Update the pipelines state in storage."""

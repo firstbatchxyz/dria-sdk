@@ -38,6 +38,9 @@ class BackStory(StepTemplate):
         builder = WorkflowBuilder(
             persona_traits=persona_traits, simulation_description=simulation_description
         )
+        builder.set_max_time(self.config.max_time)
+        builder.set_max_tokens(self.config.max_tokens)
+        builder.set_max_steps(self.config.max_steps)
 
         # Step A: GenerateBackstory
         builder.generative_step(

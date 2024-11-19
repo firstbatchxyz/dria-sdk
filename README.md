@@ -68,7 +68,7 @@ async def evaluate():
     simple = Simple()
     res = await dria.execute(
         Task(
-            workflow=simple.workflow(prompt="Write a poem about love").model_dump(),
+            workflow=simple.workflow(prompt="Write a poem about love"),
             models=[Model.GEMMA2_9B_FP16],
         ),
         timeout=45,

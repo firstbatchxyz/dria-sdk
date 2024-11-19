@@ -580,9 +580,14 @@ class Dria:
                     if address not in task.nodes:
                         logger.debug(f"{address} not in task nodes")
                         continue
-                    logger.debug(
-                        f"ID: {identifier} {result['error'].split('Workflow execution failed: ')[1]}. Task retrying.."
-                    )
+                    try:
+                        logger.debug(
+                            f"ID: {identifier} {result['error'].split('Workflow execution failed: ')[1]}. Task retrying.."
+                        )
+                    except IndexError:
+                        logger.debug(
+                            f"ID: {identifier} {result['error']}. Task retrying.."
+                        )
                     await self._handle_error_type(task, result["error"])
                     workflow = await self.storage.get_value(f"{task.id}:workflow")
                     t = Task(

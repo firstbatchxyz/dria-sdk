@@ -36,8 +36,9 @@ class RandomVariable(StepTemplate):
             dict: The generated random variables.
         """
         builder = WorkflowBuilder(simulation_description=simulation_description)
-        builder.set_max_time(90)
-        builder.set_max_tokens(750)
+        builder.set_max_time(self.config.max_time)
+        builder.set_max_tokens(self.config.max_tokens)
+        builder.set_max_steps(self.config.max_steps)
 
         # Step A: RandomVarGen
         builder.generative_step(
