@@ -13,7 +13,7 @@ class Evaluator:
         self.client = instructor.from_openai(OpenAI())
 
     def evaluate(
-        self, question: str, context: str, prediction: str, ground_truth: str
+        self, question: str, prediction: str, ground_truth: str
     ) -> EvaluationResult:
 
         return self.client.chat.completions.create(
@@ -23,9 +23,8 @@ class Evaluator:
             messages=[
                 {
                     "role": "system",
-                    "content": "You are a world class judge to evaluate predicted answers to given question and context.",
+                    "content": "You are a world class judge to evaluate predicted answers to given question.",
                 },
-                {"role": "user", "content": f"{context}"},
                 {"role": "user", "content": f"Question: {question}"},
                 {"role": "user", "content": f"Prediction: {prediction}"},
                 {"role": "user", "content": f"Ground truth: {ground_truth}"},
