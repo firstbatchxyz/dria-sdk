@@ -2,7 +2,6 @@ from typing import List, Union, Tuple
 from pydantic import BaseModel, Field, ValidationInfo, model_validator
 from openai import OpenAI
 from ragatouille import RAGPretrainedModel
-from examples.rag_evaluation.chunker import ReadmeChunker
 import instructor
 import re
 
@@ -42,14 +41,14 @@ class QuestionAnswer(BaseModel):
 
 
 class RAG:
-    def __init__(self):
+    def __init__(self, chunks):
         self.rag = RAGPretrainedModel.from_pretrained("colbert-ir/colbertv2.0")
-        self.chunker = ReadmeChunker("blog/docs")
-        chunks = [chunk["chunk"] for chunk in self.chunker.get_chunks()]
         self.index_path = self.rag.index(index_name="my_index", collection=chunks)
         self.client = instructor.from_openai(OpenAI())
 
-    def search(self, questions: Union[List[str], str], top_k=3) -> Union[List[List[str]], List[str]]:
+    def search(
+        self, questions: Union[List[str], str], top_k=3
+    ) -> Union[List[List[str]], List[str]]:
         res = self.rag.search(questions)
         return [r[:top_k] for r in res]
 
@@ -72,4 +71,3 @@ class RAG:
             ],
             validation_context={"text_chunk": context},
         )
-

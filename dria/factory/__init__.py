@@ -33,5 +33,5 @@ __all__ = [
     "ListExtenderPipeline",
     "QAPipeline",
     "MultiHopQuestion",
-    "NemotronQA"
+    "NemotronQA",
 ]

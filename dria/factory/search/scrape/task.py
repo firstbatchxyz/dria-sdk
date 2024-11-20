@@ -19,8 +19,8 @@ class Article(TypedDict):
 class PageScraper(StepTemplate):
 
     def create_workflow(
-            self,
-            article: Article,
+        self,
+        article: Article,
     ) -> Workflow:
         """Collect web pages related to topic
 

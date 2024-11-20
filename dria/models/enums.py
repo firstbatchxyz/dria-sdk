@@ -15,6 +15,7 @@ class CallbackType(Enum):
     DEFAULT = "default"
     CUSTOM = "custom"
 
+
 class Model(str, Enum):
     # Ollama models
     NOUS_THETA = "finalend/hermes-3-llama-3.1:8b-q8_0"

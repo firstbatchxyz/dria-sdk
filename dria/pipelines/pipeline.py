@@ -163,7 +163,9 @@ class Pipeline:
                         )
                         try:
                             latest_step_name = self.proceed_steps[-1]
-                            latest_step_index = self.steps.index(self.get_step(latest_step_name))
+                            latest_step_index = self.steps.index(
+                                self.get_step(latest_step_name)
+                            )
                             next_step = self.steps[latest_step_index + 1]
                         except IndexError:
                             raise Exception(
@@ -173,7 +175,9 @@ class Pipeline:
                             await self._finalize_pipeline(next_step)
                             return
 
-                        await self._run_next_step(next_step, self.steps.index(next_step) + 1)
+                        await self._run_next_step(
+                            next_step, self.steps.index(next_step) + 1
+                        )
                         start_time = time.time()
                         continue
 

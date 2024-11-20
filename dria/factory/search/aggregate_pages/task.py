@@ -21,8 +21,8 @@ logger = logging.getLogger(__name__)
 class PageAggregator(StepTemplate):
 
     def create_workflow(
-            self,
-            topic: str,
+        self,
+        topic: str,
     ) -> Workflow:
         """Collect web pages related to topic
 
