@@ -34,7 +34,8 @@ async def run_multihop_tasks(dria: Dria, file_chunks):
     executor = ParallelSingletonExecutor(dria, singleton)
     executor.set_timeout(150)
     executor.set_models(
-        [Model.GPT4O_MINI, Model.LLAMA_3_1_70B_OR, Model.QWEN2_5_72B_OR, Model.GPT4O]
+        [Model.GPT4O_MINI, Model.LLAMA_3_1_70B_OR, Model.QWEN2_5_72B_OR, Model.GPT4O,
+         Model.ANTHROPIC_SONNET_3_5_OR, Model.ANTHROPIC_HAIKU_3_5_OR]
     )
     executor.load_instructions(
         [{"chunks": random.sample(file_chunks, 3)} for _ in range(20)]
@@ -45,10 +46,10 @@ async def run_multihop_tasks(dria: Dria, file_chunks):
 def main():
     # Load dataset
     dataset = load_dataset("m-ric/huggingface_doc")
-    eval_chunks = dataset["train"].select(range(int(0.02 * len(dataset["train"]))))
+    eval_chunks = dataset["train"].select(range(int(0.01 * len(dataset["train"]))))
     eval_chunks = [chunk["text"] for chunk in eval_chunks]
-    print(f"Number of evaluation chunks: {len(eval_chunks)}")
-    # Create synthetic evaluation data using %10 of the dataset
+
+    # Create synthetic evaluation data using %1 of the dataset
     dria = Dria(rpc_token=os.environ["DRIA_RPC_TOKEN"])
     qa_eval = asyncio.run(run_qa_pipeline(dria, eval_chunks))
     multihop_eval = asyncio.run(run_multihop_tasks(dria, eval_chunks))
@@ -62,7 +63,7 @@ def main():
     evaluate = Evaluator()
 
     # Answer QA data
-    for pair in tqdm(qa_eval):
+    for pair in tqdm(qa_eval, desc="Answering QA"):
         answer = rag.answer(pair["question"])
         answers.append(
             {
@@ -74,7 +75,7 @@ def main():
         )
 
     # Answer multi-hop QA data
-    for pair in tqdm(multihop_eval):
+    for pair in tqdm(multihop_eval, desc="Answering multi-hop QA"):
         for hop_type in ["1-hop", "2-hop", "3-hop"]:
             answer = rag.answer(pair[hop_type])
             answers.append(
@@ -88,7 +89,7 @@ def main():
 
     # Evaluate all answers
     evaluated_answers = []
-    for answer in tqdm(answers):
+    for answer in tqdm(answers, desc="Evaluating answers"):
         result = evaluate.evaluate(
             answer["question"],
             answer["prediction"],

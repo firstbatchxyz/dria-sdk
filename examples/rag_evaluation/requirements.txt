@@ -2,3 +2,4 @@ RAGatouille
 instructor
 dria
 datasets
+openai

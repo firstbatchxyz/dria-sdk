@@ -1,4 +1,4 @@
-from typing import List, Union, Tuple
+from typing import List, Union
 from pydantic import BaseModel, Field, ValidationInfo, model_validator
 from openai import OpenAI
 from ragatouille import RAGPretrainedModel
@@ -50,7 +50,7 @@ class RAG:
         self, questions: Union[List[str], str], top_k=3
     ) -> Union[List[List[str]], List[str]]:
         res = self.rag.search(questions)
-        return [r[:top_k] for r in res]
+        return [r["content"][:top_k] for r in res]
 
     def answer(self, question: str) -> QuestionAnswer:
 
