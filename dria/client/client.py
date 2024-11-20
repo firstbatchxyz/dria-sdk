@@ -187,7 +187,17 @@ class Dria:
             tasks[idx] = task
 
         try:
-            nodes, filters, models = await self.task_manager.create_filter(tasks, self.stats)
+            nodes, filters, models = None, None, None
+            attempts = 0
+            while nodes is None:
+                if self.background_tasks.done():
+                    raise Exception("Shutting down..")
+                if attempts % 20 == 0:
+                    logger.info("Waiting for nodes to be available...")
+                await asyncio.sleep(MONITORING_INTERVAL)
+                nodes, filters, models = await self.task_manager.create_filter(tasks, self.stats)
+                attempts += 1
+
             for idx, i in enumerate(zip(nodes, filters, models)):
                 tasks[idx].nodes = [i[0]]
                 tasks[idx].filter = i[1]

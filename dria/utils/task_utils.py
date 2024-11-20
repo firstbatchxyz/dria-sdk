@@ -1,4 +1,4 @@
-import asyncio
+import copy
 import copy
 import json
 import random
@@ -12,7 +12,7 @@ from dria_workflows import Workflow
 from fastbloom_rs import BloomFilter
 from json_repair import repair_json
 
-from dria.constants import MONITORING_INTERVAL, INPUT_CONTENT_TOPIC, TASK_DEADLINE
+from dria.constants import INPUT_CONTENT_TOPIC, TASK_DEADLINE
 from dria.db.mq import KeyValueQueue
 from dria.db.storage import Storage
 from dria.models import NodeModel, Task, TaskModel, TaskInputModel
@@ -42,7 +42,7 @@ class TaskManager:
     - Node availability tracking
     """
 
-    def __init__(self, storage: Storage, rpc: RPCClient,  kv: KeyValueQueue):
+    def __init__(self, storage: Storage, rpc: RPCClient, kv: KeyValueQueue):
         """
         Initialize TaskManager.
 
@@ -204,7 +204,7 @@ class TaskManager:
             tasks: List[Task],
             node_stats: Dict[str, int],
             retry: int = 0,
-    ) -> tuple[list[str], list[dict[str, int | str]], list[list[Any]]]:
+    ) -> tuple[None, None, None] | tuple[list[str], list[dict[str, int | str]], list[list[Any]]]:
         """
         Create Bloom filter for node selection.
 
@@ -215,6 +215,7 @@ class TaskManager:
         Returns:
             Tuple of (selected nodes, selected model, Bloom filter params)
         """
+
         models = list(set([x for i in tasks for x in i.models]))
         # Get all available nodes for all models
         all_model_nodes = {}
@@ -224,20 +225,7 @@ class TaskManager:
                 all_model_nodes[model] = nodes
 
         if not all_model_nodes:
-            if retry % 20 == 0 and retry != 0:
-                log_str = ""
-                for model in Model:
-                    node_count = len(await self.get_available_nodes(model.value))
-                    if node_count > 0:
-                        log_str += f" {model.name}: {node_count} nodes, "
-                if log_str:
-                    logger.debug(f"Current network state:{log_str}")
-                else:
-                    logger.debug("No active nodes in the network")
-            await asyncio.sleep(MONITORING_INTERVAL)
-            return await self.create_filter(
-                tasks, node_stats, retry=retry + 1
-            )
+            return None, None, None
         stats_for_model_nodes = {}
         seen_nodes = set()
         for model, nodes in all_model_nodes.items():
