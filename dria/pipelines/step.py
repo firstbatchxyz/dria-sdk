@@ -1,5 +1,6 @@
 import json
 from abc import ABC
+from copy import deepcopy
 from typing import List, Callable, Optional, Union, Dict, Any
 
 from dria_workflows import Workflow
@@ -75,7 +76,7 @@ class Step(ABC):
                 batched_input = self.input[step_round * SCORING_BATCH_SIZE: (step_round+1)*SCORING_BATCH_SIZE]
             else:
                 batched_input = [self.input]
-            await self._push_task([self._validate_and_run_workflow(i) for i in batched_input])
+            await self._push_task([deepcopy(self._validate_and_run_workflow(i)) for i in batched_input])
         except Exception as e:
             self.logger.error(f"Error executing step '{self.name}': {e}", exc_info=True)
             raise RuntimeError(f"Failed to execute step '{self.name}': {e}") from e
