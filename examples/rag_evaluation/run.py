@@ -35,16 +35,15 @@ async def run_multihop_tasks(dria: Dria, file_chunks):
     executor.set_timeout(150)
     executor.set_models(
         [
-            Model.GPT4O_MINI,
-            Model.LLAMA_3_1_70B_OR,
             Model.QWEN2_5_72B_OR,
+            Model.GEMINI_15_PRO,
             Model.GPT4O,
             Model.ANTHROPIC_SONNET_3_5_OR,
             Model.ANTHROPIC_HAIKU_3_5_OR,
         ]
     )
     executor.load_instructions(
-        [{"chunks": random.sample(file_chunks, 3)} for _ in range(20)]
+        [{"chunks": random.sample(file_chunks, 3)} for _ in range(10)]
     )
     return await executor.run()
 
