@@ -37,24 +37,23 @@ class QAPipeline:
                 num_of_samples=num_samples, config=StepConfig(max_tokens=1500)
             )
             .set_models(
-                [Model.GPT4_TURBO, Model.GPT4O, Model.O1_MINI, Model.GEMINI_15_PRO]
+                [Model.ANTHROPIC_SONNET_3_5_OR, Model.GPT4O, Model.GEMINI_15_PRO]
             )
             .custom()
             << BackStoryStep(chunks=chunks, config=StepConfig())
             .set_models(
                 [
-                    Model.GEMMA2_9B,
-                    Model.GEMMA2_9B_FP16,
-                    Model.LLAMA3_1_8BQ8,
-                    Model.LLAMA3_1_8B_FP16,
-                    Model.QWEN2_5_7B,
-                    Model.QWEN2_5_7B_FP16,
+                    Model.QWEN2_5_72B_OR,
+                    Model.QWEN2_5_7B_OR,
                     Model.QWEN2_5_32B_FP16,
-                    Model.MIXTRAL_8_7B,
-                    Model.GPT4_TURBO,
-                    Model.GPT4O,
+                    Model.LLAMA3_1_8BQ8,
+                    Model.QWEN2_5_7B_FP16,
+                    Model.ANTHROPIC_HAIKU_3_5_OR,
+                    Model.QWEN2_5_EVA_32B_OR,
+                    Model.LLAMA_3_1_70B_OR,
+                    Model.LLAMA_3_1_8B_OR,
+                    Model.GPT4O_MINI,
                     Model.GEMINI_15_FLASH,
-                    Model.GEMINI_15_PRO,
                 ]
             )
             .custom()
@@ -66,28 +65,33 @@ class QAPipeline:
                     Model.LLAMA3_1_8B_FP16,
                     Model.QWEN2_5_7B,
                     Model.QWEN2_5_7B_FP16,
+                    Model.QWEN2_5_7B_OR,
                     Model.QWEN2_5_32B_FP16,
                     Model.MIXTRAL_8_7B,
-                    Model.GPT4_TURBO,
-                    Model.GPT4O,
+                    Model.GPT4O_MINI,
+                    Model.ANTHROPIC_HAIKU_3_5_OR,
                     Model.GEMINI_15_FLASH,
-                    Model.GEMINI_15_PRO,
+                    Model.LLAMA_3_1_8B_OR,
+                    Model.QWEN2_5_EVA_32B_OR,
                 ]
             )
             << AnswerStep(config=StepConfig()).set_models(
                 [
-                    Model.GEMMA2_9B,
                     Model.GEMMA2_9B_FP16,
-                    Model.LLAMA3_1_8BQ8,
+                    Model.LLAMA_3_1_70B_OR,
+                    Model.LLAMA_3_1_8B_OR,
                     Model.LLAMA3_1_8B_FP16,
-                    Model.QWEN2_5_7B,
-                    Model.QWEN2_5_7B_FP16,
+                    Model.LLAMA_3_1_70B_OR,
+                    Model.QWEN2_5_7B_OR,
                     Model.QWEN2_5_32B_FP16,
+                    Model.QWEN2_5_EVA_32B_OR,
                     Model.MIXTRAL_8_7B,
-                    Model.GPT4_TURBO,
+                    Model.GPT4O_MINI,
                     Model.GPT4O,
                     Model.GEMINI_15_FLASH,
                     Model.GEMINI_15_PRO,
+                    Model.ANTHROPIC_HAIKU_3_5_OR,
+                    Model.ANTHROPIC_SONNET_3_5_OR,
                 ]
             )
         )
