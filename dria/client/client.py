@@ -59,7 +59,6 @@ class Dria:
     def __init__(
             self,
             rpc_token: Optional[str] = None,
-            network: str = "pro",
             api_mode: bool = False,
             log_level=logging.INFO,
     ):
@@ -71,7 +70,7 @@ class Dria:
             api_mode (bool): If True, runs in API mode without cleanup of monitoring/polling.
         """
         logging.getLogger("dria").setLevel(log_level)
-        self.rpc = RPCClient(auth_token=rpc_token or os.environ.get("DRIA_RPC_TOKEN"), mode=network)
+        self.rpc = RPCClient(auth_token=rpc_token or os.environ.get("DRIA_RPC_TOKEN"))
         self.storage = Storage()
         self.kv = KeyValueQueue()
         self.task_manager = TaskManager(self.storage, self.rpc, self.kv)

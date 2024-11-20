@@ -22,18 +22,16 @@ class RPCClient:
 
     NETWORK_MAX_MESSAGE_SIZE = 256
 
-    def __init__(self, auth_token: str, mode="pro"):
+    def __init__(self, auth_token: str):
         if not auth_token:
             raise ValueError(
                 "RPC token is required for Dria RPC. "
                 "Please set the DRIA_RPC_TOKEN environment variable."
             )
-        if mode == "pro":
+        if auth_token.startswith("sk-dria-v1-"):
             self.base_url = constants.RPC_BASE_URL
-        elif mode == "community":
-            self.base_url = constants.RPC_BASE_URL_COMMUNITY
         else:
-            raise ValueError(f"Unknown network mode: {mode}")
+            self.base_url = constants.RPC_BASE_URL_COMMUNITY
         self.auth_token = auth_token
         self.headers = {
             "x-api-key": self.auth_token,
