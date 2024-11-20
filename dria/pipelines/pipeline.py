@@ -158,6 +158,7 @@ class Pipeline:
                             math.log(max(1, len(step.input))) * self.config.step_timeout,
                             self.config.step_timeout,
                         )
+
                     )
 
                     # Process tasks in batches

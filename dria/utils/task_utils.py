@@ -136,11 +136,14 @@ class TaskManager:
         return task
 
     async def save_workflow(self, task: Task):
-        await self.storage.set_value(f"{task.id}:workflow", copy.deepcopy(task.workflow))
+        await self.storage.set_value(
+            f"{task.id}:workflow", copy.deepcopy(task.workflow)
+        )
 
     async def push_task(
             self, task: Task
     ):
+
         """
         Push prepared task to network.
 
@@ -203,8 +206,8 @@ class TaskManager:
             self,
             tasks: List[Task],
             node_stats: Dict[str, int],
-            retry: int = 0,
     ) -> tuple[None, None, None] | tuple[list[str], list[dict[str, int | str]], list[list[Any]]]:
+
         """
         Create Bloom filter for node selection.
 

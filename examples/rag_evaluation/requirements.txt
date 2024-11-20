@@ -1,4 +1,4 @@
-langchain-core
-langchain-openai
-langchain_community
-instructor dria
+RAGatouille
+instructor
+dria
+datasets
