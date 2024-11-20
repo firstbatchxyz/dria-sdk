@@ -103,7 +103,7 @@ class RandomVarsStep(StepTemplate):
                 inputs.append(
                     TaskInput(
                         persona_traits=persona_traits,
-                        simulation_description=step.all_inputs[
+                        simulation_description=step.input[
                             0
                         ].simulation_description,
                     )
