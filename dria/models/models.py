@@ -58,7 +58,7 @@ class Task(BaseModel):
             "deadline": self.deadline,
             "nodes": self.nodes,
             "step_name": self.step_name,
-            "created_ts": self.created_ts
+            "created_ts": self.created_ts,
         }
 
 

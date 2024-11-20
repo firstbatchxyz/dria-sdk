@@ -51,8 +51,12 @@ def select_nodes(node_scores, batch_size) -> List[str]:
                 break
 
             # Select a node based on the remaining probabilities
-            chosen_node = random.choices(remaining_nodes, weights=remaining_probabilities, k=1)[0]
-            logger.debug(f"Selected node: {chosen_node}, Score: {scores[nodes.index(chosen_node)]}")
+            chosen_node = random.choices(
+                remaining_nodes, weights=remaining_probabilities, k=1
+            )[0]
+            logger.debug(
+                f"Selected node: {chosen_node}, Score: {scores[nodes.index(chosen_node)]}"
+            )
             selected_nodes.append(chosen_node)
 
             # Remove the chosen node and its probability from the lists
@@ -65,9 +69,13 @@ def select_nodes(node_scores, batch_size) -> List[str]:
                 total_prob = sum(remaining_probabilities)
                 if total_prob == 0:
                     # Assign equal probabilities if all remaining scores are zero
-                    remaining_probabilities = [1 / len(remaining_probabilities)] * len(remaining_probabilities)
+                    remaining_probabilities = [1 / len(remaining_probabilities)] * len(
+                        remaining_probabilities
+                    )
                 else:
-                    remaining_probabilities = [p / total_prob for p in remaining_probabilities]
+                    remaining_probabilities = [
+                        p / total_prob for p in remaining_probabilities
+                    ]
     else:
         # Perform weighted sampling with replacement
         selected_nodes = random.choices(nodes, weights=probabilities, k=batch_size)

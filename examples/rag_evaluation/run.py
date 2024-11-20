@@ -19,8 +19,8 @@ async def run_qa_pipeline(dria: Dria, file_chunks):
 
     pipeline = QAPipeline(dria, config=PipelineConfig()).build(
         simulation_description="AI developers and researchers learning Huggingface. "
-                               "Some focus on fine-tuning and post-training, others on RAG systems, "
-                               "retrieval problems, image models, or dataset work.",
+        "Some focus on fine-tuning and post-training, others on RAG systems, "
+        "retrieval problems, image models, or dataset work.",
         num_samples=1,
         persona="A HuggingFace expert that is concise and direct",
         chunks=file_chunks,
@@ -34,8 +34,14 @@ async def run_multihop_tasks(dria: Dria, file_chunks):
     executor = ParallelSingletonExecutor(dria, singleton)
     executor.set_timeout(150)
     executor.set_models(
-        [Model.GPT4O_MINI, Model.LLAMA_3_1_70B_OR, Model.QWEN2_5_72B_OR, Model.GPT4O,
-         Model.ANTHROPIC_SONNET_3_5_OR, Model.ANTHROPIC_HAIKU_3_5_OR]
+        [
+            Model.GPT4O_MINI,
+            Model.LLAMA_3_1_70B_OR,
+            Model.QWEN2_5_72B_OR,
+            Model.GPT4O,
+            Model.ANTHROPIC_SONNET_3_5_OR,
+            Model.ANTHROPIC_HAIKU_3_5_OR,
+        ]
     )
     executor.load_instructions(
         [{"chunks": random.sample(file_chunks, 3)} for _ in range(20)]

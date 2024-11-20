@@ -17,8 +17,7 @@ from dria.constants import (
     RETURN_DEADLINE,
     MONITORING_INTERVAL,
     FETCH_INTERVAL,
-    SCORING_BATCH_SIZE
-
+    SCORING_BATCH_SIZE,
 )
 from dria.db.mq import KeyValueQueue
 from dria.db.storage import Storage
@@ -57,10 +56,10 @@ class Dria:
     DEADLINE_MULTIPLIER: int = 10
 
     def __init__(
-            self,
-            rpc_token: Optional[str] = None,
-            api_mode: bool = False,
-            log_level=logging.INFO,
+        self,
+        rpc_token: Optional[str] = None,
+        api_mode: bool = False,
+        log_level=logging.INFO,
     ):
         """
         Initialize the Dria client.
@@ -194,7 +193,9 @@ class Dria:
                 if attempts % 20 == 0:
                     logger.info("Waiting for nodes to be available...")
                 await asyncio.sleep(MONITORING_INTERVAL)
-                nodes, filters, models = await self.task_manager.create_filter(tasks, self.stats)
+                nodes, filters, models = await self.task_manager.create_filter(
+                    tasks, self.stats
+                )
                 attempts += 1
 
             for idx, i in enumerate(zip(nodes, filters, models)):
@@ -202,21 +203,19 @@ class Dria:
                 tasks[idx].filter = i[1]
                 tasks[idx].models = i[2]
             await asyncio.gather(*[self.task_manager.push_task(task) for task in tasks])
-            logger.debug(
-                f"Task successfully published"
-            )
+            logger.debug(f"Task successfully published")
             return True
 
         except Exception as e:
             raise TaskPublishError(f"Failed to publish task: {e}") from e
 
     async def fetch(
-            self,
-            pipeline: Optional[Any] = None,
-            task: Union[Optional[Task], Optional[List[Task]]] = None,
-            min_outputs: Optional[int] = None,
-            timeout: int = 30,
-            is_disabled: bool = False,
+        self,
+        pipeline: Optional[Any] = None,
+        task: Union[Optional[Task], Optional[List[Task]]] = None,
+        min_outputs: Optional[int] = None,
+        timeout: int = 30,
+        is_disabled: bool = False,
     ) -> List[TaskResult]:
         """
         Fetch task results from storage.
@@ -242,7 +241,7 @@ class Dria:
         min_outputs = self._determine_min_outputs(task, min_outputs)
 
         with tqdm(
-                total=min_outputs, desc="Fetching results...", disable=is_disabled
+            total=min_outputs, desc="Fetching results...", disable=is_disabled
         ) as pbar:
             while len(results) < min_outputs and not self.shutdown_event.is_set():
                 elapsed_time = time.time() - start_time
@@ -286,8 +285,8 @@ class Dria:
 
     @staticmethod
     def _determine_min_outputs(
-            task: Union[Optional[Task], Optional[List[Task]]],
-            min_outputs: Optional[int],
+        task: Union[Optional[Task], Optional[List[Task]]],
+        min_outputs: Optional[int],
     ) -> int:
         """
         Determine minimum required outputs.
@@ -312,7 +311,7 @@ class Dria:
 
     @staticmethod
     def _get_task_id(
-            task: Union[Optional[Task], Optional[List[Task]]]
+        task: Union[Optional[Task], Optional[List[Task]]]
     ) -> Union[None, str, List[str]]:
         """
         Get task ID(s) from task object(s).
@@ -336,9 +335,9 @@ class Dria:
             raise ValueError("Invalid task type. Expected None, Task, or List[Task].")
 
     async def _fetch_results(
-            self,
-            pipeline_id: Optional[str],
-            task_id: Union[Optional[str], Optional[List[str]]],
+        self,
+        pipeline_id: Optional[str],
+        task_id: Union[Optional[str], Optional[List[str]]],
     ) -> Tuple[Dict[str, TaskResult], Dict[str, str]]:
         """
         Fetch results for pipeline and/or tasks.
@@ -405,7 +404,7 @@ class Dria:
         return results
 
     async def _fetch_task_results(
-            self, task_id: str
+        self, task_id: str
     ) -> Tuple[Dict[str, TaskResult], Dict[str, Any]]:
         """
         Fetch results for a specific task.
@@ -432,7 +431,7 @@ class Dria:
         return results, new_ids
 
     async def _create_task_result(
-            self, task_id: str, value: dict
+        self, task_id: str, value: dict
     ) -> Optional[TaskResult]:
         """
         Create TaskResult object from raw data.
@@ -539,14 +538,20 @@ class Dria:
                     if "stats" in result.keys():
                         l = {
                             "node_address": address,
-                            "model": result['model'],
-                            "publish_latency": (current_ns - result['stats']['publishedAt']) / 1e9,
-                            "execution_time": (result['stats']['executionTime']) / 1e9,
-                            "receive_latency": -(task_data['created_ts'] - result['stats']['receivedAt']) / 1e9,
-                            "roundtrip": (current_ns - task_data['created_ts']) / 1e9
+                            "model": result["model"],
+                            "publish_latency": (
+                                current_ns - result["stats"]["publishedAt"]
+                            )
+                            / 1e9,
+                            "execution_time": (result["stats"]["executionTime"]) / 1e9,
+                            "receive_latency": -(
+                                task_data["created_ts"] - result["stats"]["receivedAt"]
+                            )
+                            / 1e9,
+                            "roundtrip": (current_ns - task_data["created_ts"]) / 1e9,
                         }
                         if "error" in result:
-                            l['error'] = True
+                            l["error"] = True
                         logger.debug(f"Metrics: {l}")
                         self.metrics.append(l)
                     workflow = await self.storage.get_value(f"{task.id}:workflow")
@@ -572,14 +577,20 @@ class Dria:
                     if "stats" in result.keys():
                         l = {
                             "node_address": address,
-                            "model": result['model'],
-                            "publish_latency": (current_ns - result['stats']['publishedAt']) / 1e9,
-                            "execution_time": (result['stats']['executionTime']) / 1e9,
-                            "receive_latency": -(task_data['created_ts'] - result['stats']['receivedAt']) / 1e9,
-                            "roundtrip": (current_ns - task_data['created_ts']) / 1e9
+                            "model": result["model"],
+                            "publish_latency": (
+                                current_ns - result["stats"]["publishedAt"]
+                            )
+                            / 1e9,
+                            "execution_time": (result["stats"]["executionTime"]) / 1e9,
+                            "receive_latency": -(
+                                task_data["created_ts"] - result["stats"]["receivedAt"]
+                            )
+                            / 1e9,
+                            "roundtrip": (current_ns - task_data["created_ts"]) / 1e9,
                         }
                         if "error" in result:
-                            l['error'] = True
+                            l["error"] = True
                         logger.debug(f"Metrics: {l}")
                         self.metrics.append(l)
                     await self.kv.push(
@@ -592,7 +603,7 @@ class Dria:
                 logger.error(f"Unexpected error processing item: {e}", exc_info=True)
 
     async def execute(
-            self, task: Union[Task, List[Task]], timeout: int = 30
+        self, task: Union[Task, List[Task]], timeout: int = 30
     ) -> list[TaskResult] | None:
         """
         Execute task(s) and get results.
@@ -624,7 +635,10 @@ class Dria:
 
         try:
             tasks_ = [t.__deepcopy__() for t in tasks]
-            batched_tasks = [tasks_[i:i + SCORING_BATCH_SIZE] for i in range(0, len(tasks_), SCORING_BATCH_SIZE)]
+            batched_tasks = [
+                tasks_[i : i + SCORING_BATCH_SIZE]
+                for i in range(0, len(tasks_), SCORING_BATCH_SIZE)
+            ]
             results = []
             for batch_tasks in batched_tasks:
                 success = await self.push(batch_tasks)
@@ -731,11 +745,12 @@ class Dria:
                         )
 
                 if not filtered_models:
-                    supported_model_names = [model.name for model in FunctionCallingModels]
+                    supported_model_names = [
+                        model.name for model in FunctionCallingModels
+                    ]
                     raise ValueError(
                         f"No supported function calling models found for task. "
                         f"Supported models: {', '.join(supported_model_names)}"
                     )
 
             task.models = filtered_models
-

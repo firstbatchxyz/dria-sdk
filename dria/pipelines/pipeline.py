@@ -143,8 +143,8 @@ class Pipeline:
                 try:
                     # Check and initialize client if needed
                     if (
-                            self.client.background_tasks is None
-                            or self.client.background_tasks.done()
+                        self.client.background_tasks is None
+                        or self.client.background_tasks.done()
                     ):
                         if self.client.api_mode:
                             logger.debug("Background tasks closed. Reinitializing..")
@@ -155,10 +155,10 @@ class Pipeline:
                     # Calculate timeout based on input size
                     step_timeout = int(
                         max(
-                            math.log(max(1, len(step.input))) * self.config.step_timeout,
+                            math.log(max(1, len(step.input)))
+                            * self.config.step_timeout,
                             self.config.step_timeout,
                         )
-
                     )
 
                     # Process tasks in batches
@@ -167,7 +167,11 @@ class Pipeline:
                     if not batched_tasks:
                         await asyncio.sleep(5)
                         continue
-                    results.extend(await self.client.fetch(task=batched_tasks, timeout=step_timeout))
+                    results.extend(
+                        await self.client.fetch(
+                            task=batched_tasks, timeout=step_timeout
+                        )
+                    )
 
                     # Store results
                     for result in results:
@@ -246,7 +250,7 @@ class Pipeline:
             if isinstance(self.output, TaskInput):
                 output_data = json.dumps(self.output.dict())
             elif isinstance(self.output, list) and isinstance(
-                    self.output[0], TaskInput
+                self.output[0], TaskInput
             ):
                 output_data = json.dumps([i.dict() for i in self.output])
             else:

@@ -39,11 +39,11 @@ def evaluate_nodes(task_data, previous_node_scores):
     roundtrip_times = []
     error_indices = set()
     for idx, task in enumerate(task_data):
-        if task.get('error', False):
+        if task.get("error", False):
             error_indices.add(idx)
             continue
-        execution_times.append(task['execution_time'])
-        roundtrip_times.append(task['roundtrip'])
+        execution_times.append(task["execution_time"])
+        roundtrip_times.append(task["roundtrip"])
 
     # Check if we have any successful tasks
     if not execution_times or not roundtrip_times:
@@ -51,25 +51,33 @@ def evaluate_nodes(task_data, previous_node_scores):
         return node_scores
 
     # Detect outliers globally
-    execution_outliers, exec_lower_bound, exec_upper_bound = detect_outliers_iqr(execution_times)
-    roundtrip_outliers, rt_lower_bound, rt_upper_bound = detect_outliers_iqr(roundtrip_times)
+    execution_outliers, exec_lower_bound, exec_upper_bound = detect_outliers_iqr(
+        execution_times
+    )
+    roundtrip_outliers, rt_lower_bound, rt_upper_bound = detect_outliers_iqr(
+        roundtrip_times
+    )
 
     # Map indices to tasks for easy access
     index_task_map = {idx: task for idx, task in enumerate(task_data)}
 
     # Process each node
     for idx, task in index_task_map.items():
-        node = task['node_address']  # Replace 'model' with 'node' if you have node addresses
+        node = task[
+            "node_address"
+        ]  # Replace 'model' with 'node' if you have node addresses
         if node not in node_scores:
             # Initialize node score if not present
             node_scores[node] = 0.5
 
-        is_errored = task.get('error', False)
+        is_errored = task.get("error", False)
 
         if is_errored:
             # Apply error penalty
             node_scores[node] = max(node_scores[node] - 0.3, 0.0)
-            logger.debug(f"Node {node} - Task {idx}: Error occurred. New Score: {node_scores[node]:.2f}")
+            logger.debug(
+                f"Node {node} - Task {idx}: Error occurred. New Score: {node_scores[node]:.2f}"
+            )
             continue
         # Check if the task is an outlier
         is_execution_outlier = idx in execution_outliers
@@ -78,10 +86,14 @@ def evaluate_nodes(task_data, previous_node_scores):
         if is_execution_outlier:
             # Apply penalty for outliers
             node_scores[node] = max(node_scores[node] - 0.1, 0.0)
-            logger.debug(f"Node {node} - Task {idx}: Outlier detected. New Score: {node_scores[node]:.2f}")
+            logger.debug(
+                f"Node {node} - Task {idx}: Outlier detected. New Score: {node_scores[node]:.2f}"
+            )
         else:
             # Reward for good performance
             node_scores[node] = min(node_scores[node] + 0.25, 1.0)
-            logger.debug(f"Node {node} - Task {idx}: Good performance. New Score: {node_scores[node]:.2f}")
+            logger.debug(
+                f"Node {node} - Task {idx}: Good performance. New Score: {node_scores[node]:.2f}"
+            )
 
     return node_scores

@@ -1,7 +1,7 @@
 import logging
 from typing import List
 
-from dria.models import TaskInput, TaskResult
+from dria.models import TaskResult
 from dria_workflows import (
     WorkflowBuilder,
     Operator,
@@ -68,6 +68,11 @@ class MultiHopQuestion(SingletonTemplate):
             twohop = get_text_between_tags(r.result, "2hop")
             threehop = get_text_between_tags(r.result, "3hop")
             answer = get_text_between_tags(r.result, "answer")
+            if None in [onehop, twohop, threehop, answer]:
+                logging.debug(
+                    "One of the questions is missing. Please check the output."
+                )
+                continue
             results.append(
                 {
                     "1-hop": onehop,

@@ -84,7 +84,9 @@ async def test_multihop_question_workflow(dria_client, text_chunks):
 @pytest.mark.asyncio
 async def test_csv_extender_pipeline(dria_client, sample_csv):
     await dria_client.initialize()
-    pipeline = CSVExtenderPipeline(dria_client, PipelineConfig()).build(csv=sample_csv, num_rows=2, num_values=2)
+    pipeline = CSVExtenderPipeline(dria_client, PipelineConfig()).build(
+        csv=sample_csv, num_rows=2, num_values=2
+    )
     result = await pipeline.execute(return_output=True)
 
     assert isinstance(result, dict)

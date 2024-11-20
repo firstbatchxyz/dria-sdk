@@ -111,9 +111,7 @@ class TaskManager:
         except Exception as e:
             raise TaskPublishError(f"Failed to publish task: {e}") from e
 
-    async def prepare_task(
-            self, task: Task
-    ) -> Task:
+    async def prepare_task(self, task: Task) -> Task:
         """
         Prepare task for publishing by generating ID, deadline and selecting nodes.
 
@@ -140,10 +138,7 @@ class TaskManager:
             f"{task.id}:workflow", copy.deepcopy(task.workflow)
         )
 
-    async def push_task(
-            self, task: Task
-    ):
-
+    async def push_task(self, task: Task):
         """
         Push prepared task to network.
 
@@ -166,13 +161,11 @@ class TaskManager:
         task_model = TaskModel(
             taskId=task.id,
             filter=task.filter,
-            input=TaskInputModel(
-                workflow=task.workflow, model=task.models
-            ).dict(),
+            input=TaskInputModel(workflow=task.workflow, model=task.models).dict(),
             pickedNodes=task.nodes,
             deadline=task.deadline,
             publicKey=task.public_key[2:],
-            privateKey=task.private_key
+            privateKey=task.private_key,
         ).dict()
         task_model_str = json.dumps(task_model, ensure_ascii=False)
 
@@ -203,11 +196,13 @@ class TaskManager:
             return []
 
     async def create_filter(
-            self,
-            tasks: List[Task],
-            node_stats: Dict[str, int],
-    ) -> tuple[None, None, None] | tuple[list[str], list[dict[str, int | str]], list[list[Any]]]:
-
+        self,
+        tasks: List[Task],
+        node_stats: Dict[str, int],
+    ) -> (
+        tuple[None, None, None]
+        | tuple[list[str], list[dict[str, int | str]], list[list[Any]]]
+    ):
         """
         Create Bloom filter for node selection.
 
@@ -239,7 +234,9 @@ class TaskManager:
                 seen_nodes.add(node)
 
                 # Find matching stat for this node
-                matching_stat = next(({n: s} for n, s in node_stats.items() if n == node), None)
+                matching_stat = next(
+                    ({n: s} for n, s in node_stats.items() if n == node), None
+                )
                 if matching_stat:
                     stats_for_model_nodes.update(matching_stat)
                 else:
@@ -257,7 +254,9 @@ class TaskManager:
             weighted_scores[node] = stats_for_model_nodes[node] * freq
 
         # Sort by weighted score and take top nodes
-        picked_nodes = sorted(weighted_scores.items(), key=lambda x: x[1], reverse=True)[:len(tasks)]
+        picked_nodes = sorted(
+            weighted_scores.items(), key=lambda x: x[1], reverse=True
+        )[: len(tasks)]
         picked_nodes = [node for node, _ in picked_nodes]
         sampled_stat = {}
         for node in picked_nodes:
@@ -291,11 +290,7 @@ class TaskManager:
             node_models.append([random_model])
 
         logger.debug(f"Selected nodes: {picked_nodes}")
-        return (
-            picked_nodes,
-            filters,
-            node_models
-        )
+        return (picked_nodes, filters, node_models)
 
     async def add_available_nodes(self, node_model: NodeModel, model_type: str) -> bool:
         """
