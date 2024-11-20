@@ -157,7 +157,7 @@ class Dria:
                 except asyncio.CancelledError:
                     pass
 
-    async def push(self, tasks: List[Task]) -> bool:
+    async def push(self, tasks: List[Task]) -> bool | None:
         """
         Submit a task to the network.
 
@@ -190,7 +190,7 @@ class Dria:
             attempts = 0
             while nodes is None:
                 if self.background_tasks.done():
-                    raise Exception("Shutting down..")
+                    return None
                 if attempts % 20 == 0:
                     logger.info("Waiting for nodes to be available...")
                 await asyncio.sleep(MONITORING_INTERVAL)
@@ -593,7 +593,7 @@ class Dria:
 
     async def execute(
             self, task: Union[Task, List[Task]], timeout: int = 30
-    ) -> List[Any]:
+    ) -> list[TaskResult] | None:
         """
         Execute task(s) and get results.
 
@@ -627,7 +627,9 @@ class Dria:
             batched_tasks = [tasks_[i:i + SCORING_BATCH_SIZE] for i in range(0, len(tasks_), SCORING_BATCH_SIZE)]
             results = []
             for batch_tasks in batched_tasks:
-                await self.push(batch_tasks)
+                success = await self.push(batch_tasks)
+                if success is False:
+                    return None
                 results.extend(await self.fetch(task=batch_tasks, timeout=timeout))
                 self.stats = evaluate_nodes(self.metrics, self.stats)
                 self.metrics = []
