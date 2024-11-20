@@ -1,6 +1,6 @@
+import json
 import asyncio
 import base64
-import json
 import logging
 import os
 import signal
@@ -17,6 +17,8 @@ from dria.constants import (
     RETURN_DEADLINE,
     MONITORING_INTERVAL,
     FETCH_INTERVAL,
+    SCORING_BATCH_SIZE
+
 )
 from dria.db.mq import KeyValueQueue
 from dria.db.storage import Storage
@@ -37,6 +39,7 @@ from dria.utils.ec import (
     recover_public_key,
     uncompressed_public_key,
 )
+from dria.utils.node_evaluations import evaluate_nodes
 from dria.utils.task_utils import TaskManager
 
 
@@ -48,16 +51,16 @@ class Dria:
     - Submitting AI tasks to the network
     - Retrieving task results
     - Managing background monitoring and polling
-    - Handling node blacklisting and retries
+    - Handling node retries
     """
 
     DEADLINE_MULTIPLIER: int = 10
 
     def __init__(
-        self,
-        rpc_token: Optional[str] = None,
-        api_mode: bool = False,
-        log_level=logging.INFO,
+            self,
+            rpc_token: Optional[str] = None,
+            api_mode: bool = False,
+            log_level=logging.INFO,
     ):
         """
         Initialize the Dria client.
@@ -72,14 +75,10 @@ class Dria:
         self.kv = KeyValueQueue()
         self.task_manager = TaskManager(self.storage, self.rpc, self.kv)
         self.background_tasks: Optional[asyncio.Task] = None
-        self.blacklist: Dict[str, Dict[str, int]] = {}
         self.shutdown_event = asyncio.Event()
         self.api_mode = api_mode
-
-        # Set up cache directory and blacklist
-        cache_dir = os.path.join(os.path.dirname(__file__), ".cache")
-        os.makedirs(cache_dir, exist_ok=True)
-        self.blacklist_file = os.path.join(cache_dir, ".blacklist")
+        self.stats = {}
+        self.metrics = []
 
         # Register signal handlers
         signal.signal(signal.SIGTERM, self._signal_handler)
@@ -94,40 +93,6 @@ class Dria:
         """Set shutdown event asynchronously"""
         self.shutdown_event.set()
 
-    async def _load_blacklist(self) -> None:
-        """Load node blacklist from disk or create new if not exists."""
-        try:
-            with open(self.blacklist_file, "r") as f:
-                self.blacklist = {}
-                for line in f:
-                    key, value = line.strip().split("|")
-                    self.blacklist[key] = eval(value)
-        except FileNotFoundError:
-            self.blacklist = {}
-            await self._save_blacklist()
-
-    async def _save_blacklist(self) -> None:
-        """Persist current blacklist to disk."""
-        with open(self.blacklist_file, "w") as f:
-            for key, value in self.blacklist.items():
-                f.write(f"{key}|{value}\n")
-
-    async def _remove_from_blacklist(self, address: str, model: str = "") -> None:
-        """
-        Remove a node address from the blacklist.
-
-        Args:
-            address (str): Node address to remove
-            model (str): Model info for blacklist
-        """
-        mid = address + ":" + model
-        if mid in self.blacklist:
-            del self.blacklist[mid]
-            await self._save_blacklist()
-            logger.debug(f"Address {address} removed from blacklist.")
-        else:
-            logger.debug(f"Address {address} not found in blacklist.")
-
     def set_api_mode(self, api_mode: bool) -> None:
         """
         Set client API mode.
@@ -137,14 +102,8 @@ class Dria:
         """
         self.api_mode = api_mode
 
-    async def flush_blacklist(self) -> None:
-        """Clear the node blacklist."""
-        self.blacklist = {}
-        await self._save_blacklist()
-
     async def initialize(self) -> None:
         """Initialize background monitoring and polling tasks."""
-        await self._load_blacklist()
         if self.background_tasks:
             if self.background_tasks.done():
                 logger.info("Background tasks already running")
@@ -198,12 +157,12 @@ class Dria:
                 except asyncio.CancelledError:
                     pass
 
-    async def push(self, task: Task) -> bool:
+    async def push(self, tasks: List[Task]) -> bool:
         """
         Submit a task to the network.
 
         Args:
-            task (Task): Task to submit
+            tasks (Task): Task to submit
 
         Returns:
             bool: True if successfully published
@@ -211,64 +170,53 @@ class Dria:
         Raises:
             TaskPublishError: If task publication fails
         """
-        await self._check_function_calling_models(task)
+        await self._check_function_calling_models(tasks)
 
-        # Generate valid task keys
-        max_attempts = 20
-        for attempt in range(max_attempts):
-            task.private_key, task.public_key = generate_task_keys()
-            if not task.public_key.startswith("0x0"):
-                break
-        else:
-            raise TaskPublishError(
-                f"Failed to generate valid keys for task {task.id} after {max_attempts} attempts."
-            )
+        for idx, task in enumerate(tasks):
+            # Generate valid task keys
+            max_attempts = 20
+            for attempt in range(max_attempts):
+                task.private_key, task.public_key = generate_task_keys()
+                if not task.public_key.startswith("0x0"):
+                    break
+            else:
+                raise TaskPublishError(
+                    f"Failed to generate valid keys for task {task.id} after {max_attempts} attempts."
+                )
+            tasks[idx] = task
 
         try:
-            success, nodes, selected_model = await self.task_manager.push_task(
-                task, self.blacklist
-            )
-            if success:
-                await self._update_blacklist(nodes, selected_model)
-                logger.debug(
-                    f"Task {task.id} successfully published. Step: {task.step_name}"
-                )
-                return True
-            else:
-                logger.error(f"Failed to publish task {task.id}.")
-                return False
-        except Exception as e:
-            raise TaskPublishError(f"Failed to publish task {task.id}: {e}") from e
+            nodes, filters, models = None, None, None
+            attempts = 0
+            while nodes is None:
+                if self.background_tasks.done():
+                    raise Exception("Shutting down..")
+                if attempts % 20 == 0:
+                    logger.info("Waiting for nodes to be available...")
+                await asyncio.sleep(MONITORING_INTERVAL)
+                nodes, filters, models = await self.task_manager.create_filter(tasks, self.stats)
+                attempts += 1
 
-    async def _update_blacklist(self, nodes: List[str], selected_model: str) -> None:
-        """
-        Update node blacklist with exponential backoff.
-
-        Args:
-            nodes (List[str]): Node addresses to blacklist
-            selected_model (str): Selected model
-        """
-        current_time = int(time.time())
-        for node in nodes:
-            node = node + ":" + selected_model
-            node_entry = self.blacklist.get(node, {"count": 0})
-            node_entry["count"] += 1
-            wait_time = self.DEADLINE_MULTIPLIER * 60 * (4 ** (node_entry["count"] - 1))
-            node_entry["deadline"] = current_time + wait_time
-            self.blacklist[node] = node_entry
+            for idx, i in enumerate(zip(nodes, filters, models)):
+                tasks[idx].nodes = [i[0]]
+                tasks[idx].filter = i[1]
+                tasks[idx].models = i[2]
+            await asyncio.gather(*[self.task_manager.push_task(task) for task in tasks])
             logger.debug(
-                f"Address {node} added to blacklist with deadline at {node_entry['deadline']}."
+                f"Task successfully published"
             )
+            return True
 
-        await self._save_blacklist()
+        except Exception as e:
+            raise TaskPublishError(f"Failed to publish task: {e}") from e
 
     async def fetch(
-        self,
-        pipeline: Optional[Any] = None,
-        task: Union[Optional[Task], Optional[List[Task]]] = None,
-        min_outputs: Optional[int] = None,
-        timeout: int = 30,
-        is_disabled: bool = False,
+            self,
+            pipeline: Optional[Any] = None,
+            task: Union[Optional[Task], Optional[List[Task]]] = None,
+            min_outputs: Optional[int] = None,
+            timeout: int = 30,
+            is_disabled: bool = False,
     ) -> List[TaskResult]:
         """
         Fetch task results from storage.
@@ -294,7 +242,7 @@ class Dria:
         min_outputs = self._determine_min_outputs(task, min_outputs)
 
         with tqdm(
-            total=min_outputs, desc="Fetching results...", disable=is_disabled
+                total=min_outputs, desc="Fetching results...", disable=is_disabled
         ) as pbar:
             while len(results) < min_outputs and not self.shutdown_event.is_set():
                 elapsed_time = time.time() - start_time
@@ -338,8 +286,8 @@ class Dria:
 
     @staticmethod
     def _determine_min_outputs(
-        task: Union[Optional[Task], Optional[List[Task]]],
-        min_outputs: Optional[int],
+            task: Union[Optional[Task], Optional[List[Task]]],
+            min_outputs: Optional[int],
     ) -> int:
         """
         Determine minimum required outputs.
@@ -364,7 +312,7 @@ class Dria:
 
     @staticmethod
     def _get_task_id(
-        task: Union[Optional[Task], Optional[List[Task]]]
+            task: Union[Optional[Task], Optional[List[Task]]]
     ) -> Union[None, str, List[str]]:
         """
         Get task ID(s) from task object(s).
@@ -388,9 +336,9 @@ class Dria:
             raise ValueError("Invalid task type. Expected None, Task, or List[Task].")
 
     async def _fetch_results(
-        self,
-        pipeline_id: Optional[str],
-        task_id: Union[Optional[str], Optional[List[str]]],
+            self,
+            pipeline_id: Optional[str],
+            task_id: Union[Optional[str], Optional[List[str]]],
     ) -> Tuple[Dict[str, TaskResult], Dict[str, str]]:
         """
         Fetch results for pipeline and/or tasks.
@@ -457,7 +405,7 @@ class Dria:
         return results
 
     async def _fetch_task_results(
-        self, task_id: str
+            self, task_id: str
     ) -> Tuple[Dict[str, TaskResult], Dict[str, Any]]:
         """
         Fetch results for a specific task.
@@ -484,7 +432,7 @@ class Dria:
         return results, new_ids
 
     async def _create_task_result(
-        self, task_id: str, value: dict
+            self, task_id: str, value: dict
     ) -> Optional[TaskResult]:
         """
         Create TaskResult object from raw data.
@@ -531,6 +479,7 @@ class Dria:
             topic_results: Raw results from topic
         """
         current_time = int(time.time())
+        current_ns = time.time_ns()
 
         signature = None
         for item in topic_results:
@@ -541,7 +490,6 @@ class Dria:
                 except json.JSONDecodeError:
                     signature, metadata_json = decoded_item[:130], decoded_item[130:]
                     result = json.loads(metadata_json)
-
                 identifier, rpc_auth = result["taskId"].split("--")
                 task_data = await self.storage.get_value(identifier)
                 if not task_data:
@@ -588,7 +536,19 @@ class Dria:
                         logger.debug(
                             f"ID: {identifier} {result['error']}. Task retrying.."
                         )
-                    await self._handle_error_type(task, result["error"])
+                    if "stats" in result.keys():
+                        l = {
+                            "node_address": address,
+                            "model": result['model'],
+                            "publish_latency": (current_ns - result['stats']['publishedAt']) / 1e9,
+                            "execution_time": (result['stats']['executionTime']) / 1e9,
+                            "receive_latency": -(task_data['created_ts'] - result['stats']['receivedAt']) / 1e9,
+                            "roundtrip": (current_ns - task_data['created_ts']) / 1e9
+                        }
+                        if "error" in result:
+                            l['error'] = True
+                        logger.debug(f"Metrics: {l}")
+                        self.metrics.append(l)
                     workflow = await self.storage.get_value(f"{task.id}:workflow")
                     t = Task(
                         id=task.id,
@@ -597,7 +557,7 @@ class Dria:
                         step_name=task.step_name,
                         pipeline_id=task.pipeline_id,
                     )
-                    asyncio.create_task(self.push(t))
+                    asyncio.create_task(self.push([t]))
                     continue
 
                 if self._is_task_valid(task, current_time):
@@ -608,9 +568,20 @@ class Dria:
                         logger.debug(f"Address: {address}    not valid in nodes.")
                         continue
 
-                    else:
-                        await self._remove_from_blacklist(address, result["model"])
                     pipeline_id = task.pipeline_id or ""
+                    if "stats" in result.keys():
+                        l = {
+                            "node_address": address,
+                            "model": result['model'],
+                            "publish_latency": (current_ns - result['stats']['publishedAt']) / 1e9,
+                            "execution_time": (result['stats']['executionTime']) / 1e9,
+                            "receive_latency": -(task_data['created_ts'] - result['stats']['receivedAt']) / 1e9,
+                            "roundtrip": (current_ns - task_data['created_ts']) / 1e9
+                        }
+                        if "error" in result:
+                            l['error'] = True
+                        logger.debug(f"Metrics: {l}")
+                        self.metrics.append(l)
                     await self.kv.push(
                         f"{pipeline_id}:{identifier}",
                         {"result": processed_result, "model": result["model"]},
@@ -621,7 +592,7 @@ class Dria:
                 logger.error(f"Unexpected error processing item: {e}", exc_info=True)
 
     async def execute(
-        self, task: Union[Task, List[Task]], timeout: int = 30
+            self, task: Union[Task, List[Task]], timeout: int = 30
     ) -> List[Any]:
         """
         Execute task(s) and get results.
@@ -653,10 +624,15 @@ class Dria:
 
         try:
             tasks_ = [t.__deepcopy__() for t in tasks]
-            for t in tqdm(tasks_, desc="Publishing tasks to network..."):
-                await self.push(t)
+            batched_tasks = [tasks_[i:i + SCORING_BATCH_SIZE] for i in range(0, len(tasks_), SCORING_BATCH_SIZE)]
+            results = []
+            for batch_tasks in batched_tasks:
+                await self.push(batch_tasks)
+                results.extend(await self.fetch(task=batch_tasks, timeout=timeout))
+                self.stats = evaluate_nodes(self.metrics, self.stats)
+                self.metrics = []
 
-            return await self.fetch(task=tasks_, timeout=timeout)
+            return results
         except Exception as e:
             logger.error(f"Error during task execution: {str(e)}")
             raise
@@ -705,79 +681,59 @@ class Dria:
         raise ValueError(f"Task metadata not found for task id: {task_id}")
 
     @staticmethod
-    async def _check_function_calling_models(task: Task) -> None:
+    async def _check_function_calling_models(tasks: List[Task]) -> None:
         """
         Validate models for function calling tasks.
 
         Args:
-            task: Task to validate
+            tasks: Task to validate
 
         Raises:
             ValueError: If no supported models found
         """
-        if isinstance(task.workflow, Workflow):
-            has_function_calling = any(
-                t.operator == "function_calling" for t in task.workflow.tasks
-            )
-        else:
-            has_function_calling = any(
-                t.get("operator") == "function_calling"
-                for t in task.workflow.get("tasks", [])
-            )
-        supported_models = set(model.value for model in FunctionCallingModels)
-
-        model_list = []
-        for model in task.models:
-            if model == "openai":
-                model_list.extend(model.value for model in OpenAIModels)
-            elif model == "ollama":
-                model_list.extend(model.value for model in OllamaModels)
-            elif model == "coder":
-                model_list.extend(model.value for model in CoderModels)
-            elif model == "gemini":
-                model_list.extend(model.value for model in GeminiModels)
+        for task in tasks:
+            if isinstance(task.workflow, Workflow):
+                has_function_calling = any(
+                    t.operator == "function_calling" for t in task.workflow.tasks
+                )
             else:
-                model_list.append(model)
+                has_function_calling = any(
+                    t.get("operator") == "function_calling"
+                    for t in task.workflow.get("tasks", [])
+                )
+            supported_models = set(model.value for model in FunctionCallingModels)
 
-        filtered_models = model_list
-        if has_function_calling:
-            filtered_models = [
-                model for model in model_list if model in supported_models
-            ]
+            model_list = []
+            for model in task.models:
+                if model == "openai":
+                    model_list.extend(model.value for model in OpenAIModels)
+                elif model == "ollama":
+                    model_list.extend(model.value for model in OllamaModels)
+                elif model == "coder":
+                    model_list.extend(model.value for model in CoderModels)
+                elif model == "gemini":
+                    model_list.extend(model.value for model in GeminiModels)
+                else:
+                    model_list.append(model)
 
-            for model in model_list:
-                if model not in supported_models:
-                    logger.warning(
-                        f"Model '{model}' not supported for function calling and will be removed."
+            filtered_models = model_list
+            if has_function_calling:
+                filtered_models = [
+                    model for model in model_list if model in supported_models
+                ]
+
+                for model in model_list:
+                    if model not in supported_models:
+                        logger.warning(
+                            f"Model '{model}' not supported for function calling and will be removed."
+                        )
+
+                if not filtered_models:
+                    supported_model_names = [model.name for model in FunctionCallingModels]
+                    raise ValueError(
+                        f"No supported function calling models found for task. "
+                        f"Supported models: {', '.join(supported_model_names)}"
                     )
 
-            if not filtered_models:
-                supported_model_names = [model.name for model in FunctionCallingModels]
-                raise ValueError(
-                    f"No supported function calling models found for task. "
-                    f"Supported models: {', '.join(supported_model_names)}"
-                )
+            task.models = filtered_models
 
-        task.models = filtered_models
-
-    async def _handle_error_type(self, task: Task, error: str) -> None:
-        """
-        Handle task error by removing nodes from blacklist.
-
-        Args:
-            task: Task object containing nodes to unblacklist
-            error: Error message string to check
-        """
-        user_side_errors = [
-            "InvalidInput",
-            "tcp open error",
-            "FunctionCallFailed",
-            "Invalid schema for response_format",
-        ]
-
-        if any(err in error for err in user_side_errors):
-            error_msg = error.split("Workflow execution failed: ")[1]
-            logger.info(f"ID: {task.id} {error_msg}. Task retrying..")
-
-            for address in task.nodes:
-                await self._remove_from_blacklist(address)

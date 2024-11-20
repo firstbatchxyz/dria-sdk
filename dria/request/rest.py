@@ -17,6 +17,7 @@ class RPCClient:
 
     Args:
         auth_token (str): The authentication token for the RPC client.
+        mode (str): Network name
     """
 
     NETWORK_MAX_MESSAGE_SIZE = 256
@@ -27,7 +28,10 @@ class RPCClient:
                 "RPC token is required for Dria RPC. "
                 "Please set the DRIA_RPC_TOKEN environment variable."
             )
-        self.base_url = constants.RPC_BASE_URL
+        if auth_token.startswith("sk-dria-v1-"):
+            self.base_url = constants.RPC_BASE_URL
+        else:
+            self.base_url = constants.RPC_BASE_URL_COMMUNITY
         self.auth_token = auth_token
         self.headers = {
             "x-api-key": self.auth_token,

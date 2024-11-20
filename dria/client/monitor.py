@@ -56,7 +56,7 @@ class Monitor:
             await self._check_heartbeat()
         except Exception as e:
             logger.error(f"Error during heartbeat process: {e}", exc_info=True)
-            raise
+            raise e
 
     async def _send_heartbeat(self, payload: str) -> bool:
         """
@@ -115,8 +115,7 @@ class Monitor:
             return True
 
         except Exception as e:
-            logger.error(f"Failed to process heartbeat responses: {e}", exc_info=True)
-            return False
+            raise e
 
     @staticmethod
     def _decrypt_nodes(node_responses: List[str]) -> Dict[str, List[str]]:

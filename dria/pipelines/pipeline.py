@@ -1,16 +1,14 @@
 import asyncio
 import json
 import math
-import time
 import traceback
 import uuid
 from typing import List, Optional, Dict, Any, Tuple, Union
 
-from tqdm import tqdm
-
 from dria.client import Dria
+from dria.constants import SCORING_BATCH_SIZE
 from dria.db.storage import Storage
-from dria.models import TaskResult, TaskInput
+from dria.models import TaskInput
 from dria.models.enums import PipelineStatus
 from dria.pipelines.config import PipelineConfig
 from dria.pipelines.step import Step
@@ -108,12 +106,6 @@ class Pipeline:
             step.input = [step.input]
 
         self.logger.info(f"Running step: {step.name}")
-        self.config.pipeline_timeout = int(
-            max(
-                math.log(max(1, len(step.input))) * self.config.step_timeout,
-                self.config.step_timeout,
-            )
-        )
         try:
             asyncio.create_task(step.run())
             self.logger.info(f"Step '{step.name}' completed successfully.")
@@ -144,89 +136,64 @@ class Pipeline:
     async def _poll(self) -> None:
         """Poll for results and process them."""
         try:
-            start_time = time.time()
-            while True:
+            current_step_index = 0
+            step_round = 0
+            while current_step_index < len(self.steps):
+                step = self.steps[current_step_index]
                 try:
+                    # Check and initialize client if needed
                     if (
-                        self.client.background_tasks is None
-                        or self.client.background_tasks.done()
+                            self.client.background_tasks is None
+                            or self.client.background_tasks.done()
                     ):
                         if self.client.api_mode:
                             logger.debug("Background tasks closed. Reinitializing..")
                             await self.client.initialize()
                         else:
                             raise Exception("Dria client is not initialized")
-                    if time.time() - start_time > self.config.pipeline_timeout:
-                        """Handle the deadline exceeded error."""
-                        self.logger.warn(
-                            f"Step exceeded the deadline of {self.config.pipeline_timeout} seconds. Next step is running..."
-                        )
-                        try:
-                            latest_step_name = self.proceed_steps[-1]
-                            latest_step_index = self.steps.index(
-                                self.get_step(latest_step_name)
-                            )
-                            next_step = self.steps[latest_step_index + 1]
-                        except IndexError:
-                            raise Exception(
-                                "No steps have been executed yet in the pipeline. Cannot determine latest step. Exiting pipeline."
-                            )
-                        if self._is_final_step(next_step):
-                            await self._finalize_pipeline(next_step)
-                            return
 
-                        await self._run_next_step(
-                            next_step, self.steps.index(next_step) + 1
+                    # Calculate timeout based on input size
+                    step_timeout = int(
+                        max(
+                            math.log(max(1, len(step.input))) * self.config.step_timeout,
+                            self.config.step_timeout,
                         )
-                        start_time = time.time()
+
+                    )
+
+                    # Process tasks in batches
+                    batched_tasks = step.tasks
+                    results = []
+                    if not batched_tasks:
+                        await asyncio.sleep(5)
+                        continue
+                    results.extend(await self.client.fetch(task=batched_tasks, timeout=step_timeout))
+
+                    # Store results
+                    for result in results:
+                        step.output.append(result)
+
+                    if ((step_round + 1) * SCORING_BATCH_SIZE) < len(step.input):
+                        step_round += 1
+                        await step.run(step_round)
                         continue
 
-                    results: List[TaskResult] = await self.client.fetch(
-                        pipeline=self, timeout=0, is_disabled=True
-                    )
-                    for result in results:
-                        step = self.get_step(result.step_name)
-                        if not step:
-                            self.logger.warning(
-                                f"Received result for unknown step '{result.step_name}'."
-                            )
-                            continue
+                    # Handle final step
+                    if self._is_final_step(step):
+                        await self._finalize_pipeline(step)
+                        return
 
-                        step.output.append(result)
-                        if not self._check_step_requirements(step):
-                            continue
-                        if self._is_final_step(step):
-                            await self._finalize_pipeline(step)
-                            return
-
-                        await self._run_next_step(step, self.steps.index(step) + 1)
-                        start_time = time.time()
+                    # Move to next step
+                    await self._run_next_step(step, current_step_index + 1)
+                    current_step_index += 1
 
                 except Exception as e:
                     return await self._graceful_shutdown(e)
 
                 await asyncio.sleep(self.config.retry_interval)
+
         finally:
             await self._graceful_shutdown()
-
-    def _check_step_requirements(self, step: Step) -> bool:
-        """Check if the step requirements are met."""
-        if len(step.all_inputs) == 1:
-            self.proceed_steps.append(step.name)
-            return True
-        required_results = int(len(step.all_inputs) * step.config.min_compute)
-        progress = tqdm(
-            total=required_results,
-            desc=f"Step {step.name}",
-            initial=len(step.output),
-            unit="results",
-        )
-        progress.update(0)
-        progress.close()
-        if len(step.output) < int(required_results) or step.name in self.proceed_steps:
-            return False
-        self.proceed_steps.append(step.name)
-        return True
 
     def _is_final_step(self, step: Step) -> bool:
         """Check if the step is the final step in the pipelines."""
@@ -279,7 +246,7 @@ class Pipeline:
             if isinstance(self.output, TaskInput):
                 output_data = json.dumps(self.output.dict())
             elif isinstance(self.output, list) and isinstance(
-                self.output[0], TaskInput
+                    self.output[0], TaskInput
             ):
                 output_data = json.dumps([i.dict() for i in self.output])
             else:
