@@ -52,10 +52,10 @@ async def run_multihop_tasks(dria: Dria, file_chunks):
 def main():
     # Load dataset
     dataset = load_dataset("m-ric/huggingface_doc")
-    eval_chunks = dataset["train"].select(range(int(0.01 * len(dataset["train"]))))
+    eval_chunks = dataset["train"].select(range(int(0.02 * len(dataset["train"]))))
     eval_chunks = [chunk["text"] for chunk in eval_chunks]
 
-    # Create synthetic evaluation data using %1 of the dataset
+    # Create synthetic evaluation data using %2 of the dataset
     dria = Dria(rpc_token=os.environ["DRIA_RPC_TOKEN"])
     qa_eval = asyncio.run(run_qa_pipeline(dria, eval_chunks))
     multihop_eval = asyncio.run(run_multihop_tasks(dria, eval_chunks))
