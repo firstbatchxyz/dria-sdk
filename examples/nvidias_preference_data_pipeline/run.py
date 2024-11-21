@@ -1,10 +1,11 @@
+import logging
 import os
 from dria.client import Dria
 import asyncio
 import json
 from examples.nvidias_preference_data_pipeline.nemotron_qa import NemotronQA
 
-dria = Dria(rpc_token=os.environ["DRIA_RPC_TOKEN"])
+dria = Dria(rpc_token=os.environ["DRIA_RPC_TOKEN"], log_level=logging.DEBUG)
 
 
 async def run_pipeline():
