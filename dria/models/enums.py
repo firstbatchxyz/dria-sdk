@@ -119,10 +119,7 @@ class FunctionCallingModels(Enum):
     ANTHROPIC_HAIKU_3_5_OR = Model.ANTHROPIC_HAIKU_3_5_OR.value
     QWEN2_5_72B_OR = Model.QWEN2_5_72B_OR.value
     QWEN2_5_7B_OR = Model.QWEN2_5_7B_OR.value
-    QWEN2_5_CODER_32B_OR = Model.QWEN2_5_CODER_32B_OR.value
     QWEN2_5_EVA_32B_OR = Model.QWEN2_5_EVA_32B_OR.value
-    DEEPSEEK_2_5_OR = Model.DEEPSEEK_2_5_OR.value
-    NOUS_HERMES_405B_OR = Model.NOUS_HERMES_405B_OR.value
 
 
 class OpenAIModels(Enum):

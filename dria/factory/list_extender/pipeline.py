@@ -38,7 +38,7 @@ class ListExtenderPipeline:
                 Model.GPT4O,
                 Model.GEMINI_15_FLASH,
                 Model.GPT4O_MINI,
-                Model.QWEN2_5_32B_FP16,
+                Model.QWEN2_5_EVA_32B_OR,
                 Model.QWEN2_5_7B_FP16,
                 Model.QWEN2_5_7B,
                 Model.LLAMA3_1_8B_FP16,
