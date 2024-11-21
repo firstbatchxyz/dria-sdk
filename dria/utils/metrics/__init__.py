@@ -1,1 +1,1 @@
-from .diversity import NGramBasedDiversity
+from .diversity import NGramBasedDiversity, VendiScore

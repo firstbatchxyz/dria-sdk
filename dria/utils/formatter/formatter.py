@@ -1,3 +1,5 @@
+import json
+
 from pydantic import BaseModel
 from typing import List, Dict, Optional
 from enum import Enum
@@ -12,6 +14,11 @@ class Message(BaseModel):
 class StandardLanguageModeling(BaseModel):
     """Simple text format for language modeling"""
     text: str
+
+
+class StandardPromptOnly(BaseModel):
+    """Standard prompt-only format"""
+    prompt: str
 
 
 class StandardPromptCompletion(BaseModel):
@@ -68,6 +75,7 @@ class ConversationalUnpairedPreference(BaseModel):
 class FormatType(str, Enum):
     # Standard formats
     STANDARD_LANGUAGE_MODELING = "standard_language_modeling"
+    STANDARD_PROMPT_ONLY = "standard_prompt_only"
     STANDARD_PROMPT_COMPLETION = "standard_prompt_completion"
     STANDARD_PREFERENCE = "standard_preference"
     STANDARD_UNPAIRED_PREFERENCE = "standard_unpaired_preference"
@@ -102,6 +110,7 @@ class DataFormatter:
     FORMAT_SCHEMAS = {
         # Standard formats
         FormatType.STANDARD_LANGUAGE_MODELING: StandardLanguageModeling,
+        FormatType.STANDARD_PROMPT_ONLY: StandardPromptOnly,
         FormatType.STANDARD_PROMPT_COMPLETION: StandardPromptCompletion,
         FormatType.STANDARD_PREFERENCE: StandardPreference,
         FormatType.STANDARD_UNPAIRED_PREFERENCE: StandardUnpairedPreference,
@@ -116,6 +125,7 @@ class DataFormatter:
 
     REQUIRED_FIELDS = {
         FormatType.STANDARD_LANGUAGE_MODELING: {"text"},
+        FormatType.STANDARD_PROMPT_ONLY: {"prompt"},
         FormatType.STANDARD_PROMPT_COMPLETION: {"prompt", "completion"},
         FormatType.STANDARD_PREFERENCE: {"prompt", "chosen", "rejected"},
         FormatType.STANDARD_UNPAIRED_PREFERENCE: {"prompt", "completion", "label"},
@@ -171,6 +181,10 @@ class DataFormatter:
                 if format_type == FormatType.STANDARD_LANGUAGE_MODELING:
                     formatted = {
                         "text": item[field_mapping.text]
+                    }
+                elif format_type == FormatType.STANDARD_PROMPT_ONLY:
+                    formatted = {
+                        "prompt": item[field_mapping.prompt],
                     }
                 elif format_type == FormatType.STANDARD_PROMPT_COMPLETION:
                     formatted = {
@@ -281,9 +295,8 @@ if __name__ == "__main__":
     
     # Format data
     try:
-        formatted = formatter.format(data, FormatType.CONVERSATIONAL_UNPAIRED_PREFERENCE, mapping)
+        formatted = formatter.format(data, FormatType.CONVERSATIONAL_PREFERENCE, mapping)
         print("\nFormatted data:")
-        for item in formatted:
-            print(item)
+        print(json.dumps(formatted, indent=2))
     except Exception as e:
         print(f"Error: {e}")

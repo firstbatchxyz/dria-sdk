@@ -1,1 +1,1 @@
-from .formatter import FieldMapping, DataFormatter
+from .formatter import FieldMapping, DataFormatter, FormatType
