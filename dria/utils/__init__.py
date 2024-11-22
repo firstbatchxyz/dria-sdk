@@ -15,5 +15,5 @@ __all__ = [
     "FieldMapping",
     "FormatType",
     "DataFormatter",
-    "VendiScore"
+    "VendiScore",
 ]

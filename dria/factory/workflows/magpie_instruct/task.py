@@ -85,16 +85,16 @@ class MagPie(SingletonTemplate):
             messages (list of str): The list of messages to be grouped.
 
         Returns:
-            list of dict: A list of dialogue turns, where each turn is a dictionary 
+            list of dict: A list of dialogue turns, where each turn is a dictionary
                          containing both 'instructor' and 'responder' keys.
         """
         dialogue = []
-        
+
         # Process messages in pairs
         for i in range(0, len(messages), 2):
             turn = {
                 "instructor": messages[i] if i < len(messages) else "",
-                "responder": messages[i + 1] if i + 1 < len(messages) else ""
+                "responder": messages[i + 1] if i + 1 < len(messages) else "",
             }
             dialogue.append(turn)
 
