@@ -1,1 +1,1 @@
-from .formatter import FieldMapping, DataFormatter, FormatType
+from .formatter import ConversationMapping, FieldMapping, DataFormatter, FormatType

@@ -27,7 +27,8 @@ from dria.models.enums import (
     OllamaModels,
     OpenAIModels,
     CoderModels,
-    GeminiModels, OpenRouterModels,
+    GeminiModels,
+    OpenRouterModels,
 )
 from dria.models.exceptions import TaskPublishError
 from dria.request import RPCClient

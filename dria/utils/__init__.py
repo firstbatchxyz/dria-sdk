@@ -3,7 +3,7 @@ from importlib.metadata import version, PackageNotFoundError
 from .ec import recover_public_key, uncompressed_public_key, generate_task_keys
 from .messaging import base64_to_json, str_to_base64
 from .logging import logger
-from .formatter import FieldMapping, DataFormatter, FormatType
+from .formatter import ConversationMapping, FieldMapping, DataFormatter, FormatType
 
 __core_exports = [
     "recover_public_key",
@@ -14,12 +14,13 @@ __core_exports = [
     "logger",
     "FieldMapping",
     "FormatType",
-    "DataFormatter"
+    "DataFormatter",
 ]
 
 try:
     from .metrics import NGramBasedDiversity, VendiScore
-    version('dria[diversity]')
+
+    version("dria[diversity]")
     __all__ = [*__core_exports, "NGramBasedDiversity", "VendiScore"]
 except (ImportError, PackageNotFoundError):
     __all__ = __core_exports

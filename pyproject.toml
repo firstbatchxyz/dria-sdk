@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "dria"
-version = "0.0.92"
+version = "0.0.93"
 description = "Dria SDK - A Python library for interacting with the Dria Network"
 authors = ["andthattoo <omer@firstbatch.xyz>", "Anil <anil@firstbatch.xyz>"]
 readme = "README.md"

@@ -424,7 +424,9 @@ class PipelineBuilder:
                 task_input = []
                 for inp in self.pipeline_input:
                     if not isinstance(inp, dict):
-                        raise ValueError(f"Invalid input: {inp}, list elements must be equal to object.")
+                        raise ValueError(
+                            f"Invalid input: {inp}, list elements must be equal to object."
+                        )
                     task_input.append(TaskInput(**inp))
             else:
                 task_input = TaskInput(**self.pipeline_input)

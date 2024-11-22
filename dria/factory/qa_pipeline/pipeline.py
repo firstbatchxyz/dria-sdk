@@ -49,7 +49,6 @@ class QAPipeline:
                     Model.LLAMA3_1_8BQ8,
                     Model.QWEN2_5_7B_FP16,
                     Model.ANTHROPIC_HAIKU_3_5_OR,
-                    Model.QWEN2_5_EVA_32B_OR,
                     Model.LLAMA_3_1_70B_OR,
                     Model.LLAMA_3_1_8B_OR,
                     Model.GPT4O_MINI,
@@ -72,7 +71,6 @@ class QAPipeline:
                     Model.ANTHROPIC_HAIKU_3_5_OR,
                     Model.GEMINI_15_FLASH,
                     Model.LLAMA_3_1_8B_OR,
-                    Model.QWEN2_5_EVA_32B_OR,
                 ]
             )
             << AnswerStep(config=StepConfig()).set_models(
@@ -84,7 +82,6 @@ class QAPipeline:
                     Model.LLAMA_3_1_70B_OR,
                     Model.QWEN2_5_7B_OR,
                     Model.QWEN2_5_32B_FP16,
-                    Model.QWEN2_5_EVA_32B_OR,
                     Model.MIXTRAL_8_7B,
                     Model.GPT4O_MINI,
                     Model.GPT4O,
