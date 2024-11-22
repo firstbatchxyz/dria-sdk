@@ -324,8 +324,14 @@ class PipelineBuilder:
                 )
             step_names.add(step.name)
 
-    def input(self, **kwargs):
-        self.pipeline_input = kwargs
+    def input(self, *args, **kwargs):
+        if args:
+            if len(args) == 1 and isinstance(args[0], list):
+                self.pipeline_input = args[0]
+            else:
+                raise ValueError("If providing args, must be a single list of dicts")
+        else:
+            self.pipeline_input = kwargs
         return self
 
     def _validate_input_types(self, step_template: StepTemplate):
@@ -341,7 +347,11 @@ class PipelineBuilder:
         )
 
         try:
-            input_model(**self.pipeline_input)
+            if isinstance(self.pipeline_input, list):
+                for inp in self.pipeline_input:
+                    input_model(**inp)
+            else:
+                input_model(**self.pipeline_input)
         except ValidationError as e:
             error_messages = []
             for error in e.errors():
@@ -410,7 +420,14 @@ class PipelineBuilder:
         task_input = None
         if len(self.steps) == 0:
             self._validate_input_types(other)
-            task_input = TaskInput(**self.pipeline_input)
+            if isinstance(self.pipeline_input, list):
+                task_input = []
+                for inp in self.pipeline_input:
+                    if not isinstance(inp, dict):
+                        raise ValueError(f"Invalid input: {inp}, list elements must be equal to object.")
+                    task_input.append(TaskInput(**inp))
+            else:
+                task_input = TaskInput(**self.pipeline_input)
 
         _step = StepBuilder(
             name=other.__class__.__name__ + f".{len(self.steps)}",

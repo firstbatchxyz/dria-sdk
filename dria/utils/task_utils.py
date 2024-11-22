@@ -214,7 +214,7 @@ class TaskManager:
             Tuple of (selected nodes, selected model, Bloom filter params)
         """
 
-        models = list(set([x for i in tasks for x in i.models]))
+        models = list(set([x.value if isinstance(x, Model) else x for i in tasks for x in i.models]))
         # Get all available nodes for all models
         all_model_nodes = {}
         for model in models:
