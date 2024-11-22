@@ -25,6 +25,10 @@ class SearchPipeline:
         self.pipeline = PipelineBuilder(self.pipeline_config, dria)
         self.models_list = [
             [
+                Model.ANTHROPIC_HAIKU_3_5_OR,
+                Model.ANTHROPIC_SONNET_3_5_OR,
+                Model.LLAMA_3_1_70B_OR,
+                Model.LLAMA_3_1_8B_OR,
                 Model.LLAMA3_1_8B_FP16,
                 Model.QWEN2_5_32B_FP16,
                 Model.QWEN2_5_7B_FP16,
@@ -39,6 +43,10 @@ class SearchPipeline:
                 Model.GEMINI_15_FLASH,
                 Model.GPT4O_MINI,
                 Model.GPT4O,
+                Model.ANTHROPIC_HAIKU_3_5_OR,
+                Model.ANTHROPIC_SONNET_3_5_OR,
+                Model.LLAMA_3_1_70B_OR,
+                Model.LLAMA_3_1_8B_OR
             ],
         ]
 

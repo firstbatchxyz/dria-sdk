@@ -49,8 +49,8 @@ class RAG:
     def search(
         self, questions: Union[List[str], str], top_k=3
     ) -> Union[List[List[str]], List[str]]:
-        res = self.rag.search(questions)
-        return [r["content"][:top_k] for r in res]
+        res = self.rag.search(questions, k=top_k)
+        return [r["content"] for r in res]
 
     def answer(self, question: str) -> QuestionAnswer:
 
