@@ -107,7 +107,7 @@ class FieldMapping(BaseModel):
     completion: Optional[str] = None
     chosen: Optional[str] = None
     rejected: Optional[str] = None
-    label: Optional[str] = None
+    label: Optional[Union[str, bool]] = None
 
     user_message: Optional[str] = None
     assistant_message: Optional[str] = None
@@ -118,6 +118,7 @@ class ConversationMapping(BaseModel):
     """Configuration for mapping conversation object fields"""
 
     field: str  # field name for user messages in each turn (e.g., "instructor")
+    label: Optional[Union[str, bool]] = None
     conversation: FieldMapping
 
 
@@ -171,7 +172,9 @@ class DataFormatter:
         """Validate that the field mapping contains all required fields for the format"""
         required_fields = cls.REQUIRED_FIELDS[format_type]
         mapping_dict = field_mapping.model_dump(exclude_none=True)
-        if field_mapping.conversation:
+        if hasattr(field_mapping, "conversation") and field_mapping.conversation:
+            if "label" in required_fields and "label" in mapping_dict:
+                required_fields.remove("label")
             missing_fields = required_fields - set(mapping_dict["conversation"].keys())
         else:
             missing_fields = required_fields - set(mapping_dict.keys())
@@ -385,7 +388,7 @@ class DataFormatter:
                         formatted = {
                             "prompt": [],
                             "completion": [],
-                            "label": item[conv_mapping.label],
+                            "label": item[field_mapping.label],
                         }
                         # Add system message if exists
                         if (
@@ -432,28 +435,49 @@ if __name__ == "__main__":
         {
             "dialogue": [
                 {
-                    "a": "What are the advantages?",
-                    "b": "There are several advantages...",
-                    "c": "False"
+                    "question": "What color is the sky?",
+                    "good": "It is blue.",
+                    "bad": "It is green.",
+                },
+                {
+                    "question": "Where is the sun?",
+                    "good": "In the sky.",
+                    "bad": "In the sea.",
                 },
             ]
-        }
+        },
+        {
+            "dialogue": [
+                {
+                    "question": "What color is the sky?",
+                    "good": "It is blue.",
+                    "bad": "It is green.",
+                },
+                {
+                    "question": "Where is the sun?",
+                    "good": "In the sky.",
+                    "bad": "In the sea.",
+                },
+            ]
+        },
+    ]
+
+    data2 = [
+        {
+            "question": "What color is the sky?",
+            "answer": "It is blue.",
+            "failed": "mmm",
+        },
+        {"question": "Where is the sun?", "answer": "In the sky.", "failed": "mmm"},
     ]
 
     formatter = DataFormatter()
 
     # Define field mapping
-    mapping = ConversationMapping(
-        field="dialogue",  # the key containing the list of conversation turns
-        conversation=FieldMapping(
-            user_message="a", completion="b", label="c"
-        ),
-    )
+    mapping = FieldMapping(prompt="question", chosen="answer", rejected="failed")
     # Format data
     try:
-        formatted = formatter.format(
-            data, FormatType.CONVERSATIONAL_UNPAIRED_PREFERENCE, mapping
-        )
+        formatted = formatter.format(data2, FormatType.STANDARD_PREFERENCE, mapping)
         print("\nFormatted data:")
         print(json.dumps(formatted, indent=2))
     except Exception as e:
