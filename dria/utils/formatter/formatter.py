@@ -385,7 +385,7 @@ class DataFormatter:
                         formatted = {
                             "prompt": [],
                             "completion": [],
-                            "label": item[field_mapping.label],
+                            "label": item[conv_mapping.label],
                         }
                         # Add system message if exists
                         if (
@@ -432,14 +432,9 @@ if __name__ == "__main__":
         {
             "dialogue": [
                 {
-                    "question_text": "What are the advantages?",
-                    "answer_good": "There are several advantages...",
-                    "answer_bad": "The benefits include...",
-                },
-                {
-                    "question_text": "What are the disadvantages?",
-                    "answer_good": "The main disadvantages are...",
-                    "answer_bad": "Some drawbacks include...",
+                    "a": "What are the advantages?",
+                    "b": "There are several advantages...",
+                    "c": "False"
                 },
             ]
         }
@@ -451,13 +446,13 @@ if __name__ == "__main__":
     mapping = ConversationMapping(
         field="dialogue",  # the key containing the list of conversation turns
         conversation=FieldMapping(
-            user_message="question_text", assistant_message="answer_good"
+            user_message="a", completion="b", label="c"
         ),
     )
     # Format data
     try:
         formatted = formatter.format(
-            data, FormatType.CONVERSATIONAL_LANGUAGE_MODELING, mapping
+            data, FormatType.CONVERSATIONAL_UNPAIRED_PREFERENCE, mapping
         )
         print("\nFormatted data:")
         print(json.dumps(formatted, indent=2))
