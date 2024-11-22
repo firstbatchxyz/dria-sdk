@@ -30,6 +30,7 @@ class SchemaParser:
             "gemini": SchemaParser._parse_gemini,
             "openai": SchemaParser._parse_openai,
             "ollama": SchemaParser._parse_ollama,
+            "openrouter": SchemaParser._parse_ollama
         }
 
         if provider not in parser_map:

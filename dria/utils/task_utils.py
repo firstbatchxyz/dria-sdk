@@ -21,7 +21,7 @@ from dria.models.enums import (
     OpenAIModels,
     OllamaModels,
     CoderModels,
-    GeminiModels,
+    GeminiModels, OpenRouterModels,
 )
 from dria.models.exceptions import TaskPublishError
 from dria.request import RPCClient
@@ -70,6 +70,8 @@ class TaskManager:
                 continue
             elif selected_model in [m.value for m in GeminiModels]:
                 provider = Model.GEMINI.value
+            elif selected_model in [m.value for m in OpenRouterModels]:
+                provider = Model.OPENROUTER.value
             schema = SchemaParser.parse(t.schema, provider)
             t.schema = schema
 
