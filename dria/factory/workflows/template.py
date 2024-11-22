@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
-from typing import List
+from typing import List, Optional
+from dria.utils import FormatType
 from types import SimpleNamespace
 from dria.models import TaskResult
 

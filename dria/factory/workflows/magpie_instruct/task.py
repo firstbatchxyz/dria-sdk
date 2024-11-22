@@ -79,19 +79,23 @@ class MagPie(SingletonTemplate):
     @staticmethod
     def group_into_dialogue(messages):
         """
-        Groups a list of messages into a dialogue between Speaker A and Speaker B.
+        Groups messages into a list of dialogue turns, where each turn has both speakers.
 
         Args:
             messages (list of str): The list of messages to be grouped.
 
         Returns:
-            list of dict: A list where each element is a dictionary representing a turn in the dialogue.
+            list of dict: A list of dialogue turns, where each turn is a dictionary
+                         containing both 'instructor' and 'responder' keys.
         """
         dialogue = []
-        speakers = ["instructor", "responder"]
 
-        for index, message in enumerate(messages):
-            speaker = speakers[index % 2]
-            dialogue.append({speaker: message})
+        # Process messages in pairs
+        for i in range(0, len(messages), 2):
+            turn = {
+                "instructor": messages[i] if i < len(messages) else "",
+                "responder": messages[i + 1] if i + 1 < len(messages) else "",
+            }
+            dialogue.append(turn)
 
         return dialogue

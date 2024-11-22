@@ -1,3 +1,4 @@
+import logging
 import os
 from dria.client import Dria
 import asyncio

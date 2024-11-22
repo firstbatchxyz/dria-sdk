@@ -15,7 +15,12 @@ class NemotronQA:
         self.pipeline_config: PipelineConfig = PipelineConfig()
         self.pipeline = PipelineBuilder(self.pipeline_config, dria)
         self.models_list = [
-            [Model.GPT4O],
+            [
+                Model.GPT4O,
+                Model.GEMINI_15_PRO,
+                Model.ANTHROPIC_SONNET_3_5_OR,
+                Model.LLAMA_3_1_405B_OR,
+            ],
             [
                 Model.GPT4O_MINI,
                 Model.QWEN2_5_32B_FP16,
@@ -23,12 +28,20 @@ class NemotronQA:
                 Model.MIXTRAL_8_7B,
                 Model.QWEN2_5_7B_FP16,
                 Model.LLAMA3_1_8B_FP16,
+                Model.QWEN2_5_EVA_32B_OR,
+                Model.QWEN2_5_7B_OR,
+                Model.LLAMA_3_1_8B_OR,
+                Model.ANTHROPIC_HAIKU_3_5_OR,
             ],
             [
-                Model.O1_MINI,
                 Model.GEMINI_15_FLASH,
                 Model.GEMINI_15_PRO,
                 Model.GPT4O,
+                Model.ANTHROPIC_HAIKU_3_5_OR,
+                Model.ANTHROPIC_SONNET_3_5_OR,
+                Model.LLAMA_3_1_70B_OR,
+                Model.QWEN2_5_72B_OR,
+                Model.QWEN2_5_EVA_32B_OR,
             ],
         ]
 
