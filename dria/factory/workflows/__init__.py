@@ -16,6 +16,7 @@ from .magpie_instruct import MagPie
 from .self_instruct import SelfInstruct
 from .simple import Simple
 from .multihop_qa_from_docs import MultiHopQuestion
+from .instruction_backtranslation import InstructionBacktranslation
 
 __all__ = [
     "Clair",
@@ -37,4 +38,5 @@ __all__ = [
     "WebMultiChoice",
     "Simple",
     "MultiHopQuestion",
+    "InstructionBacktranslation",
 ]
