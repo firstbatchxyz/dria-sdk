@@ -1,7 +1,6 @@
 import logging
 from dria.models import TaskInput
-from dria.factory.utilities import get_abs_path
-from dria.utils.task_utils import extract_backtick_label
+from dria.factory.utilities import get_abs_path, extract_backtick_label
 from dria_workflows import (
     WorkflowBuilder,
     Operator,
