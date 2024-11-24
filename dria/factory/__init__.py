@@ -1,3 +1,5 @@
+#from importlib.metadata import version, PackageNotFoundError
+
 from .workflows import *
 from .persona import *
 from .subtopic import *
@@ -6,6 +8,7 @@ from .csv_extender import *
 from .list_extender import *
 from .qa_pipeline import *
 from .nemotron_qa import *
+from .safe import *
 
 __all__ = [
     "Clair",
@@ -35,4 +38,8 @@ __all__ = [
     "MultiHopQuestion",
     "InstructionBacktranslation",
     "NemotronQA",
+    "SearchAugmentedFactualityEvaluator"
 ]
+
+
+

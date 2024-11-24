@@ -1,0 +1,90 @@
+{
+  "He is also a successful producer and engineer, having worked with a wide variety of artists, including Willie Nelson, Tim McGraw, and Taylor Swift.": [
+    "He is successful.",
+    "He is a producer.",
+    "He is a engineer.",
+    "He has worked with a wide variety of artists.",
+    "Willie Nelson is an artist.",
+    "He has worked with Willie Nelson.",
+    "Tim McGraw is an artist.",
+    "He has worked with Tim McGraw.",
+    "Taylor Swift is an artist.",
+    "He has worked with Taylor Swift."
+  ],
+  "Michael Collins (born October 31, 1930) is a retired American astronaut and test pilot who was the Command Module Pilot for the Apollo 11 mission in 1969.": [
+    "Michael Collins was born on October 31, 1930.",
+    "Michael Collins is retired.",
+    "Michael Collins is an American.",
+    "Michael Collins was an astronaut.",
+    "Michael Collins was a test pilot.",
+    "Michael Collins was the Command Module Pilot.",
+    "Michael Collins was the Command Module Pilot for the Apollo 11 mission.",
+    "Michael Collins was the Command Module Pilot for the Apollo 11 mission in 1969."
+  ],
+  "He was an American composer, conductor, and musical director.": [
+    "He was an American.",
+    "He was a composer.",
+    "He was a conductor.",
+    "He was a musical director."
+  ],
+  "In 1970, the Empire State Building in New York City was the tallest building in the United States and the world, standing at 1,250 feet tall.": [
+    "The Empire State Building is in New York City.",
+    "In 1970, the Empire State Building was the tallest building in the United States.",
+    "In 1970, the Empire State Building was the tallest building in the world.",
+    "The Empire State Building stands at 1,250 feet tall."
+  ],
+  "The Willis Tower (formerly the Sears Tower) in Chicago was the first to do so, reaching 1,450 feet in 1973. ": [
+    "The Willis Tower is formerly called the Sears Tower.",
+    "The Willis Tower is in Chicago.",
+    "The Willis Tower reached 1,450 feet in 1973."
+  ],
+  "The current tallest building in the United States is One World Trade Center in New York City, which stands at 1,776 feet. ": [
+    "The current tallest building in the United States is One World Trade Center.",
+    "One World Trade Center is in New York City.",
+    "One World Trade Center stands at 1,776 feet."
+  ],
+  "William E. Moerner is an American physical chemist who was affiliated with the University of Sussex as a visiting professor. ": [
+    "William E. Moerner is an American.",
+    "William E. Moerner is an physical chemist.",
+    "William E. Moerner was affiliated with the University of Sussex.",
+    "William E. Moerner was affiliated with the University of Sussex as a visiting professor."
+  ],
+  "Sir Harold Walter Kroto, an English chemist, shared the 1996 Nobel Prize in Chemistry with Robert Curl and Richard Smalley for their discovery of a new form of carbon, buckminsterfullerene, also known as buckyballs. ": [
+    "Sir Harold Walter Kroto is English.",
+    "Sir Harold Walter Kroto is an chemist.",
+    "Sir Harold Walter Kroto won the Nobel Prize in 1996.",
+    "Sir Harold Walter Kroto won the Nobel Prize in Chemistry.",
+    "Sir Harold Walter Kroto shared the Nobel Prize with Robert Curl and Richard Smalley.",
+    "They won the prize for their discovery of a new form of carbon, buckminsterfullerene, also known as buckyballs."
+  ],
+  "Marie Curie was a Polish-born physicist and chemist who conducted pioneering research on radioactivity and was the first woman to win a Nobel Prize.": [
+    "Marie Curie was born in Poland.",
+    "Marie Curie was a physicist.",
+    "Marie Curie was a chemist.",
+    "Marie Curie conducted pioneering research on radioactivity.",
+    "Marie Curie was the first woman to win a Nobel Prize."
+  ],
+  "The Great Wall of China is a series of fortifications made of stone, brick, and other materials, built along the historical northern borders of China to protect against invasions.": [
+    "The Great Wall of China is a series of fortifications.",
+    "It is made of stone, brick, and other materials.",
+    "It was built along the historical northern borders of China.",
+    "It was built to protect against invasions."
+  ],
+  "Albert Einstein developed the theory of relativity, one of the two pillars of modern physics, and won the Nobel Prize in Physics in 1921 for his discovery of the photoelectric effect.": [
+    "Albert Einstein developed the theory of relativity.",
+    "The theory of relativity is one of the two pillars of modern physics.",
+    "Albert Einstein won the Nobel Prize in Physics in 1921.",
+    "He won the prize for his discovery of the photoelectric effect."
+  ],
+  "Mount Everest, located in the Himalayas on the border between Nepal and China, is the highest mountain above sea level, with a peak at 8,848 meters.": [
+    "Mount Everest is located in the Himalayas.",
+    "It is on the border between Nepal and China.",
+    "Mount Everest is the highest mountain above sea level.",
+    "Its peak is at 8,848 meters."
+  ],
+  "The 2016 Summer Olympics were held in Rio de Janeiro, Brazil, marking the first time the event was hosted in South America.": [
+    "The 2016 Summer Olympics were held in Rio de Janeiro.",
+    "Rio de Janeiro is in Brazil.",
+    "It was the first time the Olympics were hosted in South America."
+  ]
+}
