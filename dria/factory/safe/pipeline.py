@@ -11,6 +11,7 @@ from .atomic_facts import (
     SplitAtomicFacts,
 )
 from .revise import ReviseAtomicFact
+from .classify_relevance import ClassifyAtomicFacts
 from typing import Optional, List, Union
 
 logger = logging.getLogger(__name__)
@@ -25,7 +26,7 @@ class SearchAugmentedFactualityEvaluator:
     ):
         self.pipeline = PipelineBuilder(dria)
         self.models_list = [
-            [Model.GPT4O, Model.ANTHROPIC_HAIKU_3_5_OR, Model.QWEN2_5_72B_OR],
+            [Model.LLAMA_3_1_8B_OR, Model.ANTHROPIC_HAIKU_3_5_OR, Model.QWEN2_5_72B_OR],
             [Model.GPT4O_MINI, Model.ANTHROPIC_HAIKU_3_5_OR, Model.GEMINI_15_FLASH],
         ]
 
@@ -46,16 +47,17 @@ class SearchAugmentedFactualityEvaluator:
         curr_sentences = tokenize.sent_tokenize(paragraph)
         return fix_sentence_splitter(curr_sentences, initials)
 
-    def build(self, response: str) -> Pipeline:
+    def build(self, question: str, response: str) -> Pipeline:
 
         sentences = self.sentence_splitter(response)
         self.pipeline.input(
             [
-                {"instruction": prepare_prompt(sentence), "response": response}
+                {"instruction": prepare_prompt(sentence), "question":question, "response": response}
                 for sentence in sentences
             ]
         )
         self.pipeline << SplitAtomicFacts().set_models(self.models_list[0])
         self.pipeline << ReviseAtomicFact().set_models(self.models_list[1])
+        self.pipeline << ClassifyAtomicFacts().set_models(self.models_list[1])
 
         return self.pipeline.build()

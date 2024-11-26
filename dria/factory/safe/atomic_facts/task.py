@@ -1,4 +1,3 @@
-from dria.factory.utilities import get_abs_path
 import json
 import re
 from dria.models import TaskInput
@@ -117,12 +116,13 @@ def prepare_prompt(sentence: str) -> str:
 
 
 class SplitAtomicFacts(StepTemplate):
-    def create_workflow(self, instruction: str, response: str, **kwargs) -> Workflow:
+    def create_workflow(self, instruction: str, question:str, response: str, **kwargs) -> Workflow:
         """Split sentence to atomic facts.
 
         Args:
-            :param instruction: The traits of the persona.
-            :param response: The description of the simulation.
+            :param instruction: Prompt for splitting atomic facts from response.
+            :param response: Response to the question.
+            :param question: The question.
 
         Returns:
             dict: The output data from the workflow.
@@ -163,7 +163,7 @@ class SplitAtomicFacts(StepTemplate):
             try:
                 for fact in self.parse(s.result):
                     tasks.append(
-                        TaskInput(atomic_fact=fact, response=step.input[i].response)
+                        TaskInput(atomic_fact=fact, response=step.input[i].response, question=step.input[i].question)
                     )
             except Exception as e:
                 logger.error(f"Error in atomic fact split: {str(e)}")

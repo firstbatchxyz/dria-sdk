@@ -16,7 +16,7 @@ from dria.pipelines import Step, StepTemplate
 logger = logging.getLogger(__name__)
 
 
-class ReviseAtomicFact(StepTemplate):
+class RateWithSearch(StepTemplate):
     def create_workflow(self, atomic_fact: str, response: str, question:str, **kwargs) -> Workflow:
         """Revise atomic facts.
 
@@ -36,7 +36,7 @@ class ReviseAtomicFact(StepTemplate):
         # Step A: GenerateBackstory
         builder.generative_step(
             id="revise",
-            path=get_abs_path("prompt.md"),
+            path=get_abs_path("next_search.md"),
             operator=Operator.GENERATION,
             outputs=[Write.new("revised_fact")],
         )
