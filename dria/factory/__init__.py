@@ -1,4 +1,4 @@
-#from importlib.metadata import version, PackageNotFoundError
+# from importlib.metadata import version, PackageNotFoundError
 
 from .workflows import *
 from .persona import *
@@ -38,8 +38,5 @@ __all__ = [
     "MultiHopQuestion",
     "InstructionBacktranslation",
     "NemotronQA",
-    "SearchAugmentedFactualityEvaluator"
+    "SearchAugmentedFactualityEvaluator",
 ]
-
-
-

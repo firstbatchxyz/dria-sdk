@@ -3,10 +3,18 @@ from dria.client import Dria
 from dria.pipelines import Pipeline, PipelineConfig
 from dria.pipelines.builder import PipelineBuilder
 from dria.models import Model
-from .atomic_facts import detect_initials, fix_sentence_splitter, tokenize, SplitAtomicFacts
+from .atomic_facts import (
+    prepare_prompt,
+    detect_initials,
+    fix_sentence_splitter,
+    tokenize,
+    SplitAtomicFacts,
+)
+from .revise import ReviseAtomicFact
 from typing import Optional, List, Union
 
 logger = logging.getLogger(__name__)
+
 
 class SearchAugmentedFactualityEvaluator:
 
@@ -19,8 +27,8 @@ class SearchAugmentedFactualityEvaluator:
         self.pipeline_config: PipelineConfig = config or PipelineConfig()
         self.pipeline = PipelineBuilder(self.pipeline_config, dria)
         self.models_list = [
-            [Model.GPT4O],
-            [Model.QWEN2_5_7B_FP16, Model.QWEN2_5_32B_FP16, Model.LLAMA3_1_8B_FP16],
+            [Model.GPT4O, Model.ANTHROPIC_HAIKU_3_5_OR, Model.QWEN2_5_72B_OR],
+            [Model.GPT4O_MINI, Model.ANTHROPIC_HAIKU_3_5_OR, Model.GEMINI_15_FLASH],
         ]
 
         if models:
@@ -40,11 +48,16 @@ class SearchAugmentedFactualityEvaluator:
         curr_sentences = tokenize.sent_tokenize(paragraph)
         return fix_sentence_splitter(curr_sentences, initials)
 
-    def build(self, paragraph: str) -> Pipeline:
+    def build(self, response: str) -> Pipeline:
 
-        sentences = self.sentence_splitter(paragraph)
-
-        self.pipeline.input([{"sentence":sentence, "paragraph":paragraph} for sentence in sentences])
+        sentences = self.sentence_splitter(response)
+        self.pipeline.input(
+            [
+                {"instruction": prepare_prompt(sentence), "response": response}
+                for sentence in sentences
+            ]
+        )
         self.pipeline << SplitAtomicFacts().set_models(self.models_list[0])
+        self.pipeline << ReviseAtomicFact().set_models(self.models_list[1])
 
         return self.pipeline.build()

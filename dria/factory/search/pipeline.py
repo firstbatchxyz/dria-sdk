@@ -44,7 +44,7 @@ class SearchPipeline:
                 Model.ANTHROPIC_HAIKU_3_5_OR,
                 Model.ANTHROPIC_SONNET_3_5_OR,
                 Model.LLAMA_3_1_70B_OR,
-                Model.LLAMA_3_1_8B_OR
+                Model.LLAMA_3_1_8B_OR,
             ],
         ]
 

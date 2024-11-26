@@ -70,12 +70,7 @@ def main():
     all_chunks = [chunk["text"] for chunk in all_chunks]
     rag = RAG(all_chunks)
 
-    answers = {
-        "qa": [],
-        "1-hop": [],
-        "2-hop": [],
-        "3-hop": []
-    }
+    answers = {"qa": [], "1-hop": [], "2-hop": [], "3-hop": []}
     evaluate = Evaluator()
 
     # Answer QA data

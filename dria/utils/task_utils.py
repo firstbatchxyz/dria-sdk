@@ -355,27 +355,3 @@ def parse_json(text: Union[str, List]) -> Union[List[Dict], Dict]:
     if isinstance(text, list):
         return [parse_single_json(item) for item in text]
     return parse_single_json(text)
-
-
-def extract_backtick_label(text, label):
-    """
-    Extracts content between backticks with specified label
-
-    Args:
-        text (str): Input text containing backtick blocks
-        label (str): Label to match (e.g., 'python', 'csv')
-
-    Returns:
-        list: List of content found between matching backtick blocks
-    """
-    import re
-
-    # Create pattern for matching backticks with label
-    pattern = f"```{label}(.*?)```"
-
-    # Find all matches using regex
-    # re.DOTALL flag allows . to match newlines
-    matches = re.findall(pattern, text, re.DOTALL)
-
-    # Strip whitespace from matches
-    return [match.strip() for match in matches]
