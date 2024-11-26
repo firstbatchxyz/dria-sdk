@@ -12,6 +12,7 @@ from .atomic_facts import (
 )
 from .revise import ReviseAtomicFact
 from .classify_relevance import ClassifyAtomicFacts
+from .rate_with_search import RateWithSearch, NextSearch
 from typing import Optional, List, Union
 
 logger = logging.getLogger(__name__)
@@ -27,7 +28,8 @@ class SearchAugmentedFactualityEvaluator:
         self.pipeline = PipelineBuilder(dria)
         self.models_list = [
             [Model.LLAMA_3_1_8B_OR, Model.ANTHROPIC_HAIKU_3_5_OR, Model.QWEN2_5_72B_OR],
-            [Model.GPT4O_MINI, Model.ANTHROPIC_HAIKU_3_5_OR, Model.GEMINI_15_FLASH],
+            [Model.GPT4O_MINI, Model.ANTHROPIC_HAIKU_3_5_OR, Model.GEMINI_15_FLASH, Model.GPT4O],
+            [Model.GPT4O_MINI, Model.ANTHROPIC_HAIKU_3_5_OR, Model.LLAMA_3_1_70B_OR, Model.GPT4O],
         ]
 
         if models:
@@ -63,5 +65,7 @@ class SearchAugmentedFactualityEvaluator:
         self.pipeline << SplitAtomicFacts().set_models(self.models_list[0])
         self.pipeline << ReviseAtomicFact().set_models(self.models_list[1])
         self.pipeline << ClassifyAtomicFacts().set_models(self.models_list[1])
+        self.pipeline << NextSearch().set_models(self.models_list[2])
+        self.pipeline << RateWithSearch().set_models(self.models_list[2])
 
         return self.pipeline.build()
