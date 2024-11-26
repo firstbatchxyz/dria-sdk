@@ -31,9 +31,6 @@ pip install dria
 
 ## Login
 
-Dria SDK uses authentication token for sending tasks to the Dria Network. You should get your rpc token from [Dria Login API](https://dkn.dria.co/auth/generate-token).
-
-## Getting Started
 
 Community Network
 
@@ -42,6 +39,9 @@ Dria Community Network consists of community nodes with LLMs and tool usage capa
 Pro Network
 
 Dria Pro Network consists of high performance nodes, equipped with even more powerful LLMs, compute and 99.9% reliability. Pro Network is more suitable for production-grade applications and partners in the ecosystem. Please fill out the [form](https://forms.gle/yGtLZw3HPW7kgD427) to get access to the Pro Network
+
+## Getting Started
+
 ```python
 import os
 from dria.client import Dria
