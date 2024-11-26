@@ -1,7 +1,6 @@
 from typing import Optional, List, Union
 from dria.client import Dria
 from dria.pipelines import (
-    PipelineConfig,
     PipelineBuilder,
     Pipeline,
 )
@@ -27,11 +26,9 @@ class SubTopicPipeline:
     def __init__(
         self,
         dria: Dria,
-        config: PipelineConfig,
         models: Optional[Union[List[Model], List[List[Model]]]] = None,
     ):
-        self.pipeline_config: PipelineConfig = config or PipelineConfig()
-        self.pipeline = PipelineBuilder(self.pipeline_config, dria)
+        self.pipeline = PipelineBuilder(dria)
         self.models_list = [
             [
                 Model.LLAMA3_1_8BQ8,
@@ -40,6 +37,10 @@ class SubTopicPipeline:
                 Model.QWEN2_5_32B_FP16,
                 Model.GEMMA2_9B_FP16,
                 Model.LLAMA3_2_3B,
+                Model.GPT4O_MINI,
+                Model.ANTHROPIC_HAIKU_3_5_OR,
+                Model.QWEN2_5_7B_OR,
+                Model.GEMINI_15_FLASH
             ]
         ]
 
@@ -71,6 +72,12 @@ class SubTopicPipeline:
                 Model.QWEN2_5_32B_FP16,
                 Model.GEMMA2_9B_FP16,
                 Model.LLAMA3_2_3B,
+                Model.LLAMA_3_1_8B_OR,
+                Model.GPT4O_MINI,
+                Model.QWEN2_5_7B_OR,
+                Model.ANTHROPIC_HAIKU_3_5_OR,
+                Model.DEEPSEEK_2_5_OR,
+                Model.LLAMA_3_1_70B_OR
             ]
         )
         return self.pipeline.build()
@@ -78,5 +85,5 @@ class SubTopicPipeline:
 
 if __name__ == "__main__":
     _dria = Dria(rpc_token="asd")
-    pipeline = SubTopicPipeline(_dria, PipelineConfig())
+    pipeline = SubTopicPipeline(_dria)
     pipeline.build(topic="Artificial Intelligence", max_depth=1)

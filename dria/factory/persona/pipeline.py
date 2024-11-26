@@ -1,6 +1,6 @@
 import logging
 from dria.client import Dria
-from dria.pipelines import Pipeline, PipelineConfig
+from dria.pipelines import Pipeline
 from dria.pipelines.builder import PipelineBuilder
 from dria.models import Model
 from .backstory.task import BackStory
@@ -23,14 +23,25 @@ class PersonaPipeline:
     def __init__(
         self,
         dria: Dria,
-        config: PipelineConfig,
         models: Optional[Union[List[Model], List[List[Model]]]] = None,
     ):
-        self.pipeline_config: PipelineConfig = config or PipelineConfig()
-        self.pipeline = PipelineBuilder(self.pipeline_config, dria)
+        self.pipeline = PipelineBuilder(dria)
         self.models_list = [
-            [Model.GPT4O],
-            [Model.QWEN2_5_7B_FP16, Model.QWEN2_5_32B_FP16, Model.LLAMA3_1_8B_FP16],
+            [Model.GPT4O,
+             Model.ANTHROPIC_SONNET_3_5_OR,
+             Model.GEMINI_15_PRO,
+             Model.LLAMA_3_1_405B_OR,
+             Model.LLAMA_3_1_70B_OR
+             ],
+
+            [Model.QWEN2_5_7B_FP16,
+             Model.QWEN2_5_32B_FP16,
+             Model.LLAMA3_1_8B_FP16,
+             Model.ANTHROPIC_HAIKU_3_5_OR,
+             Model.GPT4O_MINI,
+             Model.GEMINI_15_FLASH,
+             Model.LLAMA_3_1_70B_OR
+             ],
         ]
 
         if models:
@@ -56,5 +67,5 @@ class PersonaPipeline:
 
 if __name__ == "__main__":
     _dria = Dria(rpc_token="asd")
-    pipeline = PersonaPipeline(_dria, PipelineConfig())
+    pipeline = PersonaPipeline(_dria)
     pipeline.build(simulation_description="A simulation description", num_samples=100)

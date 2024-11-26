@@ -18,6 +18,7 @@ from dria.constants import (
     MONITORING_INTERVAL,
     FETCH_INTERVAL,
     SCORING_BATCH_SIZE,
+    TASK_TIMEOUT
 )
 from dria.db.mq import KeyValueQueue
 from dria.db.storage import Storage
@@ -215,7 +216,7 @@ class Dria:
         pipeline: Optional[Any] = None,
         task: Union[Optional[Task], Optional[List[Task]]] = None,
         min_outputs: Optional[int] = None,
-        timeout: int = 30,
+        timeout: int = TASK_TIMEOUT,
         is_disabled: bool = False,
     ) -> List[TaskResult]:
         """
@@ -604,7 +605,7 @@ class Dria:
                 logger.error(f"Unexpected error processing item: {e}", exc_info=True)
 
     async def execute(
-        self, task: Union[Task, List[Task]], timeout: int = 30
+        self, task: Union[Task, List[Task]], timeout: int = 300
     ) -> list[TaskResult] | None:
         """
         Execute task(s) and get results.

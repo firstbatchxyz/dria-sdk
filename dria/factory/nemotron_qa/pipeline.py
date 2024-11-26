@@ -1,6 +1,5 @@
 from dria.client import Dria
 from dria.pipelines import (
-    PipelineConfig,
     PipelineBuilder,
     Pipeline,
 )
@@ -12,8 +11,7 @@ from dria.models import Model
 
 class NemotronQA:
     def __init__(self, dria: Dria):
-        self.pipeline_config: PipelineConfig = PipelineConfig()
-        self.pipeline = PipelineBuilder(self.pipeline_config, dria)
+        self.pipeline = PipelineBuilder(dria)
         self.models_list = [
             [
                 Model.GPT4O,
@@ -41,7 +39,6 @@ class NemotronQA:
                 Model.ANTHROPIC_SONNET_3_5_OR,
                 Model.LLAMA_3_1_70B_OR,
                 Model.QWEN2_5_72B_OR,
-                Model.QWEN2_5_EVA_32B_OR,
             ],
         ]
 

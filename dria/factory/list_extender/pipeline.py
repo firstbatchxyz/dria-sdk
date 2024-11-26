@@ -1,6 +1,6 @@
 import logging
 from dria.client import Dria
-from dria.pipelines import Pipeline, PipelineConfig
+from dria.pipelines import Pipeline
 from dria.pipelines.builder import PipelineBuilder
 from dria.models import Model
 from .extender import ListExtender
@@ -16,33 +16,33 @@ class ListExtenderPipeline:
     """
 
     def __init__(
-        self,
-        dria: Dria,
-        config: PipelineConfig,
-        models: Optional[Union[List[Model], List[List[Model]]]] = None,
+            self,
+            dria: Dria,
+            models: Optional[Union[List[Model], List[List[Model]]]] = None,
     ):
-        self.pipeline_config: PipelineConfig = config or PipelineConfig()
-        self.pipeline = PipelineBuilder(self.pipeline_config, dria)
+        self.pipeline = PipelineBuilder(dria)
         self.models_list = [
             [
                 Model.GPT4O,
-                Model.GEMINI_15_FLASH,
                 Model.GEMINI_15_PRO,
-                Model.QWEN2_5_32B_FP16,
                 Model.QWEN2_5_7B_FP16,
-                Model.QWEN2_5_7B,
                 Model.LLAMA3_1_8B_FP16,
-                Model.LLAMA3_1_8BQ8,
+                Model.LLAMA_3_1_70B_OR,
+                Model.QWEN2_5_32B_FP16
             ],
             [
                 Model.GPT4O,
-                Model.GEMINI_15_FLASH,
                 Model.GPT4O_MINI,
-                Model.QWEN2_5_EVA_32B_OR,
+                Model.LLAMA_3_1_70B_OR,
                 Model.QWEN2_5_7B_FP16,
                 Model.QWEN2_5_7B,
                 Model.LLAMA3_1_8B_FP16,
                 Model.LLAMA3_1_8BQ8,
+                Model.ANTHROPIC_HAIKU_3_5_OR,
+                Model.ANTHROPIC_SONNET_3_5_OR,
+                Model.LLAMA_3_1_8B_OR,
+                Model.QWEN2_5_7B_OR
+
             ],
         ]
 
@@ -64,7 +64,7 @@ class ListExtenderPipeline:
 
         if granularize:
             (
-                self.pipeline
-                << GenerateSubtopics().set_models(self.models_list[1]).custom()
+                    self.pipeline
+                    << GenerateSubtopics().set_models(self.models_list[1]).custom()
             )
         return self.pipeline.build()

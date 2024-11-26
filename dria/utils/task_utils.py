@@ -1,5 +1,4 @@
 import copy
-import copy
 import json
 import random
 import re
@@ -120,7 +119,6 @@ class TaskManager:
 
         Args:
             task: Task to prepare
-            node_stats: Dict of stats nodes
 
         Returns:
             Tuple of task model dict and prepared task
@@ -152,6 +150,7 @@ class TaskManager:
             Tuple of (success bool, list of selected nodes if successful)
         """
         is_retried = False
+        old_task_id = None
         if task.id is not None:
             is_retried = True
             old_task_id = task.__deepcopy__().id
@@ -164,12 +163,12 @@ class TaskManager:
         task_model = TaskModel(
             taskId=task.id,
             filter=task.filter,
-            input=TaskInputModel(workflow=task.workflow, model=task.models).dict(),
+            input=TaskInputModel(workflow=task.workflow, model=task.models).model_dump(),
             pickedNodes=task.nodes,
             deadline=task.deadline,
             publicKey=task.public_key[2:],
             privateKey=task.private_key,
-        ).dict()
+        ).model_dump()
         task_model_str = json.dumps(task_model, ensure_ascii=False)
 
         if await self.publish_message(task_model_str, INPUT_CONTENT_TOPIC):
@@ -199,19 +198,19 @@ class TaskManager:
             return []
 
     async def create_filter(
-        self,
-        tasks: List[Task],
-        node_stats: Dict[str, int],
+            self,
+            tasks: List[Task],
+            node_stats: Dict[str, int],
     ) -> (
-        tuple[None, None, None]
-        | tuple[list[str], list[dict[str, int | str]], list[list[Any]]]
+            tuple[None, None, None]
+            | tuple[list[str], list[dict[str, int | str]], list[list[Any]]]
     ):
         """
         Create Bloom filter for node selection.
 
         Args:
+            tasks:
             node_stats: Dict of nodes stats
-            retry: Number of retries attempted
 
         Returns:
             Tuple of (selected nodes, selected model, Bloom filter params)
@@ -274,17 +273,6 @@ class TaskManager:
             sampled_stat[node] = stats_for_model_nodes[node]
 
         picked_nodes = select_nodes(sampled_stat, len(tasks))
-
-        for model in models:
-            try:
-                await self.storage.remove_from_list(
-                    f"available-nodes-{model}", None, picked_nodes
-                )
-            except ValueError:
-                logger.debug(
-                    f"Node {picked_nodes} not found in available nodes for model {model}"
-                )
-
         filters = []
         node_models = []
 
@@ -301,7 +289,7 @@ class TaskManager:
             node_models.append([random_model])
 
         logger.debug(f"Selected nodes: {picked_nodes}")
-        return (picked_nodes, filters, node_models)
+        return picked_nodes, filters, node_models
 
     async def add_available_nodes(self, node_model: NodeModel, model_type: str) -> bool:
         """

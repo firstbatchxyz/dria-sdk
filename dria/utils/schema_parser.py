@@ -12,7 +12,7 @@ class SchemaParser:
     """Schema parser for different model providers."""
 
     @staticmethod
-    def parse(model: Type[BaseModel], provider: str) -> str:
+    def parse(model: str, provider: str) -> str:
         """
         Parse schema based on provider type.
 

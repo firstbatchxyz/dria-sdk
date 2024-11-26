@@ -1,7 +1,7 @@
 import logging
 from typing import Optional, List, Union, Literal
 from dria.client import Dria
-from dria.pipelines import Pipeline, PipelineConfig, StepConfig
+from dria.pipelines import Pipeline, StepConfig
 from dria.pipelines.builder import PipelineBuilder
 from dria.models import Model
 from .aggregate_pages import PageAggregator
@@ -18,11 +18,9 @@ class SearchPipeline:
     def __init__(
         self,
         dria: Dria,
-        config: PipelineConfig,
         models: Optional[Union[List[Model], List[List[Model]]]] = None,
     ):
-        self.pipeline_config: PipelineConfig = config or PipelineConfig()
-        self.pipeline = PipelineBuilder(self.pipeline_config, dria)
+        self.pipeline = PipelineBuilder(dria)
         self.models_list = [
             [
                 Model.ANTHROPIC_HAIKU_3_5_OR,

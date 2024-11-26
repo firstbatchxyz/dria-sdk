@@ -5,39 +5,6 @@ from pydantic import BaseModel, Field, field_validator
 from dria.models.enums import Model
 
 
-class PipelineConfig(BaseModel):
-    """
-    Configuration settings for initializing and running a pipelines.
-
-    Attributes:
-        retry_interval (int): Time interval between retry attempts, in seconds.
-        pipeline_timeout (int): Maximum allowed duration for the entire pipelines execution, in seconds.
-    """
-
-    retry_interval: int = Field(
-        default=2,
-        description="Time interval between retry attempts, in seconds",
-        ge=0,
-    )
-    pipeline_timeout: int = Field(
-        default=0,
-        description="Maximum allowed duration for the entire pipelines execution, in seconds. It's dynamic by "
-        "task execution.",
-        ge=1,
-    )
-    step_timeout: int = Field(
-        default=60,
-        description="Maximum allowed duration for a task execution, in seconds",
-        ge=1,
-    )
-
-    @field_validator("retry_interval", "pipeline_timeout", "step_timeout")
-    def validate_positive_values(cls, value, field):
-        if value < 0:
-            raise ValueError(f"{field.name} must be a non-negative integer")
-        return value
-
-
 DEFAULT_MODELS: List[Model] = [
     Model.GPT4_TURBO,
     Model.GPT4O,

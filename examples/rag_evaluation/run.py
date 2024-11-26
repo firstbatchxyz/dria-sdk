@@ -1,7 +1,6 @@
 import os
 from dria.client import Dria
 from dria.factory import QAPipeline
-from dria.pipelines import PipelineConfig
 from dria.factory import MultiHopQuestion
 from dria.models import Model
 from dria.batches import ParallelSingletonExecutor
@@ -18,7 +17,7 @@ import json
 async def run_qa_pipeline(dria: Dria, file_chunks):
     await dria.initialize()
 
-    pipeline = QAPipeline(dria, config=PipelineConfig()).build(
+    pipeline = QAPipeline(dria).build(
         simulation_description="AI developers and researchers learning Huggingface. "
         "Some focus on fine-tuning and post-training, others on RAG systems, "
         "retrieval problems, image models, or dataset work.",
@@ -33,7 +32,6 @@ async def run_qa_pipeline(dria: Dria, file_chunks):
 async def run_multihop_tasks(dria: Dria, file_chunks):
     singleton = MultiHopQuestion()
     executor = ParallelSingletonExecutor(dria, singleton)
-    executor.set_timeout(150)
     executor.set_models(
         [
             Model.QWEN2_5_72B_OR,

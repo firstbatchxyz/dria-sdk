@@ -1,5 +1,5 @@
 from .builder import StepTemplate, StepBuilder, PipelineBuilder
-from .config import PipelineConfig, StepConfig
+from .config import StepConfig
 from .pipeline import Pipeline
 from .step import Step
 
@@ -8,7 +8,6 @@ __all__ = [
     "StepConfig",
     "StepTemplate",
     "Pipeline",
-    "PipelineConfig",
     "StepBuilder",
     "PipelineBuilder",
 ]

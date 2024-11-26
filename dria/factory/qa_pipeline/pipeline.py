@@ -3,7 +3,7 @@ from typing import List
 
 from dria.client import Dria
 from dria.models import Model
-from dria.pipelines import PipelineConfig, Pipeline, StepConfig
+from dria.pipelines import Pipeline, StepConfig
 from dria.pipelines.builder import PipelineBuilder
 
 from .answer import AnswerStep
@@ -19,9 +19,8 @@ class QAPipeline:
     A pipeline for generating QA pairs
     """
 
-    def __init__(self, dria: Dria, config: PipelineConfig):
-        self.pipeline_config: PipelineConfig = config or PipelineConfig()
-        self.pipeline = PipelineBuilder(self.pipeline_config, dria)
+    def __init__(self, dria: Dria):
+        self.pipeline = PipelineBuilder(dria)
 
     def build(
         self,

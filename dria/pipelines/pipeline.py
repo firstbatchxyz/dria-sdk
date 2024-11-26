@@ -1,16 +1,14 @@
 import asyncio
 import json
-import math
 import traceback
 import uuid
 from typing import List, Optional, Dict, Any, Tuple, Union
 
 from dria.client import Dria
-from dria.constants import SCORING_BATCH_SIZE
+from dria.constants import SCORING_BATCH_SIZE, MONITORING_INTERVAL, TASK_TIMEOUT
 from dria.db.storage import Storage
 from dria.models import TaskInput
 from dria.models.enums import PipelineStatus
-from dria.pipelines.config import PipelineConfig
 from dria.pipelines.step import Step
 from dria.utils import logger
 
@@ -24,13 +22,12 @@ class Pipeline:
         steps (List[Step]): Ordered list of Step objects in the pipelines.
         logger: Logger for the pipelines.
         storage (Storage): Storage object for persisting data.
-        config (PipelineConfig): Configuration for the pipelines.
         output (Dict[str, Any]): The final output of the pipelines.
         proceed_steps (List[str]): List of steps that are ready to proceed.
         client (Dria): Client for interacting with the Dria system.
     """
 
-    def __init__(self, client: Dria, config: PipelineConfig):
+    def __init__(self, client: Dria):
         self.pipeline_id: str = str(uuid.uuid4())
         self.steps: List[Step] = []
         self.proceed_steps: List[str] = []
@@ -38,7 +35,6 @@ class Pipeline:
         self.logger = logger
         self.storage = client.storage
         self.client = client
-        self.config = config
 
     def add_step(self, step: Step) -> None:
         """Add a step to the pipelines."""
@@ -153,13 +149,7 @@ class Pipeline:
                             raise Exception("Dria client is not initialized")
 
                     # Calculate timeout based on input size
-                    step_timeout = int(
-                        max(
-                            math.log(max(1, len(step.input)))
-                            * self.config.step_timeout,
-                            self.config.step_timeout,
-                        )
-                    )
+                    step_timeout = len(step.tasks) * TASK_TIMEOUT
 
                     # Process tasks in batches
                     batched_tasks = step.tasks
@@ -167,11 +157,19 @@ class Pipeline:
                     if not batched_tasks:
                         await asyncio.sleep(5)
                         continue
-                    results.extend(
-                        await self.client.fetch(
-                            task=batched_tasks, timeout=step_timeout
+
+                    step_results = await self.client.fetch(
+                            task=batched_tasks, timeout=step_timeout)
+                    if not step_results:
+                        error_msg = (
+                            f"Failed to fetch results for step '{step.name}'. "
+                            f"Current timeout: {step_timeout}. "
+                            f"Consider either:\n"
+                            f"1. Using a faster model for this step\n"
+                            f"2. Reducing the batch size of inputs"
                         )
-                    )
+                        raise ValueError(error_msg)
+                    results.extend(step_results)
 
                     # Store results
                     for result in results:
@@ -194,7 +192,7 @@ class Pipeline:
                 except Exception as e:
                     return await self._graceful_shutdown(e)
 
-                await asyncio.sleep(self.config.retry_interval)
+                await asyncio.sleep(MONITORING_INTERVAL)
 
         finally:
             await self._graceful_shutdown()

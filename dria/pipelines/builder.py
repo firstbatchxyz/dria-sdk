@@ -18,7 +18,7 @@ from dria.pipelines.callbacks import (
     default_callback,
     scatter_callback,
 )
-from dria.pipelines.config import StepConfig, PipelineConfig
+from dria.pipelines.config import StepConfig
 from dria.pipelines.pipeline import Pipeline
 from dria.pipelines.step import Step
 from dria.utils.logging import logger
@@ -294,17 +294,15 @@ class PipelineBuilder:
     This class provides methods to add steps to a pipelines and build the final Pipeline instance.
     """
 
-    def __init__(self, config: PipelineConfig, dria_client: Dria):
+    def __init__(self, dria_client: Dria):
         """
         Initialize a new PipelineBuilder instance.
 
         Args:
-            config (PipelineConfig): The configuration for the pipelines.
             dria_client (Dria): The Dria client instance.
         """
         self.steps: List[Step] = []
         self.templates: List[StepTemplate] = []
-        self.config = config
         self.dria_client = dria_client
         self.pipeline_input: Optional[Dict] = None
         logger.info("Initialized PipelineBuilder")
@@ -453,7 +451,7 @@ class PipelineBuilder:
             Exception: If there's an error during pipelines building.
         """
         try:
-            pipeline = Pipeline(client=self.dria_client, config=self.config)
+            pipeline = Pipeline(client=self.dria_client)
 
             self._check_unique_step_names()
             # Note: Uncomment the following line if you want to enforce no callback on the last step

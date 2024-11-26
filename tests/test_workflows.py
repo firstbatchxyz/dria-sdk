@@ -1,7 +1,5 @@
 import pytest
 import os
-import asyncio
-from dria.pipelines import PipelineConfig
 from dria.client import Dria
 from dria.factory import Simple, GenerateCode, MultiHopQuestion, CSVExtenderPipeline
 from dria.models import Task, Model
@@ -84,7 +82,7 @@ async def test_multihop_question_workflow(dria_client, text_chunks):
 @pytest.mark.asyncio
 async def test_csv_extender_pipeline(dria_client, sample_csv):
     await dria_client.initialize()
-    pipeline = CSVExtenderPipeline(dria_client, PipelineConfig()).build(
+    pipeline = CSVExtenderPipeline(dria_client,).build(
         csv=sample_csv, num_rows=2, num_values=2
     )
     result = await pipeline.execute(return_output=True)
