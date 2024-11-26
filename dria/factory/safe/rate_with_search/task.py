@@ -153,17 +153,31 @@ class RateWithSearch(StepTemplate):
         Raises:
             Exception: If there's an error processing the step output.
         """
-
+        results = []  # a list of dicts
         try:
-            return [
-                TaskInput(
-                    supported="[SUPPORTED]" in s.result,
-                    fact=s.task_input["atomic_fact"],
-                    response=step.input[i].response,
-                    question=step.input[i].question,
+            for i, s in enumerate(step.output):
+                if all(step.input[i].question not in d.values() for d in results):
+                    results.append(
+                        {
+                            "question": step.input[i].question,
+                            "response": step.input[i].response,
+                            "facts": [],
+                        }
+                    )
+                index = 0
+                for ix, res in enumerate(results):
+                    if res["question"] == step.input[i].question:
+                        index = ix
+                results[index]["facts"].append(
+                    {
+                        "fact": step.input[index].atomic_fact,
+                        "supported": "[SUPPORTED]" in s.result,
+                        "reason": s.result,
+                    }
                 )
-                for i, s in enumerate(step.output)
-            ]
+
         except Exception as e:
             logger.error(f"Error in atomic fact revision: {str(e)}")
             raise
+
+        return [TaskInput(**r) for r in results]

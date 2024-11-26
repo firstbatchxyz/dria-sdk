@@ -28,8 +28,18 @@ class SearchAugmentedFactualityEvaluator:
         self.pipeline = PipelineBuilder(dria)
         self.models_list = [
             [Model.LLAMA_3_1_8B_OR, Model.ANTHROPIC_HAIKU_3_5_OR, Model.QWEN2_5_72B_OR],
-            [Model.GPT4O_MINI, Model.ANTHROPIC_HAIKU_3_5_OR, Model.GEMINI_15_FLASH, Model.GPT4O],
-            [Model.GPT4O_MINI, Model.ANTHROPIC_HAIKU_3_5_OR, Model.LLAMA_3_1_70B_OR, Model.GPT4O],
+            [
+                Model.GPT4O_MINI,
+                Model.ANTHROPIC_HAIKU_3_5_OR,
+                Model.GEMINI_15_FLASH,
+                Model.GPT4O,
+            ],
+            [
+                Model.GPT4O_MINI,
+                Model.ANTHROPIC_HAIKU_3_5_OR,
+                Model.LLAMA_3_1_70B_OR,
+                Model.GPT4O,
+            ],
         ]
 
         if models:
