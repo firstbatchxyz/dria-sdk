@@ -159,7 +159,8 @@ class Pipeline:
                         continue
 
                     step_results = await self.client.fetch(
-                            task=batched_tasks, timeout=step_timeout)
+                        task=batched_tasks, timeout=step_timeout
+                    )
                     if not step_results:
                         error_msg = (
                             f"Failed to fetch results for step '{step.name}'. "

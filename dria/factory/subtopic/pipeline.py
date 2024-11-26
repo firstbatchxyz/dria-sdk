@@ -40,7 +40,7 @@ class SubTopicPipeline:
                 Model.GPT4O_MINI,
                 Model.ANTHROPIC_HAIKU_3_5_OR,
                 Model.QWEN2_5_7B_OR,
-                Model.GEMINI_15_FLASH
+                Model.GEMINI_15_FLASH,
             ]
         ]
 
@@ -77,7 +77,7 @@ class SubTopicPipeline:
                 Model.QWEN2_5_7B_OR,
                 Model.ANTHROPIC_HAIKU_3_5_OR,
                 Model.DEEPSEEK_2_5_OR,
-                Model.LLAMA_3_1_70B_OR
+                Model.LLAMA_3_1_70B_OR,
             ]
         )
         return self.pipeline.build()

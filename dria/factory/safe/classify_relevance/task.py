@@ -14,11 +14,14 @@ from dria_workflows import (
 import logging
 from typing import List, Union
 from dria.pipelines import Step, StepTemplate
+
 logger = logging.getLogger(__name__)
 
 
 class ClassifyAtomicFacts(StepTemplate):
-    def create_workflow(self, question: str, response: str, revised_fact: str) -> Workflow:
+    def create_workflow(
+        self, question: str, response: str, revised_fact: str
+    ) -> Workflow:
         """
         Classify atomic facts whether they are relevant or not.
 
@@ -30,7 +33,9 @@ class ClassifyAtomicFacts(StepTemplate):
         Returns:
             dict: The output data from the workflow.
         """
-        builder = WorkflowBuilder(question=question, response=response, revised_fact=revised_fact)
+        builder = WorkflowBuilder(
+            question=question, response=response, revised_fact=revised_fact
+        )
         builder.set_max_time(self.config.max_time)
         builder.set_max_tokens(self.config.max_tokens)
         builder.set_max_steps(self.config.max_steps)
@@ -54,11 +59,22 @@ class ClassifyAtomicFacts(StepTemplate):
             try:
                 if "[Foo]" in s.result:
                     tasks.append(
-                        TaskInput(relevance="1", fact=step.input[i].revised_fact, response=step.input[i].response, question=step.input[i].question)
+                        TaskInput(
+                            relevance="1",
+                            atomic_fact=step.input[i].revised_fact,
+                            response=step.input[i].response,
+                            question=step.input[i].question,
+                        )
                     )
                 elif "[Not Foo]" in s.result:
+                    # TODO: Maybe don't create tasks for irrelevant facts
                     tasks.append(
-                        TaskInput(relevance="0", fact=step.input[i].revised_fact, response=step.input[i].response, question=step.input[i].question)
+                        TaskInput(
+                            relevance="0",
+                            atomic_fact=step.input[i].revised_fact,
+                            response=step.input[i].response,
+                            question=step.input[i].question,
+                        )
                     )
                 else:
                     pass

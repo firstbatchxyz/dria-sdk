@@ -10,7 +10,7 @@ accuracy of the given STATEMENT.
 5. Format your final query by putting it in a markdown code block.
 
 KNOWLEDGE:
-{{search_result}}
+{{search_results}}
 
 STATEMENT:
 {{atomic_fact}}

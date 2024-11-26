@@ -52,7 +52,11 @@ class SearchAugmentedFactualityEvaluator:
         sentences = self.sentence_splitter(response)
         self.pipeline.input(
             [
-                {"instruction": prepare_prompt(sentence), "question":question, "response": response}
+                {
+                    "instruction": prepare_prompt(sentence),
+                    "question": question,
+                    "response": response,
+                }
                 for sentence in sentences
             ]
         )

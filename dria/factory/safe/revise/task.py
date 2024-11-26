@@ -17,7 +17,9 @@ logger = logging.getLogger(__name__)
 
 
 class ReviseAtomicFact(StepTemplate):
-    def create_workflow(self, atomic_fact: str, response: str, question:str, **kwargs) -> Workflow:
+    def create_workflow(
+        self, atomic_fact: str, response: str, question: str, **kwargs
+    ) -> Workflow:
         """Revise atomic facts.
 
         Args:
@@ -66,7 +68,7 @@ class ReviseAtomicFact(StepTemplate):
                     revised_fact=extract_backtick_label(s.result, "")[0],
                     fact=s.task_input["atomic_fact"],
                     response=step.input[i].response,
-                    question=step.input[i].question
+                    question=step.input[i].question,
                 )
                 for i, s in enumerate(step.output)
             ]

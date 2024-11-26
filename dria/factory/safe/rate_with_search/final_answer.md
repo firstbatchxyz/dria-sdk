@@ -10,8 +10,8 @@ KNOWLEDGE.
 supporting evidence.
 5. After stating your reasoning, restate the STATEMENT and then determine your \
 final answer based on your reasoning and the STATEMENT.
-6. Your final answer should be either "{SUPPORTED_LABEL}" or \
-"{NOT_SUPPORTED_LABEL}". Wrap your final answer in square brackets.
+6. Your final answer should be either "SUPPORTED" or \
+"NOT_SUPPORTED". Wrap your final answer in square brackets.
 
 KNOWLEDGE:
 {{search_results}}

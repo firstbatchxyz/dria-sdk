@@ -18,7 +18,7 @@ from dria.constants import (
     MONITORING_INTERVAL,
     FETCH_INTERVAL,
     SCORING_BATCH_SIZE,
-    TASK_TIMEOUT
+    TASK_TIMEOUT,
 )
 from dria.db.mq import KeyValueQueue
 from dria.db.storage import Storage
@@ -29,7 +29,10 @@ from dria.models.enums import (
     OpenAIModels,
     CoderModels,
     GeminiModels,
-    OpenRouterModels, SmallModels, MidModels, LargeModels,
+    OpenRouterModels,
+    SmallModels,
+    MidModels,
+    LargeModels,
 )
 from dria.models.exceptions import TaskPublishError
 from dria.request import RPCClient

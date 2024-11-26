@@ -86,9 +86,7 @@ class GetDependencies(StepTemplate):
         output = step.output[0].result
         parsed_output = parse_json(output)
         independent_dependencies = [
-            col["column"]
-            for col in parsed_output["dependencies"]
-            if col["independent"]
+            col["column"] for col in parsed_output["dependencies"] if col["independent"]
         ]
         return [
             TaskInput(

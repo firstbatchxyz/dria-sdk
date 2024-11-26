@@ -116,7 +116,9 @@ def prepare_prompt(sentence: str) -> str:
 
 
 class SplitAtomicFacts(StepTemplate):
-    def create_workflow(self, instruction: str, question:str, response: str, **kwargs) -> Workflow:
+    def create_workflow(
+        self, instruction: str, question: str, response: str, **kwargs
+    ) -> Workflow:
         """Split sentence to atomic facts.
 
         Args:
@@ -163,7 +165,11 @@ class SplitAtomicFacts(StepTemplate):
             try:
                 for fact in self.parse(s.result):
                     tasks.append(
-                        TaskInput(atomic_fact=fact, response=step.input[i].response, question=step.input[i].question)
+                        TaskInput(
+                            atomic_fact=fact,
+                            response=step.input[i].response,
+                            question=step.input[i].question,
+                        )
                     )
             except Exception as e:
                 logger.error(f"Error in atomic fact split: {str(e)}")

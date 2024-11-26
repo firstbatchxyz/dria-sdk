@@ -35,7 +35,7 @@ class CSVExtenderPipeline:
                 Model.QWEN2_5_32B_FP16,
                 Model.ANTHROPIC_SONNET_3_5_OR,
                 Model.ANTHROPIC_HAIKU_3_5_OR,
-                Model.QWEN2_5_72B_OR
+                Model.QWEN2_5_72B_OR,
             ],
             [
                 Model.GPT4O_MINI,
@@ -47,7 +47,7 @@ class CSVExtenderPipeline:
                 Model.ANTHROPIC_HAIKU_3_5_OR,
                 Model.LLAMA_3_1_8B_OR,
                 Model.QWEN2_5_72B_OR,
-                Model.QWEN2_5_CODER_32B_OR
+                Model.QWEN2_5_CODER_32B_OR,
             ],
         ]
         if models:

@@ -27,21 +27,22 @@ class PersonaPipeline:
     ):
         self.pipeline = PipelineBuilder(dria)
         self.models_list = [
-            [Model.GPT4O,
-             Model.ANTHROPIC_SONNET_3_5_OR,
-             Model.GEMINI_15_PRO,
-             Model.LLAMA_3_1_405B_OR,
-             Model.LLAMA_3_1_70B_OR
-             ],
-
-            [Model.QWEN2_5_7B_FP16,
-             Model.QWEN2_5_32B_FP16,
-             Model.LLAMA3_1_8B_FP16,
-             Model.ANTHROPIC_HAIKU_3_5_OR,
-             Model.GPT4O_MINI,
-             Model.GEMINI_15_FLASH,
-             Model.LLAMA_3_1_70B_OR
-             ],
+            [
+                Model.GPT4O,
+                Model.ANTHROPIC_SONNET_3_5_OR,
+                Model.GEMINI_15_PRO,
+                Model.LLAMA_3_1_405B_OR,
+                Model.LLAMA_3_1_70B_OR,
+            ],
+            [
+                Model.QWEN2_5_7B_FP16,
+                Model.QWEN2_5_32B_FP16,
+                Model.LLAMA3_1_8B_FP16,
+                Model.ANTHROPIC_HAIKU_3_5_OR,
+                Model.GPT4O_MINI,
+                Model.GEMINI_15_FLASH,
+                Model.LLAMA_3_1_70B_OR,
+            ],
         ]
 
         if models:

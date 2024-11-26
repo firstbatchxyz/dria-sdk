@@ -16,9 +16,9 @@ class ListExtenderPipeline:
     """
 
     def __init__(
-            self,
-            dria: Dria,
-            models: Optional[Union[List[Model], List[List[Model]]]] = None,
+        self,
+        dria: Dria,
+        models: Optional[Union[List[Model], List[List[Model]]]] = None,
     ):
         self.pipeline = PipelineBuilder(dria)
         self.models_list = [
@@ -28,7 +28,7 @@ class ListExtenderPipeline:
                 Model.QWEN2_5_7B_FP16,
                 Model.LLAMA3_1_8B_FP16,
                 Model.LLAMA_3_1_70B_OR,
-                Model.QWEN2_5_32B_FP16
+                Model.QWEN2_5_32B_FP16,
             ],
             [
                 Model.GPT4O,
@@ -41,8 +41,7 @@ class ListExtenderPipeline:
                 Model.ANTHROPIC_HAIKU_3_5_OR,
                 Model.ANTHROPIC_SONNET_3_5_OR,
                 Model.LLAMA_3_1_8B_OR,
-                Model.QWEN2_5_7B_OR
-
+                Model.QWEN2_5_7B_OR,
             ],
         ]
 
@@ -64,7 +63,7 @@ class ListExtenderPipeline:
 
         if granularize:
             (
-                    self.pipeline
-                    << GenerateSubtopics().set_models(self.models_list[1]).custom()
+                self.pipeline
+                << GenerateSubtopics().set_models(self.models_list[1]).custom()
             )
         return self.pipeline.build()

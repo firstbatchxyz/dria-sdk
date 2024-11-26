@@ -89,6 +89,7 @@ class Model(str, Enum):
     def default(cls):
         return cls.PHI3_5_MINI
 
+
 class SmallModels(Enum):
     NOUS_THETA = Model.NOUS_THETA.value
     PHI3_MEDIUM = Model.PHI3_MEDIUM.value

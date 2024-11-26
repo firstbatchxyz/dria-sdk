@@ -163,7 +163,9 @@ class TaskManager:
         task_model = TaskModel(
             taskId=task.id,
             filter=task.filter,
-            input=TaskInputModel(workflow=task.workflow, model=task.models).model_dump(),
+            input=TaskInputModel(
+                workflow=task.workflow, model=task.models
+            ).model_dump(),
             pickedNodes=task.nodes,
             deadline=task.deadline,
             publicKey=task.public_key[2:],
@@ -198,12 +200,12 @@ class TaskManager:
             return []
 
     async def create_filter(
-            self,
-            tasks: List[Task],
-            node_stats: Dict[str, int],
+        self,
+        tasks: List[Task],
+        node_stats: Dict[str, int],
     ) -> (
-            tuple[None, None, None]
-            | tuple[list[str], list[dict[str, int | str]], list[list[Any]]]
+        tuple[None, None, None]
+        | tuple[list[str], list[dict[str, int | str]], list[list[Any]]]
     ):
         """
         Create Bloom filter for node selection.
