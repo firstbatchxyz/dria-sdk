@@ -64,18 +64,21 @@ class ClassifyAtomicFacts(StepTemplate):
                             atomic_fact=step.input[i].revised_fact,
                             response=step.input[i].response,
                             question=step.input[i].question,
+                            search_results="N/A"
                         )
                     )
                 elif "[Not Foo]" in s.result:
                     # TODO: Maybe don't create tasks for irrelevant facts
-                    tasks.append(
+                    """tasks.append(
                         TaskInput(
                             relevance="0",
                             atomic_fact=step.input[i].revised_fact,
                             response=step.input[i].response,
                             question=step.input[i].question,
+                            search_results="N/A"
                         )
-                    )
+                    )"""
+                    pass
                 else:
                     pass
 

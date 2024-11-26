@@ -12,7 +12,7 @@ from .atomic_facts import (
 )
 from .revise import ReviseAtomicFact
 from .classify_relevance import ClassifyAtomicFacts
-from .rate_with_search import RateWithSearch, NextSearch
+from .rate_with_search import RateWithSearch, NextSearch, NextQuery
 from typing import Optional, List, Union
 
 logger = logging.getLogger(__name__)
@@ -39,6 +39,9 @@ class SearchAugmentedFactualityEvaluator:
                 Model.ANTHROPIC_HAIKU_3_5_OR,
                 Model.LLAMA_3_1_70B_OR,
                 Model.GPT4O,
+            ],
+            [
+                Model.SMALL
             ],
         ]
 
@@ -75,7 +78,8 @@ class SearchAugmentedFactualityEvaluator:
         self.pipeline << SplitAtomicFacts().set_models(self.models_list[0])
         self.pipeline << ReviseAtomicFact().set_models(self.models_list[1])
         self.pipeline << ClassifyAtomicFacts().set_models(self.models_list[1])
-        self.pipeline << NextSearch().set_models(self.models_list[2])
-        self.pipeline << RateWithSearch().set_models(self.models_list[2])
+        self.pipeline << NextQuery().set_models(self.models_list[1])
+        self.pipeline << NextSearch().set_models(self.models_list[3])
+        #self.pipeline << RateWithSearch().set_models(self.models_list[2])
 
         return self.pipeline.build()

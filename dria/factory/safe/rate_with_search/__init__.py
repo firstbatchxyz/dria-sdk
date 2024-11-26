@@ -1,1 +1,1 @@
-from .task import NextSearch, RateWithSearch
+from .task import NextSearch, RateWithSearch, NextQuery
