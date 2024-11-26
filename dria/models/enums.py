@@ -81,10 +81,60 @@ class Model(str, Enum):
     CODER = "coder"
     GEMINI = "gemini"
     OPENROUTER = "openrouter"
+    SMALL = "small"
+    MID = "mid"
+    LARGE = "large"
 
     @classmethod
     def default(cls):
         return cls.PHI3_5_MINI
+
+class SmallModels(Enum):
+    NOUS_THETA = Model.NOUS_THETA.value
+    PHI3_MEDIUM = Model.PHI3_MEDIUM.value
+    PHI3_MEDIUM_128K = Model.PHI3_MEDIUM_128K.value
+    PHI3_5_MINI = Model.PHI3_5_MINI.value
+    PHI3_5_MINI_FP16 = Model.PHI3_5_MINI_FP16.value
+    GEMMA2_9B = Model.GEMMA2_9B.value
+    GEMMA2_9B_FP16 = Model.GEMMA2_9B_FP16.value
+    LLAMA3_1 = Model.LLAMA3_1.value
+    LLAMA3_1_8BQ8 = Model.LLAMA3_1_8BQ8.value
+    LLAMA3_1_8B_FP16 = Model.LLAMA3_1_8B_FP16.value
+    LLAMA3_2_1B = Model.LLAMA3_2_1B.value
+    LLAMA3_2_3B = Model.LLAMA3_2_3B.value
+    QWEN2_5_7B = Model.QWEN2_5_7B.value
+    QWEN2_5_7B_FP16 = Model.QWEN2_5_7B_FP16.value
+    DEEPSEEK_CHAT_OR = Model.DEEPSEEK_CHAT_OR.value
+    LLAMA_3_1_8B_OR = Model.LLAMA_3_1_8B_OR.value
+    QWEN2_5_7B_OR = Model.QWEN2_5_7B_OR.value
+    DEEPSEEK_2_5_OR = Model.DEEPSEEK_2_5_OR.value
+    GEMMA_2_2B_IT = Model.GEMMA_2_2B_IT.value
+    GEMMA_2_9B_IT = Model.GEMMA_2_9B_IT.value
+    GEMMA_2_27B_IT = Model.GEMMA_2_27B_IT.value
+
+
+class MidModels(Enum):
+    LLAMA3_1_70B = Model.LLAMA3_1_70B.value
+    LLAMA3_1_70BQ8 = Model.LLAMA3_1_70BQ8.value
+    QWEN2_5_32B_FP16 = Model.QWEN2_5_32B_FP16.value
+    MIXTRAL_8_7B = Model.MIXTRAL_8_7B.value
+    LLAMA_3_1_70B_OR = Model.LLAMA_3_1_70B_OR.value
+    LLAMA_3_1_70B_OR_F = Model.LLAMA_3_1_70B_OR_F.value
+    QWEN2_5_72B_OR = Model.QWEN2_5_72B_OR.value
+    QWEN2_5_EVA_32B_OR = Model.QWEN2_5_EVA_32B_OR.value
+    GEMINI_15_FLASH = Model.GEMINI_15_FLASH.value
+    GEMINI_10_PRO = Model.GEMINI_10_PRO.value
+    GPT4O_MINI = Model.GPT4O_MINI.value
+
+
+class LargeModels(Enum):
+    LLAMA_3_1_405B_OR = Model.LLAMA_3_1_405B_OR.value
+    ANTHROPIC_SONNET_3_5_OR = Model.ANTHROPIC_SONNET_3_5_OR.value
+    ANTHROPIC_HAIKU_3_5_OR = Model.ANTHROPIC_HAIKU_3_5_OR.value
+    NOUS_HERMES_405B_OR = Model.NOUS_HERMES_405B_OR.value
+    GEMINI_15_PRO = Model.GEMINI_15_PRO.value
+    GPT4_TURBO = Model.GPT4_TURBO.value
+    GPT4O = Model.GPT4O.value
 
 
 class FunctionCallingModels(Enum):

@@ -29,7 +29,7 @@ from dria.models.enums import (
     OpenAIModels,
     CoderModels,
     GeminiModels,
-    OpenRouterModels,
+    OpenRouterModels, SmallModels, MidModels, LargeModels,
 )
 from dria.models.exceptions import TaskPublishError
 from dria.request import RPCClient
@@ -733,6 +733,12 @@ class Dria:
                     model_list.extend(model.value for model in GeminiModels)
                 elif model == "openrouter":
                     model_list.extend(model.value for model in OpenRouterModels)
+                elif model == "small":
+                    model_list.extend(model.value for model in SmallModels)
+                elif model == "mid":
+                    model_list.extend(model.value for model in MidModels)
+                elif model == "large":
+                    model_list.extend(model.value for model in LargeModels)
                 else:
                     model_list.append(model)
 
