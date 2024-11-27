@@ -181,6 +181,7 @@ class Pipeline:
                         await step.run(step_round)
                         continue
 
+                    step_round = 0
                     # Handle final step
                     if self._is_final_step(step):
                         await self._finalize_pipeline(step)
