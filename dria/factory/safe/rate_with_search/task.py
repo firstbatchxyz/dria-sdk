@@ -1,17 +1,11 @@
 from dria.models import TaskInput
-from dria.factory.utilities import get_abs_path, extract_backtick_label
+from dria.factory.utilities import parse_json, get_abs_path, extract_backtick_label
 from dria_workflows import (
     WorkflowBuilder,
     Operator,
     Write,
     Edge,
-    Read,
-    GetAll,
-    Push,
     Workflow,
-    ConditionBuilder,
-    Expression,
-    Size,
 )
 import logging
 from typing import List
@@ -19,8 +13,9 @@ from dria.pipelines import Step, StepTemplate
 
 logger = logging.getLogger(__name__)
 
+
 class NextSearch(StepTemplate):
-    def create_workflow(self, query: str, atomic_fact:str, **kwargs) -> Workflow:
+    def create_workflow(self, query: str, atomic_fact: str, **kwargs) -> Workflow:
         """Revise atomic facts.
 
         Args:
@@ -39,7 +34,7 @@ class NextSearch(StepTemplate):
             id="search",
             search_query="{{query}}",
             n_results=5,
-            outputs=[Push.new("search_results")],
+            outputs=[Write.new("search_results")],
         )
 
         flow = [
@@ -79,7 +74,9 @@ class NextSearch(StepTemplate):
 
 
 class NextQuery(StepTemplate):
-    def create_workflow(self, atomic_fact: str, search_results: str, **kwargs) -> Workflow:
+    def create_workflow(
+        self, atomic_fact: str, search_results: str, **kwargs
+    ) -> Workflow:
         """Revise atomic facts.
 
         Args:
@@ -89,7 +86,9 @@ class NextQuery(StepTemplate):
         Returns:
             dict: The output data from the workflow.
         """
-        builder = WorkflowBuilder(atomic_fact=atomic_fact, search_results=search_results)
+        builder = WorkflowBuilder(
+            atomic_fact=atomic_fact, search_results=search_results
+        )
         builder.set_max_time(self.config.max_time)
         builder.set_max_tokens(self.config.max_tokens)
         builder.set_max_steps(self.config.max_steps)
@@ -127,13 +126,38 @@ class NextQuery(StepTemplate):
                     atomic_fact=s.task_input["atomic_fact"],
                     response=step.input[i].response,
                     question=step.input[i].question,
-                    query=extract_backtick_label(s.result, "")[0]
+                    query=self.clean_query(extract_backtick_label(s.result, "")[0]),
                 )
                 for i, s in enumerate(step.output)
             ]
         except Exception as e:
             logger.error(f"Error in atomic fact revision: {str(e)}")
             raise
+
+    @staticmethod
+    def clean_query(query: str) -> str:
+        """
+        Clean a search query by removing formatting prefixes and unnecessary quotes.
+
+        Args:
+            query: The raw query string
+
+        Returns:
+            A cleaned query string ready for search
+        """
+        # Remove any whitespace from ends
+        cleaned = query.strip()
+
+        # Remove formatting prefixes if they exist
+        prefixes = ["plaintext\n", "markdown\n"]
+        for prefix in prefixes:
+            if cleaned.startswith(prefix):
+                cleaned = cleaned[len(prefix) :]
+
+        # Remove surrounding quotes if they exist
+        cleaned = cleaned.strip('"')
+
+        return cleaned
 
 
 class RateWithSearch(StepTemplate):
@@ -206,9 +230,9 @@ class RateWithSearch(StepTemplate):
                         index = ix
                 results[index]["facts"].append(
                     {
-                        "fact": step.input[index].atomic_fact,
+                        "fact": s.task_input["atomic_fact"],
+                        "links": parse_json(s.task_input["search_results"]),
                         "supported": "[SUPPORTED]" in s.result,
-                        "reason": s.result,
                     }
                 )
 

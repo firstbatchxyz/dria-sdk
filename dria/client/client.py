@@ -208,7 +208,12 @@ class Dria:
                 tasks[idx].nodes = [i[0]]
                 tasks[idx].filter = i[1]
                 selected_models.append(i[2])
-            await asyncio.gather(*[self.task_manager.push_task(task, selected_models[idx]) for idx, task in enumerate(tasks)])
+            await asyncio.gather(
+                *[
+                    self.task_manager.push_task(task, selected_models[idx])
+                    for idx, task in enumerate(tasks)
+                ]
+            )
             logger.debug(f"Task successfully published")
             return True
 

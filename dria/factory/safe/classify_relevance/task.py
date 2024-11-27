@@ -64,7 +64,7 @@ class ClassifyAtomicFacts(StepTemplate):
                             atomic_fact=step.input[i].revised_fact,
                             response=step.input[i].response,
                             question=step.input[i].question,
-                            search_results="N/A"
+                            search_results="N/A",
                         )
                     )
                 elif "[Not Foo]" in s.result:
