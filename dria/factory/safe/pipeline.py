@@ -13,7 +13,7 @@ from .atomic_facts import (
 from .revise import ReviseAtomicFact
 from .classify_relevance import ClassifyAtomicFacts
 from .rate_with_search import RateWithSearch, NextSearch, NextQuery
-from typing import Optional, List, Union
+from typing import Optional, List, Union, Dict
 
 logger = logging.getLogger(__name__)
 
@@ -65,19 +65,21 @@ class SearchAugmentedFactualityEvaluator:
         curr_sentences = tokenize.sent_tokenize(paragraph)
         return fix_sentence_splitter(curr_sentences, initials)
 
-    def build(self, question: str, response: str) -> Pipeline:
+    def build(self, question_answer_pairs: List[Dict[str, str]]) -> Pipeline:
 
-        sentences = self.sentence_splitter(response)
-        self.pipeline.input(
-            [
-                {
-                    "instruction": prepare_prompt(sentence),
-                    "question": question,
-                    "response": response,
-                }
-                for sentence in sentences
-            ]
-        )
+        inputs = []
+        for pair in question_answer_pairs:
+            sentences = self.sentence_splitter(pair["answer"])
+            for sentence in sentences:
+                inputs.append(
+                    {
+                        "instruction": prepare_prompt(sentence),
+                        "question": pair["question"],
+                        "response": pair["answer"],
+                    }
+                )
+
+        self.pipeline.input(inputs)
         self.pipeline << SplitAtomicFacts().set_models(self.models_list[0])
         self.pipeline << ReviseAtomicFact().set_models(self.models_list[1])
         self.pipeline << ClassifyAtomicFacts().set_models(self.models_list[1])
