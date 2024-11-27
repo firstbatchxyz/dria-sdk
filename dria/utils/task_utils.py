@@ -139,12 +139,13 @@ class TaskManager:
             f"{task.id}:workflow", copy.deepcopy(task.workflow)
         )
 
-    async def push_task(self, task: Task):
+    async def push_task(self, task: Task, selected_model: List[str]):
         """
         Push prepared task to network.
 
         Args:
             task: Task to push
+            selected_model: Model to push
 
         Returns:
             Tuple of (success bool, list of selected nodes if successful)
@@ -158,13 +159,13 @@ class TaskManager:
         task = await self.prepare_task(task)
         await self.save_workflow(task)
         if isinstance(task.workflow, Workflow):
-            parsed_workflow = self._schema_parser(task.workflow, task.models[0])
+            parsed_workflow = self._schema_parser(task.workflow, selected_model[0])
             task.workflow = parsed_workflow
         task_model = TaskModel(
             taskId=task.id,
             filter=task.filter,
             input=TaskInputModel(
-                workflow=task.workflow, model=task.models
+                workflow=task.workflow, model=selected_model
             ).model_dump(),
             pickedNodes=task.nodes,
             deadline=task.deadline,
