@@ -46,7 +46,8 @@ class NemotronAnswerStep(StepTemplate):
         responses = []
         for o in step.output:
             resp = o.result
-            question = o.task_input["question"]
+            input_params = step.input_params[o.id]
+            question = input_params.question
             resp = resp.replace("RESPONSE A:", "").replace("RESPONSE B:", "")
             try:
                 responses.append(

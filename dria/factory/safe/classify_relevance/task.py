@@ -56,15 +56,16 @@ class ClassifyAtomicFacts(StepTemplate):
     def callback(self, step: "Step") -> Union[List[TaskInput], TaskInput]:
         tasks = []
         for i, s in enumerate(step.output):
+            input_params = step.input_params[s.id]
             try:
                 if "[Foo]" in s.result:
                     tasks.append(
                         TaskInput(
                             relevance="1",
-                            atomic_fact=step.input[i].revised_fact,
-                            response=step.input[i].response,
-                            question=step.input[i].question,
-                            search_results="N/A",
+                            atomic_fact=input_params.revised_fact,
+                            response=input_params.response,
+                            question=input_params.question,
+                            search_results=["N/A"],
                         )
                     )
                 elif "[Not Foo]" in s.result:

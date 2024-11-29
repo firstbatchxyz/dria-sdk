@@ -106,7 +106,7 @@ class QuestionStep(StepTemplate):
 
                 inputs.append(
                     TaskInput(
-                        context=questions.task_input["context"],
+                        context=step.input_params[questions.id].context,
                         persona=self.params.persona,
                         question=question.strip(),
                     )

@@ -85,6 +85,6 @@ class AnswerStep(StepTemplate):
                 continue
 
             returns.append(
-                TaskInput(question=a.task_input["question"], answer=entry.strip())
+                TaskInput(question=step.input_params[a.id].question, answer=entry.strip())
             )
         return returns

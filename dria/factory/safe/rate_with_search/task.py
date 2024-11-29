@@ -1,3 +1,6 @@
+import json
+from json import JSONDecodeError
+
 from dria.models import TaskInput
 from dria.factory.utilities import parse_json, get_abs_path, extract_backtick_label
 from dria_workflows import (
@@ -59,15 +62,27 @@ class NextSearch(StepTemplate):
         """
 
         try:
-            return [
-                TaskInput(
-                    atomic_fact=step.input[i].atomic_fact,
-                    response=step.input[i].response,
-                    question=step.input[i].question,
-                    search_results=s.result,
+            tasks = []
+            for i,s in enumerate(step.output):
+                input_params = step.input_params[s.id]
+                try:
+                    parsed_ = parse_json(s.result)["organic"]
+                    parsed_ = [json.dumps(x) for x in parsed_]
+                    if input_params.search_results[0] == "N/A":
+                        combined_ = input_params.search_results[1:] + parsed_
+                    else:
+                        combined_ = input_params.search_results + parsed_
+                except Exception as e:
+                    combined_ = input_params.search_results + s.result
+                tasks.append(
+                    TaskInput(
+                        atomic_fact=input_params.atomic_fact,
+                        response=input_params.response,
+                        question=input_params.question,
+                        search_results=combined_,
+                    )
                 )
-                for i, s in enumerate(step.output)
-            ]
+            return tasks
         except Exception as e:
             logger.error(f"Error in atomic fact revision: {str(e)}")
             raise
@@ -75,7 +90,7 @@ class NextSearch(StepTemplate):
 
 class NextQuery(StepTemplate):
     def create_workflow(
-        self, atomic_fact: str, search_results: str, **kwargs
+            self, atomic_fact: str, search_results: List[str], **kwargs
     ) -> Workflow:
         """Revise atomic facts.
 
@@ -121,15 +136,23 @@ class NextQuery(StepTemplate):
         """
 
         try:
-            return [
-                TaskInput(
-                    atomic_fact=s.task_input["atomic_fact"],
-                    response=step.input[i].response,
-                    question=step.input[i].question,
-                    query=self.clean_query(extract_backtick_label(s.result, "")[0]),
-                )
-                for i, s in enumerate(step.output)
-            ]
+            tasks = []
+            for i,s in enumerate(step.output):
+                try:
+                    input_params = step.input_params[s.id]
+                    tasks.append(
+                        TaskInput(
+                            atomic_fact=input_params.atomic_fact,
+                            response=input_params.response,
+                            question=input_params.question,
+                            query=self.clean_query(extract_backtick_label(s.result, "")[0]),
+                            search_results=input_params.search_results,
+                        )
+                    )
+                except Exception as e:
+                    pass
+            return tasks
+
         except Exception as e:
             logger.error(f"Error in atomic fact revision: {str(e)}")
             raise
@@ -155,19 +178,19 @@ class NextQuery(StepTemplate):
                 cleaned = cleaned[len(prefix) :]
 
         # Remove surrounding quotes if they exist
-        cleaned = cleaned.strip('"')
+        cleaned = cleaned.replace('"', "")
 
         return cleaned
 
 
 class RateWithSearch(StepTemplate):
     def create_workflow(
-        self,
-        atomic_fact: str,
-        response: str,
-        question: str,
-        search_results: str,
-        **kwargs,
+            self,
+            atomic_fact: str,
+            response: str,
+            question: str,
+            search_results: List[str],
+            **kwargs,
     ) -> Workflow:
         """Revise atomic facts.
 
@@ -216,25 +239,36 @@ class RateWithSearch(StepTemplate):
         results = []  # a list of dicts
         try:
             for i, s in enumerate(step.output):
-                if all(step.input[i].question not in d.values() for d in results):
+                input_params = step.input_params[s.id]
+                if all(input_params.question not in d.values() for d in results):
                     results.append(
                         {
-                            "question": step.input[i].question,
-                            "response": step.input[i].response,
+                            "question": input_params.question,
+                            "response": input_params.response,
                             "facts": [],
                         }
                     )
                 index = 0
                 for ix, res in enumerate(results):
-                    if res["question"] == step.input[i].question:
+                    if res["question"] == input_params.question:
                         index = ix
-                results[index]["facts"].append(
-                    {
-                        "fact": s.task_input["atomic_fact"],
-                        "links": parse_json(s.task_input["search_results"]),
-                        "supported": "[SUPPORTED]" in s.result,
-                    }
-                )
+                try:
+                    results[index]["facts"].append(
+                        {
+                            "fact": input_params.atomic_fact,
+                            "links": parse_json(input_params.search_results),
+                            "supported": "[SUPPORTED]" in s.result,
+                        }
+                    )
+                except JSONDecodeError:
+                    results[index]["facts"].append(
+                        {
+                            "fact": input_params.atomic_fact,
+                            "links": input_params.search_results,
+                            "supported": "[SUPPORTED]" in s.result,
+                        }
+                    )
+
 
         except Exception as e:
             logger.error(f"Error in atomic fact revision: {str(e)}")

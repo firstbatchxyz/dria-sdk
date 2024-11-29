@@ -1,4 +1,4 @@
-# from importlib.metadata import version, PackageNotFoundError
+from importlib.metadata import version, PackageNotFoundError
 
 from .workflows import *
 from .persona import *
@@ -8,14 +8,13 @@ from .csv_extender import *
 from .list_extender import *
 from .qa_pipeline import *
 from .nemotron_qa import *
-from .safe import *
 
-__all__ = [
+__core_exports = [
     "Clair",
-    "GenerateCode",
+    "GenerateCode", 
     "IterateCode",
     "EvolveComplexity",
-    "ScoreComplexity",
+    "ScoreComplexity", 
     "EvolveInstruct",
     "EvolveQuality",
     "GenerateGraph",
@@ -26,7 +25,7 @@ __all__ = [
     "MagPie",
     "Simple",
     "EvaluatePrediction",
-    "ValidatePrediction",
+    "ValidatePrediction", 
     "SelfInstruct",
     "PersonaPipeline",
     "SubTopicPipeline",
@@ -37,6 +36,12 @@ __all__ = [
     "QAPipeline",
     "MultiHopQuestion",
     "InstructionBacktranslation",
-    "NemotronQA",
-    "SearchAugmentedFactualityEvaluator",
+    "NemotronQA"
 ]
+
+try:
+    from .safe import *
+    version("dria[safe]")
+    __all__ = [*__core_exports, "SearchAugmentedFactualityEvaluator"]
+except (ImportError, PackageNotFoundError):
+    __all__ = __core_exports

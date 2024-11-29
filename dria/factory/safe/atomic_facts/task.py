@@ -48,9 +48,9 @@ def fix_sentence_splitter(curr_sentences, initials):
                 if sent1.endswith(alpha1 + ".") and sent2.startswith(alpha2 + "."):
                     # merge sentence i and i+1
                     curr_sentences = (
-                        curr_sentences[:i]
-                        + [curr_sentences[i] + " " + curr_sentences[i + 1]]
-                        + curr_sentences[i + 2 :]
+                            curr_sentences[:i]
+                            + [curr_sentences[i] + " " + curr_sentences[i + 1]]
+                            + curr_sentences[i + 2 :]
                     )
                     break
 
@@ -117,7 +117,7 @@ def prepare_prompt(sentence: str) -> str:
 
 class SplitAtomicFacts(StepTemplate):
     def create_workflow(
-        self, instruction: str, question: str, response: str, **kwargs
+            self, instruction: str, question: str, response: str, **kwargs
     ) -> Workflow:
         """Split sentence to atomic facts.
 
@@ -163,12 +163,13 @@ class SplitAtomicFacts(StepTemplate):
         tasks = []
         for i, s in enumerate(step.output):
             try:
+                input_params = step.input_params[s.id]
                 for fact in self.parse(s.result):
                     tasks.append(
                         TaskInput(
                             atomic_fact=fact,
-                            response=step.input[i].response,
-                            question=step.input[i].question,
+                            response=input_params.response,
+                            question=input_params.question,
                         )
                     )
             except Exception as e:

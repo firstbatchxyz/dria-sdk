@@ -195,7 +195,7 @@ class Dria:
             while nodes is None:
                 if self.background_tasks.done():
                     return None
-                if attempts % 20 == 0:
+                if attempts % 20 == 0 and attempts != 0:
                     logger.info("Waiting for nodes to be available...")
                 await asyncio.sleep(MONITORING_INTERVAL)
                 nodes, filters, models = await self.task_manager.create_filter(
@@ -684,6 +684,39 @@ class Dria:
             logger.debug(f"Task {task.id} deadline exceeded. Skipping.")
             return False
         return True
+
+    async def get_retried_tasks(self, task_ids: List[str]) -> Dict[str, Optional[str]]:
+        """
+        Get tasks that need to be retried.
+
+        Args:
+            task_ids: List of task IDs to check
+
+        Returns:
+            Dict mapping original task IDs to new task IDs (None if no new task ID)
+        """
+        task_map = {}
+        
+        for task_id in task_ids:
+            current_task_id = task_id
+            while True:
+                task_metadata = await self.storage.get_value(current_task_id)
+                if not task_metadata:
+                    task_map[task_id] = None
+                    break
+                    
+                try:
+                    task_data = json.loads(task_metadata)
+                    new_task_id = task_data.get("new_task_id")
+                    if not new_task_id:
+                        task_map[task_id] = current_task_id
+                        break
+                    current_task_id = new_task_id
+                except json.JSONDecodeError:
+                    task_map[task_id] = None
+                    break
+                    
+        return task_map
 
     async def _get_step_name(self, task_id: str) -> str:
         """

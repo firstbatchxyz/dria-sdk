@@ -8,7 +8,7 @@ from dria_workflows import Workflow
 from dria.client import Dria
 from dria.constants import SCORING_BATCH_SIZE
 from dria.db.storage import Storage
-from dria.models import Task, CallbackType, TaskInput, TaskResult
+from dria.models import Task, CallbackType, TaskInput, TaskResult, InputParam
 from dria.pipelines.config import StepConfig
 from dria.utils.logging import logger
 
@@ -37,16 +37,17 @@ class Step(ABC):
     """
 
     def __init__(
-        self,
-        name: str,
-        input: Optional[Union[TaskInput, List[TaskInput]]] = None,
-        workflow: Union[Callable, Workflow] = None,
-        config: StepConfig = StepConfig(),
-        client: Optional[Dria] = None,
+            self,
+            name: str,
+            input: Optional[Union[TaskInput, List[TaskInput]]] = None,
+            workflow: Union[Callable, Workflow] = None,
+            config: StepConfig = StepConfig(),
+            client: Optional[Dria] = None,
     ):
         self.logger = logger
         self.name = name
         self.input = input or []
+        self.input_params = {}
         self.workflow = workflow
         self.config = config
         self.client = client
@@ -74,21 +75,21 @@ class Step(ABC):
         try:
             if isinstance(self.input, list):
                 batched_input = self.input[
-                    step_round
-                    * SCORING_BATCH_SIZE : (step_round + 1)
-                    * SCORING_BATCH_SIZE
-                ]
+                                step_round
+                                * SCORING_BATCH_SIZE : (step_round + 1)
+                                                       * SCORING_BATCH_SIZE
+                                ]
             else:
                 batched_input = [self.input]
             await self._push_task(
-                [deepcopy(self._validate_and_run_workflow(i)) for i in batched_input]
+                [deepcopy(self._validate_and_run_workflow(i)) for i in batched_input], batched_input
             )
         except Exception as e:
             self.logger.error(f"Error executing step '{self.name}': {e}", exc_info=True)
             raise RuntimeError(f"Failed to execute step '{self.name}': {e}") from e
 
     def add_pipeline_params(
-        self, pipeline_id: str, storage: Storage, client: Dria
+            self, pipeline_id: str, storage: Storage, client: Dria
     ) -> None:
         """
         Assign pipelines parameters to the step.
@@ -105,13 +106,13 @@ class Step(ABC):
             f"Pipeline parameters added to step '{self.name}': pipeline_id={pipeline_id}"
         )
 
-    async def _push_task(self, workflows: List[Workflow]):
+    async def _push_task(self, workflows: List[Workflow], step_input: List[TaskInput]):
         """
         Push the workflow data as a task to the Dria.
 
         Args:
-            workflows (Workflow): The workflow result to be pushed.
-
+            workflows (List[Workflow]): The workflow results to be pushed.
+            step_input (List[Dict]): The input for the step.
         Returns:
             Task: The task that was successfully pushed.
 
@@ -136,10 +137,12 @@ class Step(ABC):
 
         if not self.storage:
             raise RuntimeError(f"Storage is not initialized for step '{self.name}'.")
-        for task in tasks:
+        for idx, task in enumerate(tasks):
+            task_dict = task.model_dump()
             self.tasks.append(task)
+            self.input_params[task.id] = InputParam(**step_input[idx].model_dump())
             await self.storage.set_value(
-                task.id, json.dumps(task.dict(), ensure_ascii=False)
+                task.id, json.dumps(task_dict, ensure_ascii=False)
             )
 
     def _validate_and_run_workflow(self, task_input: TaskInput) -> Workflow:
@@ -155,10 +158,10 @@ class Step(ABC):
         Raises:
             ValueError: If input keys do not match or workflow execution fails.
         """
-        input_dict = task_input.dict()
+        input_dict = task_input.model_dump()
 
         if self.input_keys and not set(sorted(self.input_keys)).issubset(
-            set(sorted(input_dict.keys()))
+                set(sorted(input_dict.keys()))
         ):
             error_msg = (
                 f"Workflow input keys mismatch for step '{self.name}'. "
@@ -178,7 +181,7 @@ class Step(ABC):
                             else (
                                 [str(x) for x in input_dict[key]]
                                 if isinstance(input_dict[key], list)
-                                and all(
+                                   and all(
                                     isinstance(x, (int, float)) for x in input_dict[key]
                                 )
                                 else input_dict[key]

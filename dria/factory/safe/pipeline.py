@@ -85,6 +85,8 @@ class SearchAugmentedFactualityEvaluator:
         self.pipeline << ClassifyAtomicFacts().set_models(self.models_list[1])
         self.pipeline << NextQuery().set_models(self.models_list[1])
         self.pipeline << NextSearch().set_models(self.models_list[3])
+        self.pipeline << NextQuery().set_models(self.models_list[1])
+        self.pipeline << NextSearch().set_models(self.models_list[3])
         self.pipeline << RateWithSearch().set_models(self.models_list[2])
 
         return self.pipeline.build()
