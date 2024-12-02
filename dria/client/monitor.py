@@ -7,6 +7,8 @@ from Crypto.Hash import keccak
 from dria.constants import (
     HEARTBEAT_OUTPUT_TOPIC,
     HEARTBEAT_TOPIC,
+    MAX_OLLAMA_QUEUE,
+    MAX_API_QUEUE
 )
 from dria.db.mq import KeyValueQueue
 from dria.db.storage import Storage
@@ -103,7 +105,7 @@ class Monitor:
             nodes_by_model = self._decrypt_nodes(
                 [base64_to_json(response) for response in topic_responses]
             )
-
+            print(nodes_by_model)
             model_counts: Dict[str, int] = {}
             for model, addresses in nodes_by_model.items():
                 unique_addresses = list(set(addresses))
@@ -150,6 +152,13 @@ class Monitor:
 
                 # Map address to both model ID and name
                 for model_id, model_name in metadata["models"]:
+                    if "pending_tasks" not in metadata:
+                        continue
+                    
+                    max_queue = MAX_OLLAMA_QUEUE if model_id == "ollama" else MAX_API_QUEUE
+                    if metadata["pending_tasks"][0] > max_queue:
+                        continue
+                        
                     node_addresses[model_name].append(address)
                     node_addresses[model_id].append(address)
 

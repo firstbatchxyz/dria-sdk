@@ -74,6 +74,8 @@ class NextSearch(StepTemplate):
                         combined_ = input_params.search_results + parsed_
                 except Exception as e:
                     combined_ = input_params.search_results + s.result
+                if not combined_:
+                    continue
                 tasks.append(
                     TaskInput(
                         atomic_fact=input_params.atomic_fact,
@@ -140,12 +142,15 @@ class NextQuery(StepTemplate):
             for i,s in enumerate(step.output):
                 try:
                     input_params = step.input_params[s.id]
+                    query = self.clean_query(extract_backtick_label(s.result, "")[0])
+                    if query.split("site:jina.ai")[0] == "":
+                        continue
                     tasks.append(
                         TaskInput(
                             atomic_fact=input_params.atomic_fact,
                             response=input_params.response,
                             question=input_params.question,
-                            query=self.clean_query(extract_backtick_label(s.result, "")[0]),
+                            query=query,
                             search_results=input_params.search_results,
                         )
                     )

@@ -431,7 +431,7 @@ class Dria:
         suffix = f":{task_id}"
         for key in await self.kv.keys():
             if key.endswith(suffix):
-                value = await self.kv.pop(key)
+                value = await self.kv.peek(key)
                 if value:
                     if "new_task_id" in value.keys():
                         new_ids[key] = value["new_task_id"]
@@ -602,7 +602,7 @@ class Dria:
                         }
                         if "error" in result:
                             l["error"] = True
-                        logger.debug(f"Metrics: {l}")
+                        logger.debug(f"Task id: {identifier}, Metrics: {l}")
                         self.metrics.append(l)
                     await self.kv.push(
                         f"{pipeline_id}:{identifier}",
@@ -700,14 +700,13 @@ class Dria:
         for task_id in task_ids:
             current_task_id = task_id
             while True:
-                task_metadata = await self.storage.get_value(current_task_id)
+                task_metadata = await self.kv.peek(f":{current_task_id}")
                 if not task_metadata:
-                    task_map[task_id] = None
+                    task_map[task_id] = current_task_id
                     break
-                    
+
                 try:
-                    task_data = json.loads(task_metadata)
-                    new_task_id = task_data.get("new_task_id")
+                    new_task_id = task_metadata.get("new_task_id")
                     if not new_task_id:
                         task_map[task_id] = current_task_id
                         break

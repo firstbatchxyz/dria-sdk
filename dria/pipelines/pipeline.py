@@ -118,7 +118,7 @@ class Pipeline:
         next_step = self.steps[next_step_index]
         retried_tasks = await self.client.get_retried_tasks(list(current_step.input_params.keys()))
         for i,v in retried_tasks.items():
-            if i != v:
+            if i != v and v is not None:
                 current_step.input_params[v] = current_step.input_params[i]
                 del current_step.input_params[i]
         input_data = current_step.callback(current_step)
