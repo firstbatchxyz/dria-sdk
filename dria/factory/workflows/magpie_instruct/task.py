@@ -84,7 +84,8 @@ class MagPie(SingletonTemplate):
         builder.set_return_value("chat")
         return builder.build()
 
-    def callback(self, result: List[TaskResult]) -> List[DialogueOutput]:
+    @staticmethod
+    def callback(result: List[TaskResult]) -> List[DialogueOutput]:
         """
         Parse the results into validated DialogueOutput objects
 
@@ -96,30 +97,29 @@ class MagPie(SingletonTemplate):
         """
         return [
             DialogueOutput(
-                dialogue=self.group_into_dialogue(json.loads(r.result)), model=r.model
+                dialogue=group_into_dialogue(json.loads(r.result)), model=r.model
             )
             for r in result
         ]
 
-    @staticmethod
-    def group_into_dialogue(messages: List[str]) -> List[DialogueTurn]:
-        """
-        Groups messages into a list of dialogue turns.
+def group_into_dialogue(messages: List[str]) -> List[DialogueTurn]:
+    """
+    Groups messages into a list of dialogue turns.
 
-        Args:
-            messages: List of messages to be grouped
+    Args:
+        messages: List of messages to be grouped
 
-        Returns:
-            List[DialogueTurn]: List of validated dialogue turns
-        """
-        dialogue = []
+    Returns:
+        List[DialogueTurn]: List of validated dialogue turns
+    """
+    dialogue = []
 
-        # Process messages in pairs
-        for i in range(0, len(messages), 2):
-            turn = DialogueTurn(
-                instructor=messages[i] if i < len(messages) else "",
-                responder=messages[i + 1] if i + 1 < len(messages) else "",
-            )
-            dialogue.append(turn)
+    # Process messages in pairs
+    for i in range(0, len(messages), 2):
+        turn = DialogueTurn(
+            instructor=messages[i] if i < len(messages) else "",
+            responder=messages[i + 1] if i + 1 < len(messages) else "",
+        )
+        dialogue.append(turn)
 
-        return dialogue
+    return dialogue
