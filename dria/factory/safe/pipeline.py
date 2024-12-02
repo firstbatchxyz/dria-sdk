@@ -29,15 +29,15 @@ class SearchAugmentedFactualityEvaluator:
         self.models_list = [
             [
                 Model.GPT4O,
-                Model.GPT4O_MINI,
                 Model.ANTHROPIC_HAIKU_3_5_OR,
-                Model.QWEN2_5_72B_OR,
+                Model.GEMINI_15_PRO,
             ],
             [
                 Model.GPT4O_MINI,
                 Model.ANTHROPIC_HAIKU_3_5_OR,
                 Model.GEMINI_15_FLASH,
                 Model.GPT4O,
+                Model.QWEN2_5_72B_OR,
             ],
             [
                 Model.GPT4O_MINI,

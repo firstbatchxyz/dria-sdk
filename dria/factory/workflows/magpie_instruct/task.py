@@ -1,5 +1,6 @@
 import json
-from typing import Any, List, Dict
+from typing import Any, List, Dict, Optional
+from pydantic import BaseModel, Field, conint
 from dria_workflows import (
     Workflow,
     WorkflowBuilder,
@@ -16,22 +17,38 @@ from dria.factory.workflows.template import SingletonTemplate
 from dria.models import TaskResult
 
 
+class DialogueTurn(BaseModel):
+    instructor: str = Field(..., description="Instructor's message")
+    responder: str = Field(..., description="Responder's message")
+
+
+class DialogueOutput(BaseModel):
+    dialogue: List[DialogueTurn] = Field(..., description="List of dialogue turns")
+    model: str = Field(..., description="Model used for generation")
+
+
 class MagPie(SingletonTemplate):
+    # Input fields
+    instructor_persona: str = Field(..., description="Persona of the instructor")
+    responding_persona: str = Field(..., description="Persona of the responder")
+    num_turns: conint(ge=1) = Field(
+        default=1, description="Number of conversation turns"
+    )
 
-    def workflow(
-        self, instructor_persona: str, responding_persona: str, num_turns=1
-    ) -> Workflow:
+    # Output schema
+    OutputSchema = DialogueOutput
+
+    def workflow(self) -> Workflow:
         """
+        Creates a workflow for generating dialogue between personas.
 
-        :param instructor_persona:
-        :param responding_persona:
-        :param num_turns:
-        :return: A Task object representing the workflow.
+        Returns:
+            Workflow: The constructed workflow
         """
-
         # Initialize the workflow with variables
         builder = WorkflowBuilder(
-            instructor_persona=instructor_persona, responding_persona=responding_persona
+            instructor_persona=self.instructor_persona,
+            responding_persona=self.responding_persona,
         )
 
         builder.generative_step(
@@ -54,7 +71,7 @@ class MagPie(SingletonTemplate):
                 source="1",
                 target="_end",
                 condition=ConditionBuilder.build(
-                    expected=str(num_turns),
+                    expected=str(self.num_turns),
                     expression=Expression.GREATER_THAN_OR_EQUAL,
                     input=Size.new(key="responses", required=True),
                     target_if_not="0",
@@ -67,35 +84,42 @@ class MagPie(SingletonTemplate):
         builder.set_return_value("chat")
         return builder.build()
 
-    def parse_result(self, result: List[TaskResult]) -> List[Dict[str, Any]]:
+    def callback(self, result: List[TaskResult]) -> List[DialogueOutput]:
+        """
+        Parse the results into validated DialogueOutput objects
+
+        Args:
+            result: List of TaskResult objects
+
+        Returns:
+            List[DialogueOutput]: List of validated dialogue outputs
+        """
         return [
-            {
-                "dialogue": self.group_into_dialogue(json.loads(r.result)),
-                "model": r.model,
-            }
+            DialogueOutput(
+                dialogue=self.group_into_dialogue(json.loads(r.result)), model=r.model
+            )
             for r in result
         ]
 
     @staticmethod
-    def group_into_dialogue(messages):
+    def group_into_dialogue(messages: List[str]) -> List[DialogueTurn]:
         """
-        Groups messages into a list of dialogue turns, where each turn has both speakers.
+        Groups messages into a list of dialogue turns.
 
         Args:
-            messages (list of str): The list of messages to be grouped.
+            messages: List of messages to be grouped
 
         Returns:
-            list of dict: A list of dialogue turns, where each turn is a dictionary
-                         containing both 'instructor' and 'responder' keys.
+            List[DialogueTurn]: List of validated dialogue turns
         """
         dialogue = []
 
         # Process messages in pairs
         for i in range(0, len(messages), 2):
-            turn = {
-                "instructor": messages[i] if i < len(messages) else "",
-                "responder": messages[i + 1] if i + 1 < len(messages) else "",
-            }
+            turn = DialogueTurn(
+                instructor=messages[i] if i < len(messages) else "",
+                responder=messages[i + 1] if i + 1 < len(messages) else "",
+            )
             dialogue.append(turn)
 
         return dialogue

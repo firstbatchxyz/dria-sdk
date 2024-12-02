@@ -37,12 +37,12 @@ class Step(ABC):
     """
 
     def __init__(
-            self,
-            name: str,
-            input: Optional[Union[TaskInput, List[TaskInput]]] = None,
-            workflow: Union[Callable, Workflow] = None,
-            config: StepConfig = StepConfig(),
-            client: Optional[Dria] = None,
+        self,
+        name: str,
+        input: Optional[Union[TaskInput, List[TaskInput]]] = None,
+        workflow: Union[Callable, Workflow] = None,
+        config: StepConfig = StepConfig(),
+        client: Optional[Dria] = None,
     ):
         self.logger = logger
         self.name = name
@@ -75,21 +75,22 @@ class Step(ABC):
         try:
             if isinstance(self.input, list):
                 batched_input = self.input[
-                                step_round
-                                * SCORING_BATCH_SIZE : (step_round + 1)
-                                                       * SCORING_BATCH_SIZE
-                                ]
+                    step_round
+                    * SCORING_BATCH_SIZE : (step_round + 1)
+                    * SCORING_BATCH_SIZE
+                ]
             else:
                 batched_input = [self.input]
             await self._push_task(
-                [deepcopy(self._validate_and_run_workflow(i)) for i in batched_input], batched_input
+                [deepcopy(self._validate_and_run_workflow(i)) for i in batched_input],
+                batched_input,
             )
         except Exception as e:
             self.logger.error(f"Error executing step '{self.name}': {e}", exc_info=True)
             raise RuntimeError(f"Failed to execute step '{self.name}': {e}") from e
 
     def add_pipeline_params(
-            self, pipeline_id: str, storage: Storage, client: Dria
+        self, pipeline_id: str, storage: Storage, client: Dria
     ) -> None:
         """
         Assign pipelines parameters to the step.
@@ -161,7 +162,7 @@ class Step(ABC):
         input_dict = task_input.model_dump()
 
         if self.input_keys and not set(sorted(self.input_keys)).issubset(
-                set(sorted(input_dict.keys()))
+            set(sorted(input_dict.keys()))
         ):
             error_msg = (
                 f"Workflow input keys mismatch for step '{self.name}'. "
@@ -181,7 +182,7 @@ class Step(ABC):
                             else (
                                 [str(x) for x in input_dict[key]]
                                 if isinstance(input_dict[key], list)
-                                   and all(
+                                and all(
                                     isinstance(x, (int, float)) for x in input_dict[key]
                                 )
                                 else input_dict[key]

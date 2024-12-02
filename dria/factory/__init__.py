@@ -11,10 +11,10 @@ from .nemotron_qa import *
 
 __core_exports = [
     "Clair",
-    "GenerateCode", 
+    "GenerateCode",
     "IterateCode",
     "EvolveComplexity",
-    "ScoreComplexity", 
+    "ScoreComplexity",
     "EvolveInstruct",
     "EvolveQuality",
     "GenerateGraph",
@@ -25,7 +25,7 @@ __core_exports = [
     "MagPie",
     "Simple",
     "EvaluatePrediction",
-    "ValidatePrediction", 
+    "ValidatePrediction",
     "SelfInstruct",
     "PersonaPipeline",
     "SubTopicPipeline",
@@ -36,11 +36,12 @@ __core_exports = [
     "QAPipeline",
     "MultiHopQuestion",
     "InstructionBacktranslation",
-    "NemotronQA"
+    "NemotronQA",
 ]
 
 try:
     from .safe import *
+
     version("dria[safe]")
     __all__ = [*__core_exports, "SearchAugmentedFactualityEvaluator"]
 except (ImportError, PackageNotFoundError):

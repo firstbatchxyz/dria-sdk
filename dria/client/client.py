@@ -696,7 +696,7 @@ class Dria:
             Dict mapping original task IDs to new task IDs (None if no new task ID)
         """
         task_map = {}
-        
+
         for task_id in task_ids:
             current_task_id = task_id
             while True:
@@ -704,7 +704,7 @@ class Dria:
                 if not task_metadata:
                     task_map[task_id] = None
                     break
-                    
+
                 try:
                     task_data = json.loads(task_metadata)
                     new_task_id = task_data.get("new_task_id")
@@ -715,7 +715,7 @@ class Dria:
                 except json.JSONDecodeError:
                     task_map[task_id] = None
                     break
-                    
+
         return task_map
 
     async def _get_step_name(self, task_id: str) -> str:

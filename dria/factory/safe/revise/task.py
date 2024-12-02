@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 class ReviseAtomicFact(StepTemplate):
     def create_workflow(
-            self, atomic_fact: str, response: str, question: str, **kwargs
+        self, atomic_fact: str, response: str, question: str, **kwargs
     ) -> Workflow:
         """Revise atomic facts.
 
@@ -64,15 +64,17 @@ class ReviseAtomicFact(StepTemplate):
 
         try:
             tasks = []
-            for i,s in enumerate(step.output):
+            for i, s in enumerate(step.output):
                 input_params = step.input_params[s.id]
                 try:
-                    tasks.append(TaskInput(
-                        revised_fact=extract_backtick_label(s.result, "")[0],
-                        fact=input_params.atomic_fact,
-                        response=input_params.response,
-                        question=input_params.question,
-                    ))
+                    tasks.append(
+                        TaskInput(
+                            revised_fact=extract_backtick_label(s.result, "")[0],
+                            fact=input_params.atomic_fact,
+                            response=input_params.response,
+                            question=input_params.question,
+                        )
+                    )
                 except Exception as e:
                     pass
             return tasks

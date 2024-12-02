@@ -63,16 +63,24 @@ class NextSearch(StepTemplate):
 
         try:
             tasks = []
-            for i,s in enumerate(step.output):
+            for i, s in enumerate(step.output):
                 input_params = step.input_params[s.id]
                 try:
-                    parsed_ = parse_json(s.result)["organic"]
-                    parsed_ = [json.dumps(x) for x in parsed_]
+                    parsed_ = []
+                    for el in parse_json(s.result)["organic"]:
+                        data = {
+                            "title": el["title"],
+                            "snippet": el["snippet"],
+                            "link": el["link"],
+                        }
+                        if "date" in el:
+                            data["date"] = el["date"]
+                        parsed_.append(json.dumps(data))
                     if input_params.search_results[0] == "N/A":
                         combined_ = input_params.search_results[1:] + parsed_
                     else:
                         combined_ = input_params.search_results + parsed_
-                except Exception as e:
+                except Exception as _:
                     combined_ = input_params.search_results + s.result
                 tasks.append(
                     TaskInput(
@@ -90,7 +98,7 @@ class NextSearch(StepTemplate):
 
 class NextQuery(StepTemplate):
     def create_workflow(
-            self, atomic_fact: str, search_results: List[str], **kwargs
+        self, atomic_fact: str, search_results: List[str], **kwargs
     ) -> Workflow:
         """Revise atomic facts.
 
@@ -137,7 +145,7 @@ class NextQuery(StepTemplate):
 
         try:
             tasks = []
-            for i,s in enumerate(step.output):
+            for i, s in enumerate(step.output):
                 try:
                     input_params = step.input_params[s.id]
                     tasks.append(
@@ -145,7 +153,9 @@ class NextQuery(StepTemplate):
                             atomic_fact=input_params.atomic_fact,
                             response=input_params.response,
                             question=input_params.question,
-                            query=self.clean_query(extract_backtick_label(s.result, "")[0]),
+                            query=self.clean_query(
+                                extract_backtick_label(s.result, "")[0]
+                            ),
                             search_results=input_params.search_results,
                         )
                     )
@@ -185,12 +195,12 @@ class NextQuery(StepTemplate):
 
 class RateWithSearch(StepTemplate):
     def create_workflow(
-            self,
-            atomic_fact: str,
-            response: str,
-            question: str,
-            search_results: List[str],
-            **kwargs,
+        self,
+        atomic_fact: str,
+        response: str,
+        question: str,
+        search_results: List[str],
+        **kwargs,
     ) -> Workflow:
         """Revise atomic facts.
 
@@ -268,7 +278,6 @@ class RateWithSearch(StepTemplate):
                             "supported": "[SUPPORTED]" in s.result,
                         }
                     )
-
 
         except Exception as e:
             logger.error(f"Error in atomic fact revision: {str(e)}")

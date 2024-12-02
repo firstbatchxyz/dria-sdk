@@ -2,7 +2,8 @@ from dria_workflows import Workflow, WorkflowBuilder, Operator, Write, Edge
 from dria.factory.utilities import get_abs_path
 from dria.models import TaskResult
 from dria.factory.workflows.template import SingletonTemplate
-from typing import Dict, List, Any
+from typing import Dict, List, Literal
+from pydantic import BaseModel, Field
 
 MUTATION_TEMPLATES: Dict[str, str] = {
     "HELPFULNESS": "Please make the Response more helpful to the user.",
@@ -13,27 +14,31 @@ MUTATION_TEMPLATES: Dict[str, str] = {
 }
 
 
+class Output(BaseModel):
+    response: str = Field(..., description="Original response")
+    evolved_response: str = Field(..., description="Evolved/rewritten response")
+    method: str = Field(..., description="Method used for evolution")
+    model: str = Field(..., description="Model used for generation")
+
+
 class EvolveQuality(SingletonTemplate):
 
-    def workflow(
-        self, prompt: str, response: str, method: str = "HELPFULNESS"
-    ) -> Workflow:
-        """
-        Evolve quality of the response to a prompt through rewriting.
-        :param prompt:
-        :param response:
-        :param method: HELPFULNESS | RELEVANCE | DEEPENING | CREATIVITY | DETAILS
-        :return:
-        """
-        self.params.response = response
-        self.params.method = method
+    prompt: str
+    response: str
+    method: Literal[
+        "HELPFULNESS", "RELEVANCE", "DEEPENING", "CREATIVITY", "DETAILS"
+    ] = Field(default="HELPFULNESS", description="Evolution method to apply")
+    OutputSchema = Output
+
+    def workflow(self) -> Workflow:
+
         selected_method = (
-            MUTATION_TEMPLATES[method]
-            if method in MUTATION_TEMPLATES
+            MUTATION_TEMPLATES[self.method]
+            if self.method in MUTATION_TEMPLATES
             else MUTATION_TEMPLATES["DETAILS"]
         )
         builder = WorkflowBuilder(
-            prompt=prompt, response=response, method=selected_method
+            prompt=self.prompt, response=self.response, method=selected_method
         )
         builder.generative_step(
             path=get_abs_path("rewrite.md"),
@@ -45,13 +50,20 @@ class EvolveQuality(SingletonTemplate):
         builder.set_return_value("rewritten_response")
         return builder.build()
 
-    def parse_result(self, result: List[TaskResult]) -> List[Dict[str, Any]]:
+    def callback(self, result: List[TaskResult]) -> List[Output]:
+        """
+        Process multiple results and return as list of Output schemas
+        Args:
+            result: List of TaskResult objects
+        Returns:
+            List[Output]: List of validated output objects
+        """
         return [
-            {
-                "response": self.params.response,
-                "evolved_response": r.result.strip(),
-                "method": self.params.method,
-                "model": r.model,
-            }
+            Output(
+                response=self.response,
+                evolved_response=r.result.strip(),
+                method=self.method,
+                model=r.model,
+            )
             for r in result
         ]
