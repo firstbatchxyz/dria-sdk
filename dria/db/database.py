@@ -103,9 +103,9 @@ class DatasetDB:
                 """
                 SELECT entry_id, data, created_at
                 FROM entries
-                WHERE dataset_id = ?
+                WHERE dataset_id = CAST(? AS INTEGER)
                 ORDER BY entry_id
-            """,
+                """,
                 (dataset_id,),
             ).fetchall()
             if data_only:
@@ -144,6 +144,15 @@ class DatasetDB:
             ]
         except Exception as e:
             raise DatabaseError(f"Failed to fetch datasets: {str(e)}")
+
+    def get_dataset_id_by_name(self, name: str) -> int:
+        """Get a dataset by its name."""
+        datasets = self.get_datasets()
+        for dataset in datasets:
+            if dataset["name"] == name:
+                return dataset["dataset_id"]
+
+        raise DatabaseError(f"Dataset {name} not found")
 
     def add_fields_to_entries(
         self, dataset_id: int, fields_and_values: Dict[str, List[Any]]

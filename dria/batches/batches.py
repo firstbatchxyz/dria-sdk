@@ -19,13 +19,13 @@ class ParallelSingletonExecutor:
         self.instructions: Tuple[List[Task], List[Dict[str, Any]]] = ([], [])
         self.models = [Model.OLLAMA]
 
-        name = self.dataset.name + "_" + self.singleton.__class__.__name__
-        failed = self.dataset.name + "_" + self.singleton.__class__.__name__ + "_failed"
+        name = self.dataset.name + "_" + self.singleton.__name__
+        failed = self.dataset.name + "_" + self.singleton.__name__ + "_failed"
         self.dataset_id = self.dataset.db.create_dataset(
-            name, description=self.singleton.__class__.__name__
+            name, description=self.singleton.__name__
         )
         self.failed_dataset_id = self.dataset.db.create_dataset(
-            failed, description=self.singleton.__class__.__name__
+            failed, description=self.singleton.__name__
         )
 
     def load_instructions(self, inputs: List[Dict[str, Any]]):
@@ -40,25 +40,14 @@ class ParallelSingletonExecutor:
         entry_ids = []
         for i in range(0, len(self.instructions[0]), self.batch_size):
             batch = self.instructions[0][i : i + self.batch_size]
-            inputs = self.instructions[1][i : i + self.batch_size]
+            original_inputs = self.instructions[1][i : i + self.batch_size]
 
-            # Execute tasks in batches, respecting the max_concurrent limit
             results = await self.dria.execute(batch, timeout=len(batch) * TASK_TIMEOUT)
             try:
-                ordered_outputs = []
-                outputs, task_inputs = self._parse_results(results)
-                common_keys = set(json.loads(task_inputs[0]).keys()).intersection(set(inputs[0].keys()))
-                lookup_inputs = [json.dumps({key: input_dict[key] for key in common_keys}) for input_dict in inputs]
-
-                for inp in lookup_inputs:
-                    try:
-                        ind = task_inputs.index(inp)
-                        ordered_outputs.append(outputs[ind])
-                        task_inputs.pop(ind)
-                        outputs.pop(ind)
-                    except ValueError:
-                        continue
-                entry_ids.extend(self.dataset.db.add_entries(self.dataset_id, ordered_outputs))
+                ordered_entries = self._align_results(results, original_inputs)
+                entry_ids.extend(
+                    self.dataset.db.add_entries(self.dataset_id, ordered_entries)
+                )
             except RuntimeError as e:
                 failed_data = [
                     {
@@ -83,5 +72,35 @@ class ParallelSingletonExecutor:
             for output in outputs
         ], [json.dumps(r.task_input) for r in results]
 
+    def _align_results(
+        self, results: List[TaskResult], original_inputs: List[Dict]
+    ) -> List:
+        """Align results with original inputs and merge the data."""
+        outputs = self.singleton.callback(results)
+        parsed_outputs = [
+            output.model_dump_json(indent=2, exclude_none=True, exclude_unset=True)
+            for output in outputs
+        ]
+        task_inputs = [r.task_input for r in results]
+
+        # Find common keys between first task input and first original input
+        common_keys = set(task_inputs[0].keys()) & set(original_inputs[0].keys())
+
+        # Create lookup dictionaries
+        result_lookup = {
+            json.dumps({k: d[k] for k in common_keys}): (full_output, task_input)
+            for full_output, task_input, d in zip(
+                parsed_outputs, task_inputs, task_inputs
+            )
+        }
+
+        ordered_outputs = []
+        for original_input in original_inputs:
+            lookup_key = json.dumps({k: original_input[k] for k in common_keys})
+            if lookup_key in result_lookup:
+                ordered_outputs.append(json.loads(result_lookup[lookup_key][0]))
+
+        return ordered_outputs
+
     async def run(self):
-        await self.execute_workflows()
+        return await self.execute_workflows()

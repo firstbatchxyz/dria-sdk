@@ -4,8 +4,11 @@ from dria.models import Model
 from dria.batches import ParallelSingletonExecutor
 from dria.factory.workflows.template import SingletonTemplate
 from dria.client import Dria
-from .utils import schemas_match
+from .utils import schemas_match, get_community_token
 import json
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class DatasetField:
@@ -18,7 +21,19 @@ class DatasetField:
 class DatasetGenerator:
     def __init__(self, dataset: DriaDataset, dria_client: Optional[Dria] = None):
         self.dataset = dataset
-        self.dria_client = dria_client or Dria()
+
+        try:
+            _id = self.dataset.db.get_dataset_id_by_name("rpc_url")
+        except:
+            token = get_community_token()
+            _id = self.dataset.db.create_dataset(
+                "rpc_url", "Stores the community rpc url"
+            )
+            self.dataset.db.add_entries(_id, [{"token": token}])
+            logger.info(f"Created RPC token!")
+
+        token = self.dataset.db.get_dataset_entries(_id, data_only=True)[0]["token"]
+        self.dria_client = dria_client or Dria(rpc_token=token)
 
     def _validate_singletons(
         self,
@@ -80,9 +95,9 @@ class DatasetGenerator:
 
     async def generate_dataset(
         self,
+        instructions: List[Dict],
         singletons: Union[SingletonTemplate, List[SingletonTemplate]],
         models: List[Model],
-        instructions: List[Dict],
     ) -> None:
         """Generate data using Dria singleton.
 
@@ -99,33 +114,27 @@ class DatasetGenerator:
         except ValueError as e:
             raise e
 
-        step_map = {singleton.__class__.__name__: [] for singleton in singletons}
+        step_map = {singleton.__name__: [] for singleton in singletons}
 
         # Execute first step with instructions
         entry_ids = await self._executor(instructions, singletons[0], models)
-        step_map[singletons[0].__class__.__name__].append(entry_ids)
+        step_map[singletons[0].__name__].append(entry_ids)
 
         for singleton in singletons[1:]:
-            name = self.dataset.name + "_" + singleton.__class__.__name__
-            dataset_id = self.dataset.db.create_dataset(
-                name, description=singleton.__class__.__name__
-            )
+            name = self.dataset.name + "_" + singleton.__name__
+            dataset_id = self.dataset.db.get_dataset_id_by_name(name)
             instructions = self.dataset.db.get_dataset_entries(
                 dataset_id, data_only=True
             )
             entry_ids = await self._executor(instructions, singleton, models)
-            step_map[singletons[0].__class__.__name__].append(entry_ids)
+            step_map[singletons[0].__name__].append(entry_ids)
 
         # Assign last created as the main dataset
-        name = self.dataset.name + "_" + singletons[-1].__class__.__name__
-        dataset_id = self.dataset.db.create_dataset(
-            name, description=singletons[-1].__class__.__name__
-        )
+        name = self.dataset.name + "_" + singletons[-1].__name__
+        dataset_id = self.dataset.db.get_dataset_id_by_name(name)
         final_entries = self.dataset.db.get_dataset_entries(dataset_id, data_only=True)
 
-        final_db = self.dataset.db.create_dataset(
-            self.dataset.name, self.dataset.description
-        )
+        final_db = self.dataset.db.get_dataset_id_by_name(self.dataset.name)
         self.dataset.db.add_entries(final_db, final_entries)
 
     async def transform_and_update_dataset(

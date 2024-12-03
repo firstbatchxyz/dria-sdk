@@ -102,6 +102,7 @@ class MagPie(SingletonTemplate):
             for r in result
         ]
 
+
 def group_into_dialogue(messages: List[str]) -> List[DialogueTurn]:
     """
     Groups messages into a list of dialogue turns.

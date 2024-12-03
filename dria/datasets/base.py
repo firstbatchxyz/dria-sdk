@@ -3,8 +3,9 @@ from pydantic import BaseModel, create_model, ValidationError, Field
 from datasets import load_dataset
 from datasets import Dataset as HFDataset
 import json
+import os
 from dria.models import Model
-from dria.utils import FieldMapping, DataFormatter, FormatType
+from dria.utils import FieldMapping, DataFormatter, FormatType, ConversationMapping
 from dria.db.database import DatasetDB
 
 OutputFormat = Literal["json", "jsonl", "huggingface"]
@@ -215,7 +216,7 @@ class DriaDataset:
     def format_for_training(
         self,
         format_type: FormatType,
-        field_mapping: FieldMapping,
+        field_mapping: Union[FieldMapping, ConversationMapping],
         output_format: OutputFormat,
         output_path: Optional[str] = None,
         hf_repo_id: Optional[str] = None,
@@ -237,15 +238,16 @@ class DriaDataset:
         formatter = DataFormatter()
         formatted_data = formatter.format(entries, format_type, field_mapping)
 
+        if not output_path:
+            output_path = os.getcwd() + self.name + "_" + format_type.name.lower()
+
         if output_format == "json":
-            if not output_path:
-                raise ValueError("output_path is required for JSON format")
+            output_path += ".json"
             with open(output_path, "w", encoding="utf-8") as f:
                 json.dump(formatted_data, f, indent=2, ensure_ascii=False)
 
         elif output_format == "jsonl":
-            if not output_path:
-                raise ValueError("output_path is required for JSONL format")
+            output_path += ".jsonl"
             with open(output_path, "w", encoding="utf-8") as f:
                 for item in formatted_data:
                     f.write(json.dumps(item, ensure_ascii=False) + "\n")
