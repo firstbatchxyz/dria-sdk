@@ -53,7 +53,9 @@ class EvolveInstructOutput(BaseModel):
 class EvolveInstruct(SingletonTemplate):
     # Input fields
     prompt: str = Field(..., description="The original prompt to be mutated")
-    mutation_type: MutationType = Field(..., description="The type of mutation to apply")
+    mutation_type: MutationType = Field(
+        ..., description="The type of mutation to apply"
+    )
 
     # Output schema
     OutputSchema = EvolveInstructOutput
@@ -108,9 +110,7 @@ class EvolveInstruct(SingletonTemplate):
             )
 
             output = EvolveInstructOutput(
-                mutated_prompt=new_prompt,
-                original_prompt=self.prompt,
-                model=r.model
+                mutated_prompt=new_prompt, original_prompt=self.prompt, model=r.model
             )
             outputs.append(output)
 

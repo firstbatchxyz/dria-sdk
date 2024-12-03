@@ -19,6 +19,9 @@ class SingletonTemplate(BaseModel, ABC):
         arbitrary_types_allowed = True
         extra = "forbid"
 
+    def preprocess(self):
+        pass
+
     @classmethod
     def create(cls, **data):
         """Factory method to create an instance with validated input"""

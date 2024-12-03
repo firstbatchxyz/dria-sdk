@@ -25,7 +25,9 @@ class QuestionSet(BaseModel):
 
 class MultiHopQuestion(SingletonTemplate):
     # Input fields
-    chunks: List[str] = Field(..., min_items=3, max_items=3, description="List of three document chunks")
+    chunks: List[str] = Field(
+        ..., min_items=3, max_items=3, description="List of three document chunks"
+    )
 
     # Output schema
     OutputSchema = QuestionSet
@@ -44,7 +46,7 @@ class MultiHopQuestion(SingletonTemplate):
         builder = WorkflowBuilder(
             document_1=self.chunks[0],
             document_2=self.chunks[1],
-            document_3=self.chunks[2]
+            document_3=self.chunks[2],
         )
 
         # Set workflow constraints
@@ -91,7 +93,9 @@ class MultiHopQuestion(SingletonTemplate):
             answer = get_text_between_tags(r.result, "answer")
 
             if None in [onehop, twohop, threehop, answer]:
-                logging.debug("One of the questions is missing. Please check the output.")
+                logging.debug(
+                    "One of the questions is missing. Please check the output."
+                )
                 continue
 
             results.append(

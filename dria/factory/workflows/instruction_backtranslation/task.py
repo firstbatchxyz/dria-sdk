@@ -38,8 +38,7 @@ class InstructionBacktranslation(SingletonTemplate):
         """
         # Initialize the workflow with variables
         builder = WorkflowBuilder(
-            instruction=self.instruction,
-            generation=self.generation
+            instruction=self.instruction, generation=self.generation
         )
 
         builder.generative_step(
@@ -65,6 +64,7 @@ class InstructionBacktranslation(SingletonTemplate):
         Returns:
             List[BacktranslationOutput]: List of validated outputs
         """
+
         def parse_result(text: str) -> tuple[str, str]:
             split = text.split("Score: ")
             reasoning = split[0].strip()
@@ -77,7 +77,7 @@ class InstructionBacktranslation(SingletonTemplate):
                 score=parse_result(r.result)[0],
                 instruction=self.instruction,
                 generation=self.generation,
-                model=r.model
+                model=r.model,
             )
             for r in result
         ]

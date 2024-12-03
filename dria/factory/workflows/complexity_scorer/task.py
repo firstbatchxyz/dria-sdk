@@ -15,7 +15,9 @@ import re
 
 # Output schemas for EvolveComplexity
 class EvolveOutput(BaseModel):
-    evolved_instruction: str = Field(..., description="Evolved version of the instruction")
+    evolved_instruction: str = Field(
+        ..., description="Evolved version of the instruction"
+    )
     instruction: str = Field(..., description="Original instruction")
     model: str = Field(..., description="Model used for generation")
 
@@ -61,7 +63,7 @@ class EvolveComplexity(SingletonTemplate):
             EvolveOutput(
                 evolved_instruction=r.result.strip(),
                 instruction=self.instruction,
-                model=r.model
+                model=r.model,
             )
             for r in result
         ]
@@ -131,7 +133,7 @@ class ScoreComplexity(SingletonTemplate):
                 InstructionScore(
                     instruction=instr,
                     score=parse_scores(r.result).get(i, 0),
-                    model=r.model
+                    model=r.model,
                 )
                 for i, instr in enumerate(self.instructions)
             ]

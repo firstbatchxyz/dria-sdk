@@ -40,7 +40,7 @@ def get_tags(text: str, tag: str) -> List[str]:
     return re.findall(rf"<{tag}>(.*?)</{tag}>", text, re.DOTALL)
 
 
-def parse_json(text: Union[str, List]) -> Union[list[dict], dict]:
+def parse_json(text: Union[str, List]) -> Union[list[dict], dict, list[str]]:
     """Parse the JSON text.
 
     Args:

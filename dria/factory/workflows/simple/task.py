@@ -32,7 +32,7 @@ class Simple(SingletonTemplate):
         builder.generative_step(
             prompt=self.prompt,
             operator=Operator.GENERATION,
-            outputs=[Write.new("response")]
+            outputs=[Write.new("response")],
         )
 
         flow = [Edge(source="0", target="_end")]
@@ -52,10 +52,6 @@ class Simple(SingletonTemplate):
             List[SimpleOutput]: List of validated simple outputs
         """
         return [
-            SimpleOutput(
-                prompt=self.prompt,
-                generation=res.result,
-                model=res.model
-            )
+            SimpleOutput(prompt=self.prompt, generation=res.result, model=res.model)
             for res in result
         ]

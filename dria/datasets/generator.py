@@ -38,7 +38,7 @@ class DatasetGenerator:
     def _validate_singletons(
         self,
         instructions: List[Dict[str, Any]],
-        singletons: Union[SingletonTemplate, List[SingletonTemplate]],
+        singletons: Union[Type[SingletonTemplate], List[Type[SingletonTemplate]]],
     ):
         """
         Validate singletons
@@ -58,10 +58,23 @@ class DatasetGenerator:
         :param instructions:
         :param singletons:
         """
+
+        def check_for_duplicates(lst):
+            seen = set()
+            for item in lst:
+                if item in seen:
+                    raise ValueError(
+                        f"Duplicate found: {item}. Can't use same singleton twice."
+                    )
+                seen.add(item)
+
+        # Name check
+        check_for_duplicates([singleton.__name__ for singleton in singletons])
+
         for i, instruction in enumerate(instructions):
             if not schemas_match(instruction, singletons[0]):
                 raise ValueError(
-                    f"Schema mismatch between the first singleton {singletons[0].__class__.__name__} and {i}th instruction. \n{json.dumps(instruction, indent=2)}"
+                    f"Schema mismatch between the first singleton {singletons[0].__name__} and {i}th instruction. \n{json.dumps(instruction, indent=2)}"
                 )
 
         for i in range(len(singletons) - 1):
@@ -70,7 +83,7 @@ class DatasetGenerator:
             # check if matches
             if not schemas_match(current_schema, next_element):
                 raise ValueError(
-                    f"Schema mismatch. Outputs for {singletons[i].__class__.__name__} doesn't match inputs for {singletons[i + 1].__class__.__name__}."
+                    f"Schema mismatch. Outputs for {singletons[i].__name__} doesn't match inputs for {singletons[i + 1].__name__}."
                 )
 
         if not schemas_match(
@@ -78,7 +91,7 @@ class DatasetGenerator:
             self.dataset.schema.model_json_schema(),
         ):
             raise ValueError(
-                f"Schema mismatch. Output of the last step: f{singletons[-1].__class__.__name__} doesn't match dataset schema."
+                f"Schema mismatch. Output of the last step: f{singletons[-1].__name__} doesn't match dataset schema."
             )
 
     async def _executor(
@@ -114,11 +127,16 @@ class DatasetGenerator:
         except ValueError as e:
             raise e
 
-        step_map = {singleton.__name__: [] for singleton in singletons}
+        step_map = []
 
         # Execute first step with instructions
-        entry_ids = await self._executor(instructions, singletons[0], models)
-        step_map[singletons[0].__name__].append(entry_ids)
+        entry_ids, input_ids = await self._executor(instructions, singletons[0], models)
+        step_map.append(
+            [
+                {"entry_id": entry_id, "input_id": input_id}
+                for entry_id, input_id in zip(entry_ids, input_ids)
+            ]
+        )
 
         for singleton in singletons[1:]:
             name = self.dataset.name + "_" + singleton.__name__
@@ -126,8 +144,13 @@ class DatasetGenerator:
             instructions = self.dataset.db.get_dataset_entries(
                 dataset_id, data_only=True
             )
-            entry_ids = await self._executor(instructions, singleton, models)
-            step_map[singletons[0].__name__].append(entry_ids)
+            entry_ids, input_ids = await self._executor(instructions, singleton, models)
+            step_map.append(
+                [
+                    {"entry_id": entry_id, "input_id": input_id}
+                    for entry_id, input_id in zip(entry_ids, input_ids)
+                ]
+            )
 
         # Assign last created as the main dataset
         name = self.dataset.name + "_" + singletons[-1].__name__
@@ -136,6 +159,8 @@ class DatasetGenerator:
 
         final_db = self.dataset.db.get_dataset_id_by_name(self.dataset.name)
         self.dataset.db.add_entries(final_db, final_entries)
+
+        # TODO: decide what to do with step_map, write on db, or store locally, or none
 
     async def transform_and_update_dataset(
         self, field: DatasetField

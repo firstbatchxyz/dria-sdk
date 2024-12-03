@@ -29,7 +29,9 @@ class EvaluationOutput(BaseModel):
 class ValidatePrediction(SingletonTemplate):
     # Input fields
     prediction: str = Field(..., description="The predicted answer to be evaluated")
-    correct_answer: str = Field(..., description="The correct answer to compare against")
+    correct_answer: str = Field(
+        ..., description="The correct answer to compare against"
+    )
 
     # Output schema
     OutputSchema = ValidationOutput
@@ -43,8 +45,7 @@ class ValidatePrediction(SingletonTemplate):
         """
         # Initialize the workflow with variables
         builder = WorkflowBuilder(
-            prediction=self.prediction,
-            correct_answer=self.correct_answer
+            prediction=self.prediction, correct_answer=self.correct_answer
         )
 
         # Add a generative step using the prompt
@@ -75,7 +76,14 @@ class ValidatePrediction(SingletonTemplate):
         outputs = []
         for r in result:
             if r.result.lower() == "true":
-                outputs.append(ValidationOutput(prediction=self.prediction, correct_answer=self.correct_answer, validation=True, model=r.model))
+                outputs.append(
+                    ValidationOutput(
+                        prediction=self.prediction,
+                        correct_answer=self.correct_answer,
+                        validation=True,
+                        model=r.model,
+                    )
+                )
             elif r.result.lower() == "false":
                 outputs.append(ValidationOutput(validation=False, model=r.model))
             else:
@@ -101,9 +109,7 @@ class EvaluatePrediction(SingletonTemplate):
         """
         # Initialize the workflow with variables
         builder = WorkflowBuilder(
-            prediction=self.prediction,
-            question=self.question,
-            context=self.context
+            prediction=self.prediction, question=self.question, context=self.context
         )
 
         # Add a generative step using the prompt
@@ -132,6 +138,11 @@ class EvaluatePrediction(SingletonTemplate):
             List[EvaluationOutput]: List of validated outputs
         """
         return [
-            EvaluationOutput(question=self.question, prediction=self.prediction, evaluation=r.result, model=r.model)
+            EvaluationOutput(
+                question=self.question,
+                prediction=self.prediction,
+                evaluation=r.result,
+                model=r.model,
+            )
             for r in result
         ]

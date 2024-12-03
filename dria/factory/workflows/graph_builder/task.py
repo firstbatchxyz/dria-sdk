@@ -26,7 +26,9 @@ class GraphOutput(BaseModel):
 
 class GenerateGraph(SingletonTemplate):
     # Input fields
-    context: str = Field(..., description="The context from which to extract the ontology of terms")
+    context: str = Field(
+        ..., description="The context from which to extract the ontology of terms"
+    )
 
     # Output schema
     OutputSchema = GraphOutput

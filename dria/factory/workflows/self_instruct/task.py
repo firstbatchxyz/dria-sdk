@@ -29,7 +29,9 @@ class SelfInstruct(SingletonTemplate):
     application_description: str = Field(
         ..., description="A description of the AI application"
     )
-    context: str = Field(..., description="The context to which the queries should be applicable")
+    context: str = Field(
+        ..., description="The context to which the queries should be applicable"
+    )
 
     # Output schema
     OutputSchema = InstructionOutput
@@ -77,7 +79,7 @@ class SelfInstruct(SingletonTemplate):
         return [
             InstructionOutput(
                 instructions=list(filter(None, r.result.strip().split("\n"))),
-                model=r.model
+                model=r.model,
             )
             for r in result
         ]

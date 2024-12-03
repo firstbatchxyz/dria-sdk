@@ -1,52 +1,68 @@
-import logging
-from dria_workflows import WorkflowBuilder, Operator, Write, Edge, GetAll, Workflow
-from typing import List, Union
+import json
+from typing import List
+from pydantic import BaseModel, Field
+from dria_workflows import (
+    Workflow,
+    WorkflowBuilder,
+    Operator,
+    Write,
+    Edge,
+)
+from dria.factory.utilities import get_abs_path, parse_json
+from dria.factory.workflows.template import SingletonTemplate
+from dria.models import TaskResult
 
-from dria.models import TaskInput
-from dria.pipelines import StepTemplate, Step
-from dria.factory.utilities import get_abs_path
-from dria.utils.task_utils import parse_json
+
+class SubtopicsOutput(BaseModel):
+    topic: str
+    subtopic: str = Field(..., description="subtopic of topic")
+    model: str = Field(..., description="Model used for generation")
 
 
-class GenerateSubtopics(StepTemplate):
-    def create_workflow(self, topic: str) -> Workflow:
-        """Generate subtopics for a given topic.
+class GenerateSubtopics(SingletonTemplate):
+    # Input fields
+    topic: str = Field(..., description="Main topic to generate subtopics for")
 
-        Args:
-            topic (list): The input data for the workflow.
-        Returns:
-            Workflow: The built workflow for subtopic generation.
+    # Output schema
+    OutputSchema = SubtopicsOutput
+
+    def workflow(self) -> Workflow:
         """
-        logging.basicConfig(
-            level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
-        )
+        Creates a workflow for generating subtopics for a given topic.
 
-        builder = WorkflowBuilder(topic=topic)
+        Returns:
+            Workflow: The constructed workflow
+        """
+        # Initialize the workflow with variables
+        builder = WorkflowBuilder(topic=self.topic)
 
-        # Step A: GenerateSubtopics
+        # Generate subtopics
         builder.generative_step(
-            id="generate_subtopics",
             path=get_abs_path("prompt.md"),
             operator=Operator.GENERATION,
             outputs=[Write.new("subtopics")],
         )
 
-        flow = [Edge(source="generate_subtopics", target="_end")]
+        # Define the flow
+        flow = [Edge(source="0", target="_end")]
         builder.flow(flow)
-        builder.set_return_value("subtopics")
-        workflow = builder.build()
-        return workflow
 
-    def callback(self, step: "Step") -> Union[List[TaskInput], TaskInput]:
+        # Set the return value of the workflow
+        builder.set_return_value("subtopics")
+        return builder.build()
+
+    def callback(self, result: List[TaskResult]) -> List[SubtopicsOutput]:
         """
-        Only to use as the last callback
+        Parse the results into validated SubtopicsOutput objects
+
         Args:
-            step:
+            result: List of TaskResult objects
 
         Returns:
-
+            List[SubtopicsOutput]: List of validated subtopics outputs
         """
-        # flatten list of lists
-        outputs = [parse_json(o.result) for o in step.output]
-        flattened = [item for sublist in outputs for item in sublist]
-        return TaskInput(**{"subtopics": flattened})
+        return [
+            SubtopicsOutput(topic=self.topic, subtopic=subtopic, model=r.model)
+            for r in result
+            for subtopic in parse_json(r.result)
+        ]
