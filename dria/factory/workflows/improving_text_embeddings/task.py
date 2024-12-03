@@ -5,53 +5,86 @@ from dria.factory.utilities import get_abs_path
 from dria.factory.workflows.template import SingletonTemplate
 from dria.models import TaskResult
 from .utils import parse_json
+from pydantic import BaseModel, Field
+
+
+class SemanticUnit(BaseModel):
+    S1: str = Field(..., description="First semantic unit")
+    S2: str = Field(..., description="Second semantic unit with high similarity to S1")
+    S3: str = Field(..., description="Third semantic unit with low similarity to S1")
+
+
+class SemanticTripletOutput(BaseModel):
+    triplet: SemanticUnit = Field(..., description="The semantic triplet units")
+    model: str = Field(..., description="Model used for generation")
 
 
 class SemanticTriplet(SingletonTemplate):
+    """
+    SemanticTripletOutput
+    """
 
-    def workflow(
-        self,
-        unit: str,
-        language: str,
-        high_score: int,
-        low_score: int,
-        difficulty: str,
-    ) -> Workflow:
+    # Input fields
+    unit: str = Field(
+        ..., description="The textual unit type (e.g., sentence, paragraph)"
+    )
+    language: str = Field(..., description="The language for generation")
+    high_score: int = Field(
+        ..., description="Similarity score between S1 and S2 (1 to 5)"
+    )
+    low_score: int = Field(
+        ..., description="Similarity score between S1 and S3 (1 to 5)"
+    )
+    difficulty: str = Field(
+        ..., description="Education level required to understand the units"
+    )
+
+    # Output schema
+    OutputSchema = SemanticTripletOutput
+
+    def workflow(self) -> Workflow:
         """
-        Generate a Task to create a JSON object with three units (S1, S2, S3) having specified semantic similarity scores.
+        Creates a workflow for generating semantic triplets.
 
-        :param unit: The textual unit (e.g., "sentence", "paragraph") to be generated.
-        :param language: The language in which the units should be written.
-        :param high_score: The similarity score between S1 and S2 (1 to 5).
-        :param low_score: The similarity score between S1 and S3 (1 to 5).
-        :param difficulty: The education level required to understand the units (e.g., "college", "high school").
-        :return: A Task object representing the workflow.
+        Returns:
+            Workflow: The constructed workflow
         """
-
         builder = WorkflowBuilder(
-            unit=unit,
-            language=language,
-            high_score=str(high_score),
-            low_score=str(low_score),
-            difficulty=difficulty,
+            unit=self.unit,
+            language=self.language,
+            high_score=str(self.high_score),
+            low_score=str(self.low_score),
+            difficulty=self.difficulty,
         )
+
         builder.generative_step(
             path=get_abs_path("monolingual_triplet.md"),
             operator=Operator.GENERATION,
             outputs=[Write.new("semantic_triple")],
         )
+
         flow = [Edge(source="0", target="_end")]
         builder.flow(flow)
         builder.set_return_value("semantic_triple")
         return builder.build()
 
-    def parse_result(self, result: List[TaskResult]) -> List[Dict[str, Any]]:
-        results = []
-        for r in result:
-            output = parse_json(r.result)
-            output["model"] = r.model
-            results.append(output)
-        return results
+    @staticmethod
+    def callback(result: List[TaskResult]) -> List[SemanticTripletOutput]:
+        """
+        Parse the results into validated SemanticTripletOutput objects
+
+        Args:
+            result: List of TaskResult objects
+
+        Returns:
+            List[SemanticTripletOutput]: List of validated semantic triplet outputs
+        """
+        return [
+            SemanticTripletOutput(
+                triplet=SemanticUnit(**parse_json(r.result)), model=r.model
+            )
+            for r in result
+        ]
 
 
 class TextMatching(SingletonTemplate):

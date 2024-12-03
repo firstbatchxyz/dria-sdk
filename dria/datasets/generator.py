@@ -1,5 +1,5 @@
 from .base import DriaDataset
-from typing import List, Dict, Optional, Union, Any
+from typing import List, Dict, Optional, Union, Any, Type
 from dria.models import Model
 from dria.batches import ParallelSingletonExecutor
 from dria.factory.workflows.template import SingletonTemplate
@@ -84,7 +84,7 @@ class DatasetGenerator:
     async def _executor(
         self,
         instructions: List[Dict[str, Any]],
-        singleton: SingletonTemplate,
+        singleton: Type[SingletonTemplate],
         models: List[Model],
     ):
 
@@ -96,7 +96,7 @@ class DatasetGenerator:
     async def generate_dataset(
         self,
         instructions: List[Dict],
-        singletons: Union[SingletonTemplate, List[SingletonTemplate]],
+        singletons: Union[Type[SingletonTemplate], List[Type[SingletonTemplate]]],
         models: List[Model],
     ) -> None:
         """Generate data using Dria singleton.

@@ -1,4 +1,6 @@
+import json
 from typing import Any, List, Dict
+from pydantic import BaseModel, Field
 from dria_workflows import (
     Workflow,
     WorkflowBuilder,
@@ -11,18 +13,34 @@ from dria.factory.workflows.template import SingletonTemplate
 from dria.models import TaskResult
 
 
+class BacktranslationOutput(BaseModel):
+    reasoning: str = Field(..., description="Reasoning for the score")
+    score: str = Field(..., description="Evaluation score")
+    instruction: str = Field(..., description="Original instruction")
+    generation: str = Field(..., description="Generated text")
+    model: str = Field(..., description="Model used for evaluation")
+
+
 class InstructionBacktranslation(SingletonTemplate):
+    # Input fields
+    instruction: str = Field(..., description="Original instruction")
+    generation: str = Field(..., description="Generated text to evaluate")
 
-    def workflow(self, instruction: str, generation: str) -> Workflow:
+    # Output schema
+    OutputSchema = BacktranslationOutput
+
+    def workflow(self) -> Workflow:
         """
+        Creates a workflow for evaluating instruction-generation pairs.
 
-        :param instruction:
-        :param generation:
-        :return: A Task object representing the workflow.
+        Returns:
+            Workflow: The constructed workflow
         """
-
         # Initialize the workflow with variables
-        builder = WorkflowBuilder(instruction=instruction, generation=generation)
+        builder = WorkflowBuilder(
+            instruction=self.instruction,
+            generation=self.generation
+        )
 
         builder.generative_step(
             path=get_abs_path("prompt.md"),
@@ -37,22 +55,29 @@ class InstructionBacktranslation(SingletonTemplate):
         builder.set_return_value("score")
         return builder.build()
 
-    def parse_result(self, result: List[TaskResult]) -> List[Dict[str, Any]]:
+    def callback(self, result: List[TaskResult]) -> List[BacktranslationOutput]:
+        """
+        Parse the results into validated BacktranslationOutput objects
+
+        Args:
+            result: List of TaskResult objects
+
+        Returns:
+            List[BacktranslationOutput]: List of validated outputs
+        """
+        def parse_result(text: str) -> tuple[str, str]:
+            split = text.split("Score: ")
+            reasoning = split[0].strip()
+            score = split[1].strip()
+            return score, reasoning
+
         return [
-            {
-                "reasoning": self.parse(r.result)[1],
-                "score": self.parse(r.result)[0],
-                "instruction": r.task_input["instruction"],
-                "generation": r.task_input["generation"],
-                "model": r.model,
-            }
+            BacktranslationOutput(
+                reasoning=parse_result(r.result)[1],
+                score=parse_result(r.result)[0],
+                instruction=self.instruction,
+                generation=self.generation,
+                model=r.model
+            )
             for r in result
         ]
-
-    @staticmethod
-    def parse(result):
-        split = result.split("Score: ")
-        reasoning = split[0].strip()
-        score = split[1].strip()
-
-        return score, reasoning

@@ -33,9 +33,8 @@ class SingletonTemplate(BaseModel, ABC):
         """
         pass
 
-    @staticmethod
     @abstractmethod
-    def callback(result: List[TaskResult]) -> List[Type[BaseModel]]:
+    def callback(self, result: List[TaskResult]) -> List[Type[BaseModel]]:
         """
         The callback method for the singleton template.
         """

@@ -84,8 +84,7 @@ class MagPie(SingletonTemplate):
         builder.set_return_value("chat")
         return builder.build()
 
-    @staticmethod
-    def callback(result: List[TaskResult]) -> List[DialogueOutput]:
+    def callback(self, result: List[TaskResult]) -> List[DialogueOutput]:
         """
         Parse the results into validated DialogueOutput objects
 
