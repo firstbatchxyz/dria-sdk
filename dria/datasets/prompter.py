@@ -3,6 +3,7 @@ from typing import Any, Type, Optional, Dict
 from typing import List
 from pydantic import BaseModel, Field
 from dria_workflows import WorkflowBuilder, Operator, Edge, Write
+from dria.factory.utilities import parse_json
 from dria.models import TaskResult
 import re
 
@@ -51,4 +52,4 @@ class Prompt:
         return builder.build()
 
     def callback(self, results: List[TaskResult]):
-        return [self.schema(**r.result) for r in results]
+        return [self.schema(**parse_json(r.result)) for r in results]

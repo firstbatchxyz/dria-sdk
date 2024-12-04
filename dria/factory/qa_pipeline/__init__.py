@@ -1,1 +1,1 @@
-from .pipeline import QAPipeline
+from .random_vars import RandomVars

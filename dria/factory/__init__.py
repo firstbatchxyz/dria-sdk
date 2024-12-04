@@ -3,7 +3,6 @@ from importlib.metadata import version, PackageNotFoundError
 from .workflows import *
 from .persona import *
 from .subtopic import *
-from .search import *
 from .csv_extender import *
 from .list_extender import *
 from .qa_pipeline import *
@@ -29,8 +28,6 @@ __core_exports = [
     "SelfInstruct",
     "PersonaPipeline",
     "SubTopicPipeline",
-    "WebMultiChoice",
-    "SearchPipeline",
     "CSVExtenderPipeline",
     "ListExtenderPipeline",
     "QAPipeline",

@@ -35,7 +35,7 @@ class DatasetGenerator:
             logger.info(f"Created RPC token!")
 
         token = self.dataset.db.get_dataset_entries(_id, data_only=True)[0]["token"]
-        self.dria_client = dria_client or Dria(rpc_token=token)
+        self.dria_client = dria_client or Dria(rpc_token=token, log_level=logging.DEBUG)
 
     def _validate_prompt(self, instructions: List[Dict[str, Any]], prompt: Prompt):
 
