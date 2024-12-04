@@ -64,7 +64,11 @@ class NextSearch(StepTemplate):
         try:
             tasks = []
             for i,s in enumerate(step.output):
-                input_params = step.input_params[s.id]
+                try:
+                    input_params = step.input_params[s.id]
+                except KeyError as e:
+                    logger.debug(f"Task not found in outputs: {str(e)}")
+                    continue
                 try:
                     parsed_ = parse_json(s.result)["organic"]
                     parsed_ = [json.dumps(x) for x in parsed_]
@@ -141,7 +145,11 @@ class NextQuery(StepTemplate):
             tasks = []
             for i,s in enumerate(step.output):
                 try:
-                    input_params = step.input_params[s.id]
+                    try:
+                        input_params = step.input_params[s.id]
+                    except KeyError as e:
+                        logger.debug(f"Task not found in outputs: {str(e)}")
+                        continue
                     query = self.clean_query(extract_backtick_label(s.result, "")[0])
                     if query.split("site:jina.ai")[0] == "":
                         continue
@@ -183,7 +191,7 @@ class NextQuery(StepTemplate):
                 cleaned = cleaned[len(prefix) :]
 
         # Remove surrounding quotes if they exist
-        cleaned = cleaned.replace('"', "")
+        cleaned = cleaned.replace('"', "").replace("\n", "")
 
         return cleaned
 
@@ -244,7 +252,11 @@ class RateWithSearch(StepTemplate):
         results = []  # a list of dicts
         try:
             for i, s in enumerate(step.output):
-                input_params = step.input_params[s.id]
+                try:
+                    input_params = step.input_params[s.id]
+                except KeyError as e:
+                    logger.debug(f"Task not found in outputs: {str(e)}")
+                    continue
                 if all(input_params.question not in d.values() for d in results):
                     results.append(
                         {
@@ -273,7 +285,6 @@ class RateWithSearch(StepTemplate):
                             "supported": "[SUPPORTED]" in s.result,
                         }
                     )
-
 
         except Exception as e:
             logger.error(f"Error in atomic fact revision: {str(e)}")

@@ -21,17 +21,15 @@ logger = logging.getLogger(__name__)
 class SearchAugmentedFactualityEvaluator:
 
     def __init__(
-        self,
-        dria: Dria,
-        models: Optional[Union[List[Model], List[List[Model]]]] = None,
+            self,
+            dria: Dria,
+            models: Optional[Union[List[Model], List[List[Model]]]] = None,
     ):
         self.pipeline = PipelineBuilder(dria)
         self.models_list = [
             [
                 Model.GPT4O,
-                Model.GPT4O_MINI,
-                Model.ANTHROPIC_HAIKU_3_5_OR,
-                Model.QWEN2_5_72B_OR,
+                Model.ANTHROPIC_SONNET_3_5_OR
             ],
             [
                 Model.GPT4O_MINI,
@@ -83,8 +81,6 @@ class SearchAugmentedFactualityEvaluator:
         self.pipeline << SplitAtomicFacts().set_models(self.models_list[0])
         self.pipeline << ReviseAtomicFact().set_models(self.models_list[1])
         self.pipeline << ClassifyAtomicFacts().set_models(self.models_list[1])
-        self.pipeline << NextQuery().set_models(self.models_list[1])
-        self.pipeline << NextSearch().set_models(self.models_list[3])
         self.pipeline << NextQuery().set_models(self.models_list[1])
         self.pipeline << NextSearch().set_models(self.models_list[3])
         self.pipeline << RateWithSearch().set_models(self.models_list[2])

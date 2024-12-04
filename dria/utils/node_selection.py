@@ -1,6 +1,7 @@
 import random
 from typing import List
 from dria.utils.logging import logger
+from dria.constants import COMPUTE_NODE_BATCH_SIZE
 
 
 def select_nodes(node_scores, batch_size) -> List[str]:
@@ -59,10 +60,11 @@ def select_nodes(node_scores, batch_size) -> List[str]:
             )
             selected_nodes.append(chosen_node)
 
-            # Remove the chosen node and its probability from the lists
-            index = remaining_nodes.index(chosen_node)
-            del remaining_nodes[index]
-            del remaining_probabilities[index]
+            if selected_nodes.count(chosen_node) >= COMPUTE_NODE_BATCH_SIZE:
+                # Remove the chosen node and its probability from the lists
+                index = remaining_nodes.index(chosen_node)
+                del remaining_nodes[index]
+                del remaining_probabilities[index]
 
             # Re-normalize the probabilities if there are remaining nodes
             if remaining_nodes:  # Add check to prevent division by zero

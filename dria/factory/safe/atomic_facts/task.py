@@ -164,7 +164,10 @@ class SplitAtomicFacts(StepTemplate):
         for i, s in enumerate(step.output):
             try:
                 input_params = step.input_params[s.id]
+                facts = []
                 for fact in self.parse(s.result):
+                    if fact in facts:
+                        continue
                     tasks.append(
                         TaskInput(
                             atomic_fact=fact,
@@ -172,6 +175,7 @@ class SplitAtomicFacts(StepTemplate):
                             question=input_params.question,
                         )
                     )
+                    facts.append(fact)
             except Exception as e:
                 logger.error(f"Error in atomic fact split: {str(e)}")
         return tasks
@@ -186,4 +190,4 @@ class SplitAtomicFacts(StepTemplate):
         Returns:
             List[str]: The parsed backstory as a list of strings.
         """
-        return [v.replace("\n", "").strip() for v in result.split("-") if v]
+        return [v.replace("\n", "").strip() for v in result.split("- ") if v]

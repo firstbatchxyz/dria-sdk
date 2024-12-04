@@ -250,7 +250,7 @@ class Dria:
         results: List[TaskResult] = []
         start_time = time.time()
         min_outputs = self._determine_min_outputs(task, min_outputs)
-
+        last_update = time.time()
         with tqdm(
             total=min_outputs, desc="Fetching results...", disable=is_disabled
         ) as pbar:
@@ -272,7 +272,12 @@ class Dria:
                 )
 
                 results.extend(new_results.values())
-                pbar.update(len(new_results))
+                
+                current_time = time.time()
+                if current_time - last_update >= 1.0:
+                    pbar.n = len(results)
+                    pbar.refresh()
+                    last_update = current_time
                 if task is not None:
                     if isinstance(task, str):
                         task = [task]
