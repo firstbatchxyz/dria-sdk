@@ -1,106 +1,111 @@
 import json
-import logging
 import random
-from typing import Dict, List
-
+from typing import List
+from pydantic import BaseModel, Field
 from dria_workflows import (
+    Workflow,
     WorkflowBuilder,
     Operator,
-    Write,
+    GetAll,
+    Push,
     Edge,
-    Read,
-    Workflow,
 )
-
-from dria.models import TaskInput
-from dria.pipelines import Step, StepTemplate
-
-logger = logging.getLogger(__name__)
+from dria.factory.utilities import get_abs_path
+from dria.factory.workflows.template import SingletonTemplate
+from dria.models import TaskResult, TaskInput
 
 
-class PageAggregator(StepTemplate):
+class SearchResult(BaseModel):
+    title: str = Field(..., description="Title of the search result")
+    url: str = Field(..., description="URL of the search result")
+    summary: str = Field(..., description="Summary or snippet of the search result")
+    id: str = Field(..., description="Unique identifier for the result")
 
-    def create_workflow(
-        self,
-        topic: str,
-    ) -> Workflow:
-        """Collect web pages related to topic
 
-        Args:
-            :param topic:
+class SearchOutput(BaseModel):
+    results: List[SearchResult] = Field(..., description="List of search results")
+    model: str = Field(..., description="Model used for generation")
+
+
+class PageAggregator(SingletonTemplate):
+    # Input fields
+    topic: str = Field(..., description="Topic to search for")
+
+    # Output schema
+    OutputSchema = SearchOutput
+
+    def workflow(self) -> Workflow:
+        """
+        Creates a workflow for searching and aggregating pages related to a topic.
 
         Returns:
-            dict: collected pages
+            Workflow: The constructed workflow
         """
-        builder = WorkflowBuilder(topic=topic)
-        builder.set_max_time(self.config.max_time)
-        builder.set_max_tokens(self.config.max_tokens)
-        builder.set_max_steps(self.config.max_steps)
+        builder = WorkflowBuilder(topic=self.topic)
 
-        # Step A: RandomVarGen
         builder.generative_step(
-            id="search",
-            prompt="Search for following topic: {{topic}}",
+            path=get_abs_path("search.md"),  # You'll need to create this template
             operator=Operator.FUNCTION_CALLING,
-            inputs=[
-                Read.new(key="topic", required=True),
-            ],
-            outputs=[Write.new("links")],
+            inputs=[GetAll.new("topic", required=True)],
+            outputs=[Push.new("links")],
         )
 
-        flow = [Edge(source="search", target="_end")]
+        flow = [Edge(source="0", target="_end")]
         builder.flow(flow)
         builder.set_return_value("links")
         return builder.build()
 
-    def callback(self, step: Step) -> List[TaskInput]:
+    def callback(self, result: List[TaskResult]) -> List[SearchOutput]:
         """
-        Process the output of the random variable generation step.
+        Parse the results into validated SearchOutput objects
 
         Args:
-            step (Step): The Step object containing input and output data.
+            result: List of TaskResult objects
 
         Returns:
-            Dict[str, Any]: A dictionary containing persona traits and simulation description.
-
-        Raises:
-            Exception: If there's an error processing the step output.
+            List[SearchOutput]: List of validated search outputs
         """
-
-        return self.parse(step.output[0].result)
+        return [
+            SearchOutput(
+                results=self.parse_results(json.loads(r.result)), model=r.model
+            )
+            for r in result
+        ]
 
     @staticmethod
-    def parse(result: str) -> List[TaskInput]:
+    def parse_results(data: str) -> List[SearchResult]:
         """
-        Parse input string into a list of TaskInput objects.
+        Parse the search results into SearchResult objects
 
         Args:
-            result (str): Input string in either JSON format or newline-separated format
+            data: Raw search result data
 
         Returns:
-            List[TaskInput]: List of parsed TaskInput objects
+            List[SearchResult]: List of parsed and validated search results
         """
         try:
-            # Try parsing as JSON first
-            data = json.loads(result)
-            return [
-                TaskInput(
-                    title=item["title"],
-                    url=f"https://{item['link']}",
-                    summary=item["snippet"],
-                    id=str(random.randint(10000, 99999)),
-                )
-                for item in data
-            ]
-        except json.JSONDecodeError:
-            # Fall back to parsing newline-separated format
-            lines = result.strip().split("\n")
-            return [
-                TaskInput(
-                    title=lines[i].strip(),
-                    url=lines[i + 1].strip(),
-                    summary=lines[i + 2].strip(),
-                    id=int(lines[i + 4].strip()),
-                )
-                for i in range(0, len(lines), 5)
-            ]
+            # Try parsing as JSON
+            if isinstance(data, list):
+                return [
+                    SearchResult(
+                        title=item["title"],
+                        url=f"https://{item['link']}",
+                        summary=item["snippet"],
+                        id=str(random.randint(10000, 99999)),
+                    )
+                    for item in data
+                ]
+            else:
+                # Parse newline-separated format
+                lines = data.strip().split("\n")
+                return [
+                    SearchResult(
+                        title=lines[i].strip(),
+                        url=lines[i + 1].strip(),
+                        summary=lines[i + 2].strip(),
+                        id=lines[i + 4].strip(),
+                    )
+                    for i in range(0, len(lines), 5)
+                ]
+        except (json.JSONDecodeError, KeyError, IndexError) as e:
+            raise ValueError(f"Error parsing search results: {str(e)}")

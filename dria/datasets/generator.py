@@ -1,12 +1,14 @@
 from .base import DriaDataset
 from typing import List, Dict, Optional, Union, Any, Type
 from dria.models import Model
-from dria.batches import ParallelSingletonExecutor
+from dria.batches import ParallelSingletonExecutor, ParallelPromptExecutor
 from dria.factory.workflows.template import SingletonTemplate
 from dria.client import Dria
+from hashlib import sha256
 from .utils import schemas_match, get_community_token
 import json
 import logging
+from .prompter import Prompt
 
 logger = logging.getLogger(__name__)
 
@@ -15,7 +17,7 @@ class DatasetField:
     name: str
     prompt: Optional[str] = None
     workflow: Optional[Union[SingletonTemplate, List[SingletonTemplate]]] = None
-    models: List[Model] = [Model.GPT4O_MINI]
+    models: List[Model] = [Model.SMALL]
 
 
 class DatasetGenerator:
@@ -34,6 +36,21 @@ class DatasetGenerator:
 
         token = self.dataset.db.get_dataset_entries(_id, data_only=True)[0]["token"]
         self.dria_client = dria_client or Dria(rpc_token=token)
+
+    def _validate_prompt(self, instructions: List[Dict[str, Any]], prompt: Prompt):
+
+        for i, instruction in enumerate(instructions):
+            if not set(instruction.keys()) == set(prompt.variables):
+                raise ValueError(
+                    f"Schema mismatch between the prompt {prompt.prompt} and {i+1}. instruction. \n{json.dumps(instruction, indent=2)}"
+                )
+        if not schemas_match(
+            prompt.schema.model_json_schema(),
+            self.dataset.schema.model_json_schema(),
+        ):
+            raise ValueError(
+                f"Schema mismatch. Schema of the Prompt doesn't match dataset schema."
+            )
 
     def _validate_singletons(
         self,
@@ -79,7 +96,7 @@ class DatasetGenerator:
 
         for i in range(len(singletons) - 1):
             current_schema = singletons[i].OutputSchema.model_json_schema()
-            next_element = singletons[i + 1].model_json_schema()
+            next_element = singletons[i + 1]
             # check if matches
             if not schemas_match(current_schema, next_element):
                 raise ValueError(
@@ -97,16 +114,58 @@ class DatasetGenerator:
     async def _executor(
         self,
         instructions: List[Dict[str, Any]],
-        singleton: Type[SingletonTemplate],
+        singleton: Union[Type[SingletonTemplate], Prompt],
         models: List[Model],
     ):
 
-        executor = ParallelSingletonExecutor(self.dria_client, singleton, self.dataset)
-        executor.set_models(models)
-        executor.load_instructions(instructions)
-        return await executor.run()
+        if isinstance(singleton, Prompt):
+            executor = ParallelPromptExecutor(self.dria_client, singleton, self.dataset)
+            executor.set_models(models)
+            executor.load_instructions(instructions)
+            return await executor.run()
+        else:
+            executor = ParallelSingletonExecutor(
+                self.dria_client, singleton, self.dataset
+            )
+            executor.set_models(models)
+            executor.load_instructions(instructions)
+            return await executor.run()
 
-    async def generate_dataset(
+    async def generate_data(
+        self,
+        instructions: List[Dict[str, Any]],
+        singletons: Union[
+            Type[SingletonTemplate], List[Type[SingletonTemplate]], Prompt
+        ],
+        models: List[Model],
+    ) -> None:
+
+        if isinstance(singletons, Prompt):
+            await self._with_prompt(instructions, singletons, models)
+        else:
+            await self._with_singletons(instructions, singletons, models)
+
+    async def _with_prompt(
+        self, instructions: List[Dict[str, Any]], prompt: Prompt, models: List[Model]
+    ):
+
+        try:
+            self._validate_prompt(instructions, prompt)
+        except ValueError as e:
+            raise e
+
+        _, _ = await self._executor(instructions, prompt, models)
+
+        name = (
+            self.dataset.name + "_" + sha256(prompt.prompt.encode("utf-8")).hexdigest()
+        )
+        dataset_id = self.dataset.db.get_dataset_id_by_name(name)
+        final_entries = self.dataset.db.get_dataset_entries(dataset_id, data_only=True)
+
+        final_db = self.dataset.db.get_dataset_id_by_name(self.dataset.name)
+        self.dataset.db.add_entries(final_db, final_entries)
+
+    async def _with_singletons(
         self,
         instructions: List[Dict],
         singletons: Union[Type[SingletonTemplate], List[Type[SingletonTemplate]]],
