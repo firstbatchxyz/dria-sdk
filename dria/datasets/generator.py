@@ -139,7 +139,7 @@ class DatasetGenerator:
         singletons: Union[
             Type[SingletonTemplate], List[Type[SingletonTemplate]], Prompt
         ],
-        models: Optional[List[Model]] = None,
+        models: Optional[Model, List[Model], List[List[Model]]] = None,
     ) -> None:
 
         if models is None:
@@ -157,13 +157,19 @@ class DatasetGenerator:
             await self._with_singletons(instructions, singletons, models)
 
     async def _with_prompt(
-        self, instructions: List[Dict[str, Any]], prompt: Prompt, models: List[Model]
+        self,
+        instructions: List[Dict[str, Any]],
+        prompt: Prompt,
+        models: Union[Model, List[Model]],
     ):
 
         try:
             self._validate_prompt(instructions, prompt)
         except ValueError as e:
             raise e
+
+        if not isinstance(models, list):
+            models = [models]
 
         _, _ = await self._executor(instructions, prompt, models)
 
@@ -180,7 +186,7 @@ class DatasetGenerator:
         self,
         instructions: List[Dict],
         singletons: Union[Type[SingletonTemplate], List[Type[SingletonTemplate]]],
-        models: List[Model],
+        models: Union[Model, List[Model], List[List[Model]]],
     ) -> None:
         """Generate data using Dria singleton.
 
@@ -192,6 +198,18 @@ class DatasetGenerator:
         if not isinstance(singletons, list):
             singletons = [singletons]
 
+        if not isinstance(models, list):
+            models = [models]
+
+        if isinstance(models[0], list):
+            if len(models) != len(singletons):
+                raise ValueError(
+                    f"If you are providing a list of models for each singleton, "
+                    f"it should have the same length. Number of models: {len(models)} number of singletons: {len(singletons)}"
+                )
+        else:
+            models = [models] * len(singletons)
+
         try:
             self._validate_singletons(instructions, singletons)
         except ValueError as e:
@@ -200,7 +218,9 @@ class DatasetGenerator:
         step_map = []
 
         # Execute first step with instructions
-        entry_ids, input_ids = await self._executor(instructions, singletons[0], models)
+        entry_ids, input_ids = await self._executor(
+            instructions, singletons[0], models[0]
+        )
         step_map.append(
             [
                 {"entry_id": entry_id, "input_id": input_id}
@@ -215,7 +235,7 @@ class DatasetGenerator:
                 dataset_id, data_only=True
             )
             entry_ids, input_ids = await self._executor(
-                instructions, singletons[i], models
+                instructions, singletons[i], models[i]
             )
             step_map.append(
                 [

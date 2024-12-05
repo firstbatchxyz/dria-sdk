@@ -3,21 +3,25 @@ from dria import Prompt, DatasetGenerator, DriaDataset, Model
 from pydantic import BaseModel, Field
 
 
-class Poem(BaseModel):
+# Define output schema
+class Tweet(BaseModel):
     topic: str = Field(..., title="Topic")
-    poem: str = Field(..., title="Poem")
+    tweet: str = Field(..., title="tweet")
 
 
-dataset = DriaDataset(name="test4", description="test4", schema=Poem)
+# Create dataset
+dataset = DriaDataset(
+    name="tweet_test", description="A dataset of tweets!", schema=Tweet
+)
 
-instructions = [{"topic": "Roses"}, {"topic": "Decentralized synthetic data"}]
+instructions = [{"topic": "BadBadNotGood"}, {"topic": "Decentralized synthetic data"}]
 
-prompter = Prompt(prompt="Write a poem about {{topic}}", schema=Poem)
+prompter = Prompt(prompt="Write a tweet about {{topic}}", schema=Tweet)
 generator = DatasetGenerator(dataset=dataset)
 
 asyncio.run(
     generator.generate_data(
-        instructions=instructions, singletons=prompter, models=[Model.GPT4O]
+        instructions=instructions, singletons=prompter, models=Model.GPT4O
     )
 )
 
