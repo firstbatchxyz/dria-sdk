@@ -18,18 +18,23 @@ from dria.factory.qa_pipeline.utils import sample_variable
 import json_repair
 
 
-
 class RandomVarOutput(BaseModel):
     persona_traits: List[str] = Field(..., description="List of persona traits")
-    simulation_description: str = Field(..., description="Description of the simulation")
+    simulation_description: str = Field(
+        ..., description="Description of the simulation"
+    )
+
 
 class RandomVariables(BaseModel):
     variables: List[RandomVarOutput] = Field(..., description="List of variables")
     model: str = Field(..., description="Model name")
 
+
 class RandomVars(SingletonTemplate):
     # Input fields
-    simulation_description: str = Field(..., description="Description of the simulation")
+    simulation_description: str = Field(
+        ..., description="Description of the simulation"
+    )
     num_of_samples: int = Field(default=1, description="Number of samples to generate")
 
     # Output schema
@@ -63,7 +68,7 @@ class RandomVars(SingletonTemplate):
         builder.set_return_value("random_vars")
         return builder.build()
 
-    def callback(self, result: List[TaskResult]) -> List[List[RandomVarOutput]]:
+    def callback(self, result: List[TaskResult]) -> List[RandomVariables]:
         """
         Parse the results into validated RandomVarOutput objects
 
@@ -105,6 +110,7 @@ class RandomVars(SingletonTemplate):
         Returns:
             Parsed JSON output.
         """
+
         def parse_single_json(t: str) -> Dict:
             return json_repair.loads(t)
 

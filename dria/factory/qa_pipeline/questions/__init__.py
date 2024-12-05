@@ -1,1 +1,1 @@
-from .task import QuestionStep
+from .task import QuestionGenerator

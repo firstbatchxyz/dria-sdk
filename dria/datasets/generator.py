@@ -24,18 +24,23 @@ class DatasetGenerator:
     def __init__(self, dataset: DriaDataset, dria_client: Optional[Dria] = None):
         self.dataset = dataset
 
-        try:
-            _id = self.dataset.db.get_dataset_id_by_name("rpc_url")
-        except:
-            token = get_community_token()
-            _id = self.dataset.db.create_dataset(
-                "rpc_url", "Stores the community rpc url"
-            )
-            self.dataset.db.add_entries(_id, [{"token": token}])
-            logger.info(f"Created RPC token!")
+        if dria_client is None:
+            try:
+                _id = self.dataset.db.get_dataset_id_by_name("rpc_url")
+            except:
+                token = get_community_token()
+                _id = self.dataset.db.create_dataset(
+                    "rpc_url", "Stores the community rpc url"
+                )
+                self.dataset.db.add_entries(_id, [{"token": token}])
+                logger.info(f"Created RPC token!")
 
-        token = self.dataset.db.get_dataset_entries(_id, data_only=True)[0]["token"]
-        self.dria_client = dria_client or Dria(rpc_token=token, log_level=logging.DEBUG)
+            token = self.dataset.db.get_dataset_entries(_id, data_only=True)[0]["token"]
+            self.dria_client = dria_client or Dria(
+                rpc_token=token, log_level=logging.DEBUG
+            )
+        else:
+            self.dria_client = dria_client
 
     def _validate_prompt(self, instructions: List[Dict[str, Any]], prompt: Prompt):
 

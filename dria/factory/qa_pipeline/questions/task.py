@@ -1,56 +1,53 @@
 import json
-import logging
 from typing import List
-
-from dria.models import TaskInput
-from dria.pipelines import Step, StepTemplate
+from pydantic import BaseModel, Field, conint
 from dria_workflows import (
+    Workflow,
     WorkflowBuilder,
     Operator,
-    Edge,
-    Size,
-    Expression,
-    ConditionBuilder,
     GetAll,
-    Workflow,
     Push,
+    Edge,
+    ConditionBuilder,
+    Expression,
+    Size,
     Read,
 )
-
-from dria.factory.qa_pipeline.utils import get_text_between_tags
 from dria.factory.utilities import get_abs_path
+from dria.factory.workflows.template import SingletonTemplate
+from dria.models import TaskResult
+from dria.factory.qa_pipeline.utils import get_text_between_tags
 
 
-class QuestionStep(StepTemplate):
+class QuestionOutput(BaseModel):
+    questions: List[str] = Field(..., description="List of generated questions")
+    model: str = Field(..., description="Model used for generation")
 
-    def create_workflow(
-        self,
-        chunk: str,
-        backstory: str,
-    ) -> Workflow:
-        """Generate questions for a given context and backstory.
 
-        Args:
-            chunk (str): The input data to be used in the workflow.
-            backstory (str): The input data to be used in the workflow.
-            max_time (int, optional): The maximum time to run the workflow. Defaults to 300.
-            max_steps (int, optional): The maximum number of steps to run the workflow. Defaults to 30.
-            max_tokens (int, optional): The maximum number of tokens to use in the workflow. Defaults to 750.
+class QuestionGenerator(SingletonTemplate):
+    # Input fields
+    context: str = Field(..., description="Context for question generation")
+    backstory: str = Field(..., description="Backstory for question generation")
+    max_time: int = Field(default=300, description="Maximum time to run the workflow")
+    max_steps: int = Field(default=30, description="Maximum number of steps")
+    max_tokens: int = Field(default=750, description="Maximum number of tokens")
+
+    # Output schema
+    OutputSchema = QuestionOutput
+
+    def workflow(self) -> Workflow:
+        """
+        Creates a workflow for generating questions based on context and backstory.
 
         Returns:
-            dict: The generated questions.
+            Workflow: The constructed workflow
         """
-        logging.basicConfig(
-            level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
-        )
+        builder = WorkflowBuilder(backstory=self.backstory, context=self.context)
 
-        builder = WorkflowBuilder(backstory=backstory, context=chunk)
+        builder.set_max_time(self.max_time)
+        builder.set_max_steps(self.max_steps)
+        builder.set_max_tokens(self.max_tokens)
 
-        builder.set_max_time(self.config.max_time)
-        builder.set_max_steps(self.config.max_steps)
-        builder.set_max_tokens(self.config.max_tokens)
-
-        # Step A: QuestionGeneration
         builder.generative_step(
             id="question_generation",
             path=get_abs_path("prompt.md"),
@@ -75,40 +72,38 @@ class QuestionStep(StepTemplate):
                 ),
             )
         ]
+
         builder.flow(flow)
         builder.set_return_value("history")
-        workflow = builder.build()
+        return builder.build()
 
-        return workflow
-
-    def callback(self, step: Step) -> List[TaskInput]:
+    def callback(self, result: List[TaskResult]) -> List[QuestionOutput]:
         """
-        Process the output of the question generation step.
+        Parse the results into validated QuestionOutput objects
 
         Args:
-            step (Step): The Step object containing input and output data.
+            result: List of TaskResult objects
 
         Returns:
-            TaskInput: A TaskInput object for the answer generation step.
-
-        Raises:
-            ValueError: If no valid question is generated.
+            List[QuestionOutput]: List of validated question outputs
         """
-        inputs = []
-        for questions in step.output:
-            if questions.result == "":
+        processed_outputs = []
+
+        for r in result:
+            if r.result == "":
                 continue
-            q_round = json.loads(questions.result)
+
+            questions = []
+            q_round = json.loads(r.result)
+
             for q in q_round:
                 question = get_text_between_tags(q, "generated_question")
-                if question is None:
-                    continue
+                if question is not None:
+                    questions.append(question.strip())
 
-                inputs.append(
-                    TaskInput(
-                        context=step.input_params[questions.id].context,
-                        persona=self.params.persona,
-                        question=question.strip(),
-                    )
+            if questions:
+                processed_outputs.append(
+                    QuestionOutput(questions=questions, model=r.model)
                 )
-        return inputs
+
+        return processed_outputs

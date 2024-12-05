@@ -56,7 +56,7 @@ class ParallelSingletonExecutor:
                     self.dataset.db.add_entries(self.dataset_id, ordered_entries)
                 )
                 input_ids.extend(input_index)
-            except RuntimeError as e:
+            except:
                 failed_data = [
                     {
                         "workflow": b.workflow,
@@ -104,7 +104,10 @@ class ParallelSingletonExecutor:
                 singleton_instance = self.singleton.create(**original_input)
 
                 # Process the result with contextualized callback
-                outputs = singleton_instance.callback([result])
+                try:
+                    outputs = singleton_instance.callback([result])
+                except:
+                    continue
 
                 for output in outputs:
                     # Convert to JSON format

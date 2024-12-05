@@ -1,10 +1,11 @@
 from typing import List, Dict, Optional, Type, Any, Literal, Union
+
+import pandas as pd
 from pydantic import BaseModel, create_model, ValidationError, Field
 from datasets import load_dataset
 from datasets import Dataset as HFDataset
 import json
 import os
-from dria.models import Model
 from dria.utils import FieldMapping, DataFormatter, FormatType, ConversationMapping
 from dria.db.database import DatasetDB
 
@@ -270,3 +271,13 @@ class DriaDataset:
     def get_entries(self, data_only=False) -> List[Dict]:
         """Get all entries in the dataset."""
         return self.db.get_dataset_entries(self.dataset_id, data_only)
+
+    def to_pandas(self) -> pd.DataFrame:
+        """Convert dataset to Pandas DataFrame."""
+        return pd.DataFrame(self.get_entries(data_only=True))
+
+    def to_jsonl(self, filepath: Optional[str] = None):
+        """Convert dataset to JSONL."""
+        if filepath is None:
+            filepath = self.name + ".jsonl"
+        self.to_pandas().to_json(filepath, orient="records", lines=True)
