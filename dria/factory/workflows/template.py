@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from typing import List, Type, ClassVar
 from types import SimpleNamespace
 from dria.models import TaskResult
-from pydantic import BaseModel, create_model
+from pydantic import BaseModel
 
 
 class SingletonTemplate(BaseModel, ABC):

@@ -20,16 +20,19 @@ from dria.factory.utilities import get_tags
 
 
 class QuestionOutput(BaseModel):
-    questions: List[str] = Field(..., description="List of generated questions")
+    question: str = Field(..., description="List of generated questions")
+    persona: str = Field(..., description="Persona name")
+    context: str = Field(..., description="Question context")
     model: str = Field(..., description="Model used for generation")
 
 
-class QuestionGenerator(SingletonTemplate):
+class Question(SingletonTemplate):
     # Input fields
     context: str = Field(..., description="Context for question generation")
-    backstory: str = Field(
-        "A curious person.", description="Backstory for question generation"
+    persona: str = Field(
+        "A curious person.", description="Persona for question generation"
     )
+    num_questions: int = Field(default=1, lt=50, description="Number of questions")
 
     # Output schema
     OutputSchema = QuestionOutput
@@ -41,11 +44,11 @@ class QuestionGenerator(SingletonTemplate):
         Returns:
             Workflow: The constructed workflow
         """
-        builder = WorkflowBuilder(backstory=self.backstory, context=self.context)
+        builder = WorkflowBuilder(persona=self.persona, context=self.context)
 
-        builder.set_max_time(self.max_time)
-        builder.set_max_steps(self.max_steps)
-        builder.set_max_tokens(self.max_tokens)
+        builder.set_max_time(65)
+        builder.set_max_steps(self.num_questions * 2 + 1)
+        builder.set_max_tokens(500)
 
         builder.generative_step(
             id="question_generation",
@@ -54,7 +57,7 @@ class QuestionGenerator(SingletonTemplate):
             inputs=[
                 Read.new(key="context", required=True),
                 GetAll.new(key="history", required=False),
-                Read.new(key="backstory", required=True),
+                Read.new(key="persona", required=True),
             ],
             outputs=[Push.new("history")],
         )
@@ -66,7 +69,7 @@ class QuestionGenerator(SingletonTemplate):
                 condition=ConditionBuilder.build(
                     input=Size.new("history", required=True),
                     expression=Expression.GREATER_THAN,
-                    expected="1",
+                    expected=str(self.num_questions),
                     target_if_not="question_generation",
                 ),
             )
@@ -98,11 +101,13 @@ class QuestionGenerator(SingletonTemplate):
             for q in q_round:
                 question = get_tags(q, "generated_question")
                 if question is not None:
-                    questions.append(question.strip())
-
-            if questions:
-                processed_outputs.append(
-                    QuestionOutput(questions=questions, model=r.model)
-                )
+                    processed_outputs.append(
+                        QuestionOutput(
+                            question=question[0].strip(),
+                            persona=self.persona,
+                            context=self.context,
+                            model=r.model,
+                        )
+                    )
 
         return processed_outputs

@@ -1,2 +1,6 @@
-from .questions import QuestionGenerator
-from .answer import AnswerStep
+from .questions import Question
+from .answer import Answer
+
+QA = [Question, Answer]
+
+__all__ = ["QA", "Question", "Answer"]

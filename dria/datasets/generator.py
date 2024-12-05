@@ -139,8 +139,17 @@ class DatasetGenerator:
         singletons: Union[
             Type[SingletonTemplate], List[Type[SingletonTemplate]], Prompt
         ],
-        models: List[Model],
+        models: Optional[List[Model]] = None,
     ) -> None:
+
+        if models is None:
+            models = [
+                Model.GPT4O,
+                Model.GPT4O_MINI,
+                Model.GEMINI_15_FLASH,
+                Model.QWEN2_5_7B_FP16,
+                Model.LLAMA3_1_8B_FP16,
+            ]
 
         if isinstance(singletons, Prompt):
             await self._with_prompt(instructions, singletons, models)

@@ -1,5 +1,4 @@
-import json
-from dria import DriaDataset, DatasetGenerator, Model
+from dria import DriaDataset, DatasetGenerator
 from dria.factory.search import SearchWeb
 import asyncio
 
@@ -21,7 +20,6 @@ asyncio.run(
     generator.generate_data(
         instructions=instructions,
         singletons=SearchWeb,
-        models=[Model.OLLAMA],
     )
 )
 

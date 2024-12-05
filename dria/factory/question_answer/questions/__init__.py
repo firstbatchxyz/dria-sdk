@@ -1,1 +1,1 @@
-from .task import QuestionGenerator
+from .task import Question

@@ -1,41 +1,49 @@
-import logging
 from typing import List
-
-from dria.models import TaskInput
-from dria.pipelines import StepTemplate, Step
-from dria_workflows import WorkflowBuilder, Operator, Write, Edge, Workflow, Read
+from pydantic import BaseModel, Field
+from dria_workflows import (
+    Workflow,
+    WorkflowBuilder,
+    Operator,
+    Read,
+    Write,
+    Edge,
+)
 from dria.factory.utilities import get_abs_path, get_tags, remove_text_between_tags
+from dria.factory.workflows.template import SingletonTemplate
+from dria.models import TaskResult
 
 
-class AnswerStep(StepTemplate):
-    def create_workflow(
-        self,
-        context: str,
-        question: str,
-        persona: str,
-    ) -> Workflow:
-        """Generate an answer to a question based on provided context while adopting a specific persona.
+class AnswerOutput(BaseModel):
+    question: str = Field(..., description="The original question")
+    answer: str = Field(..., description="Generated answer")
+    model: str = Field(..., description="Model used for generation")
 
-        Args:
-            max_time (int, optional): The maximum time to run the workflow. Defaults to 300.
-            max_steps (int, optional): The maximum number of steps to run the workflow. Defaults to 30.
-            max_tokens (int, optional): The maximum number of tokens to run the workflow. Defaults to 750.
+
+class Answer(SingletonTemplate):
+    # Input fields
+    context: str = Field(..., description="Context for answering the question")
+    question: str = Field(..., description="Question to be answered")
+    persona: str = Field(..., description="Persona to adopt while answering")
+
+    # Output schema
+    OutputSchema = AnswerOutput
+
+    def workflow(self) -> Workflow:
+        """
+        Creates a workflow for generating answers to questions.
 
         Returns:
-            dict: The output data from the workflow.
+            Workflow: The constructed workflow
         """
-        logging.basicConfig(
-            level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+        # Initialize the workflow with variables
+        builder = WorkflowBuilder(
+            context=self.context,
+            question=self.question,
+            persona=self.persona,
         )
 
-        builder = WorkflowBuilder(context=context, question=question, persona=persona)
-        builder.set_max_time(self.config.max_time)
-        builder.set_max_steps(self.config.max_steps)
-        builder.set_max_tokens(self.config.max_tokens)
-
-        # Step A: Answer Generation
+        # Answer Generation Step
         builder.generative_step(
-            id="answer_generation",
             path=get_abs_path("prompt.md"),
             operator=Operator.GENERATION,
             inputs=[
@@ -46,42 +54,33 @@ class AnswerStep(StepTemplate):
             outputs=[Write.new("answer")],
         )
 
-        # Define the flow of the workflow
-        flow = [Edge(source="answer_generation", target="_end")]
+        # Define the flow
+        flow = [Edge(source="0", target="_end")]
         builder.flow(flow)
 
         # Set the return value of the workflow
         builder.set_return_value("answer")
+        return builder.build()
 
-        # Build the workflow
-        workflow = builder.build()
-
-        return workflow
-
-    def callback(self, step: Step) -> List[TaskInput]:
+    def callback(self, result: List[TaskResult]) -> List[AnswerOutput]:
         """
-        Process the output of the answer generation step.
+        Parse the results into validated AnswerOutput objects
 
         Args:
-            step (Step): The Step object containing input and output data.
+            result: List of TaskResult objects
 
         Returns:
-            Dict[str, str]: A dictionary containing the question and answer.
-
-        Raises:
-            ValueError: If no valid answer is generated.
+            List[AnswerOutput]: List of validated answer outputs
         """
         returns = []
-        for a in step.output:
-            answer = get_tags(a.result, "answer")
+        for r in result:
+            answer = get_tags(r.result, "answer")[0]
             entry = remove_text_between_tags(answer, "rationale")
 
-            if entry is None:
-                continue
-
-            returns.append(
-                TaskInput(
-                    question=step.input_params[a.id].question, answer=entry.strip()
+            if entry is not None:
+                returns.append(
+                    AnswerOutput(
+                        question=self.question, answer=entry.strip(), model=r.model
+                    )
                 )
-            )
         return returns
