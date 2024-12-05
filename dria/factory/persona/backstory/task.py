@@ -1,48 +1,52 @@
-from dria.models import TaskInput
-from dria.factory.utilities import get_abs_path
+from typing import List
+from pydantic import BaseModel, Field
 from dria_workflows import (
+    Workflow,
     WorkflowBuilder,
     Operator,
     Write,
     Edge,
-    Read,
     GetAll,
-    Workflow,
+    Read,
 )
-import json
-
-import logging
-from typing import List
-from dria.pipelines import Step, StepTemplate
+from dria.factory.utilities import get_abs_path, parse_json
+from dria.factory.workflows.template import SingletonTemplate
+from dria.models import TaskResult
 
 
-logger = logging.getLogger(__name__)
+class BackstoryOutput(BaseModel):
+    backstory: str = Field(..., description="Generated backstory")
+    model: str = Field(..., description="Model used for generation")
 
 
-class BackStory(StepTemplate):
-    def create_workflow(
-        self, persona_traits: List[str], simulation_description: str, **kwargs
-    ) -> Workflow:
-        """Generate a backstory for a simulation persona.
+class BackStory(SingletonTemplate):
+    # Input fields
+    persona_traits: List[str] = Field(..., description="The traits of the persona")
+    simulation_description: str = Field(
+        ..., description="The description of the simulation"
+    )
 
-        Args:
-            :param persona_traits: The traits of the persona.
-            :param simulation_description: The description of the simulation.
-            :param max_time: The maximum time to run the workflow. Defaults to 300.
-            :param max_steps: The maximum number of steps to run the workflow. Defaults to 20.
-            :param max_tokens: The maximum number of tokens to run the workflow. Defaults to 750.
+    # Output schema
+    OutputSchema = BackstoryOutput
+
+    def workflow(self) -> Workflow:
+        """
+        Creates a workflow for generating backstory.
 
         Returns:
-            dict: The output data from the workflow.
+            Workflow: The constructed workflow
         """
         builder = WorkflowBuilder(
-            persona_traits=persona_traits, simulation_description=simulation_description
+            persona_traits=self.persona_traits,
+            simulation_description=self.simulation_description,
         )
-        builder.set_max_time(self.config.max_time)
-        builder.set_max_tokens(self.config.max_tokens)
-        builder.set_max_steps(self.config.max_steps)
 
-        # Step A: GenerateBackstory
+        # Set workflow constraints
+        builder.set_max_time(65)
+        builder.set_max_steps(3)
+        builder.set_max_tokens(750)
+
+        # Generate backstory step
         builder.generative_step(
             id="generate_backstory",
             path=get_abs_path("prompt.md"),
@@ -54,55 +58,34 @@ class BackStory(StepTemplate):
             outputs=[Write.new("backstory")],
         )
 
+        # Define workflow flow
         flow = [Edge(source="generate_backstory", target="_end")]
         builder.flow(flow)
+
+        # Set return value
         builder.set_return_value("backstory")
         return builder.build()
 
-    def callback(self, step: Step) -> List[TaskInput]:
+    def callback(self, result: List[TaskResult]) -> List[BackstoryOutput]:
         """
-        Process the output of the backstory generation step.
+        Parse the results into validated BackstoryOutput objects
 
         Args:
-            step (Step): The Step object containing input and output data.
+            result: List of TaskResult objects
 
         Returns:
-            List[TaskInput]: A list of TaskInput objects for the next step.
-
-        Raises:
-            Exception: If there's an error processing the step output.
+            List[BackstoryOutput]: List of validated backstory outputs
         """
+        if not result:
+            raise ValueError("Backstory generation failed")
 
-        try:
-            return [
-                TaskInput(backstory=self.parse(backstory.result))
-                for backstory in step.output
-            ]
-        except Exception as e:
-            logger.error(f"Error in backstory_callback: {str(e)}")
-            raise
+        outputs = []
+        for r in result:
+            try:
+                backstory = parse_json(r.result)["backstory"]
+            except:
+                backstory = r.result
 
-    @staticmethod
-    def parse(result: str) -> List[str]:
-        """Parse the backstory JSON.
+            outputs.append(BackstoryOutput(backstory=backstory, model=r.model))
 
-        Args:
-            result (str): The JSON string containing the backstory.
-
-        Returns:
-            List[str]: The parsed backstory as a list of strings.
-        """
-        try:
-            parsed = json.loads(result.replace("```json", ""))
-            backstory = parsed.get("backstory", [])
-            return backstory if isinstance(backstory, list) else [backstory]
-        except json.JSONDecodeError:
-            return [result]
-
-
-if __name__ == "__main__":
-    d = BackStory(
-        persona_traits=["", ""], simulation_description="simulation_description"
-    )
-
-    print("")
+        return outputs

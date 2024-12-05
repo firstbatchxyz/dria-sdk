@@ -1,4 +1,3 @@
-import json
 import logging
 from typing import Any, List, Dict, Optional
 from pydantic import BaseModel, Field
@@ -12,7 +11,7 @@ from dria_workflows import (
 from dria.factory.utilities import get_abs_path
 from dria.factory.workflows.template import SingletonTemplate
 from dria.models import TaskResult
-from dria.factory.qa_pipeline.utils import get_text_between_tags
+from dria.factory.utilities import get_tags
 
 
 class QuestionSet(BaseModel):
@@ -87,10 +86,10 @@ class MultiHopQuestion(SingletonTemplate):
         """
         results = []
         for r in result:
-            onehop = get_text_between_tags(r.result, "1hop")
-            twohop = get_text_between_tags(r.result, "2hop")
-            threehop = get_text_between_tags(r.result, "3hop")
-            answer = get_text_between_tags(r.result, "answer")
+            onehop = get_tags(r.result, "1hop")
+            twohop = get_tags(r.result, "2hop")
+            threehop = get_tags(r.result, "3hop")
+            answer = get_tags(r.result, "answer")
 
             if None in [onehop, twohop, threehop, answer]:
                 logging.debug(

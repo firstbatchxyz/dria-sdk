@@ -5,8 +5,7 @@ from .persona import *
 from .subtopic import *
 from .csv_extender import *
 from .list_extender import *
-from .qa_pipeline import *
-from .nemotron_qa import *
+from .question_answer import *
 
 __core_exports = [
     "Clair",
@@ -33,7 +32,6 @@ __core_exports = [
     "QAPipeline",
     "MultiHopQuestion",
     "InstructionBacktranslation",
-    "NemotronQA",
 ]
 
 try:

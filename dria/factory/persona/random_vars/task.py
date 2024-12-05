@@ -14,7 +14,7 @@ from dria_workflows import (
 from dria.factory.utilities import get_abs_path
 from dria.factory.workflows.template import SingletonTemplate
 from dria.models import TaskResult, TaskInput
-from dria.factory.qa_pipeline.utils import sample_variable
+from dria.factory.persona.utils import sample_variable
 import json_repair
 
 

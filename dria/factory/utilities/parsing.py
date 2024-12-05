@@ -72,6 +72,24 @@ def parse_json(text: Union[str, List]) -> Union[list[dict], dict, list[str]]:
         return parse_single_json(text)
 
 
+def remove_text_between_tags(text: str, tag: str) -> Union[None, str]:
+    """Remove the text between the given tags.
+
+    Args:
+        text (str): The text to remove the text between the tags from.
+        tag (str): The tag to remove the text between.
+
+    Returns:
+        Union[None, str]: The text with the text between tags removed, or None if empty/None.
+    """
+    if not text or not tag:
+        return None
+
+    pattern = f"<{tag}>.*?</{tag}>"
+    result = re.sub(pattern, "", text, flags=re.DOTALL).strip()
+    return result if result else None
+
+
 if __name__ == "__main__":
     text = "<json>{'key': 'value'}</json>"
     text2 = "```json{'key': 'value'}```"

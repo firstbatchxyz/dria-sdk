@@ -4,12 +4,7 @@ from typing import List
 from dria.models import TaskInput
 from dria.pipelines import StepTemplate, Step
 from dria_workflows import WorkflowBuilder, Operator, Write, Edge, Workflow, Read
-
-from dria.factory.qa_pipeline.utils import (
-    get_text_between_tags,
-    remove_text_between_tags,
-)
-from dria.factory.utilities import get_abs_path
+from dria.factory.utilities import get_abs_path, get_tags, remove_text_between_tags
 
 
 class AnswerStep(StepTemplate):
@@ -78,7 +73,7 @@ class AnswerStep(StepTemplate):
         """
         returns = []
         for a in step.output:
-            answer = get_text_between_tags(a.result, "answer")
+            answer = get_tags(a.result, "answer")
             entry = remove_text_between_tags(answer, "rationale")
 
             if entry is None:

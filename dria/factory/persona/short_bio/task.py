@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List
 from pydantic import BaseModel, Field
 from dria_workflows import (
     Workflow,
@@ -14,12 +14,12 @@ from dria.factory.workflows.template import SingletonTemplate
 from dria.models import TaskResult
 
 
-class BackstoryOutput(BaseModel):
-    backstory: str = Field(..., description="Generated backstory")
+class BioOutput(BaseModel):
+    bio: str = Field(..., description="Generated backstory")
     model: str = Field(..., description="Model used for generation")
 
 
-class BackStory(SingletonTemplate):
+class ShortBio(SingletonTemplate):
     # Input fields
     persona_traits: List[str] = Field(..., description="The traits of the persona")
     simulation_description: str = Field(
@@ -27,7 +27,7 @@ class BackStory(SingletonTemplate):
     )
 
     # Output schema
-    OutputSchema = BackstoryOutput
+    OutputSchema = BioOutput
 
     def workflow(self) -> Workflow:
         """
@@ -66,7 +66,7 @@ class BackStory(SingletonTemplate):
         builder.set_return_value("backstory")
         return builder.build()
 
-    def callback(self, result: List[TaskResult]) -> List[BackstoryOutput]:
+    def callback(self, result: List[TaskResult]) -> List[BioOutput]:
         """
         Parse the results into validated BackstoryOutput objects
 
@@ -79,4 +79,4 @@ class BackStory(SingletonTemplate):
         if not result:
             raise ValueError("Backstory generation failed")
 
-        return [BackstoryOutput(backstory=r.result, model=r.model) for r in result]
+        return [BioOutput(bio=r.result, model=r.model) for r in result]

@@ -16,7 +16,7 @@ from dria_workflows import (
 from dria.factory.utilities import get_abs_path
 from dria.factory.workflows.template import SingletonTemplate
 from dria.models import TaskResult
-from dria.factory.qa_pipeline.utils import get_text_between_tags
+from dria.factory.utilities import get_tags
 
 
 class QuestionOutput(BaseModel):
@@ -27,10 +27,9 @@ class QuestionOutput(BaseModel):
 class QuestionGenerator(SingletonTemplate):
     # Input fields
     context: str = Field(..., description="Context for question generation")
-    backstory: str = Field(..., description="Backstory for question generation")
-    max_time: int = Field(default=300, description="Maximum time to run the workflow")
-    max_steps: int = Field(default=30, description="Maximum number of steps")
-    max_tokens: int = Field(default=750, description="Maximum number of tokens")
+    backstory: str = Field(
+        "A curious person.", description="Backstory for question generation"
+    )
 
     # Output schema
     OutputSchema = QuestionOutput
@@ -97,7 +96,7 @@ class QuestionGenerator(SingletonTemplate):
             q_round = json.loads(r.result)
 
             for q in q_round:
-                question = get_text_between_tags(q, "generated_question")
+                question = get_tags(q, "generated_question")
                 if question is not None:
                     questions.append(question.strip())
 
