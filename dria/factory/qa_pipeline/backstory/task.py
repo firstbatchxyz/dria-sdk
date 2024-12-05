@@ -1,45 +1,53 @@
 from typing import List
-
-from dria.models import TaskInput
-from dria.pipelines import Step, StepTemplate
+from pydantic import BaseModel, Field
 from dria_workflows import (
+    Workflow,
     WorkflowBuilder,
     Operator,
     Write,
     Edge,
     GetAll,
-    Workflow,
     Read,
 )
-
-from dria.factory.qa_pipeline.utils import parse_backstory
 from dria.factory.utilities import get_abs_path
+from dria.factory.workflows.template import SingletonTemplate
+from dria.models import TaskResult
 
 
-class BackStoryStep(StepTemplate):
-    def create_workflow(
-        self, persona_traits: List[str], simulation_description: str, **kwargs
-    ) -> Workflow:
-        """Generate a backstory for a simulation persona.
+class BackstoryOutput(BaseModel):
+    backstory: str = Field(..., description="Generated backstory")
+    model: str = Field(..., description="Model used for generation")
 
-        Args:
-            :param persona_traits: The traits of the persona.
-            :param simulation_description: The description of the simulation.
-            :param max_time: The maximum time to run the workflow. Defaults to 300.
-            :param max_steps: The maximum number of steps to run the workflow. Defaults to 20.
-            :param max_tokens: The maximum number of tokens to run the workflow. Defaults to 750.
+
+class BackStory(SingletonTemplate):
+    # Input fields
+    persona_traits: List[str] = Field(..., description="The traits of the persona")
+    simulation_description: str = Field(..., description="The description of the simulation")
+    max_time: int = Field(default=75, description="Maximum time to run the workflow")
+    max_steps: int = Field(default=20, description="Maximum number of steps")
+    max_tokens: int = Field(default=750, description="Maximum number of tokens")
+
+    # Output schema
+    OutputSchema = BackstoryOutput
+
+    def workflow(self) -> Workflow:
+        """
+        Creates a workflow for generating backstory.
 
         Returns:
-            dict: The output data from the workflow.
+            Workflow: The constructed workflow
         """
         builder = WorkflowBuilder(
-            persona_traits=persona_traits, simulation_description=simulation_description
+            persona_traits=self.persona_traits,
+            simulation_description=self.simulation_description
         )
-        builder.set_max_time(self.config.max_time)
-        builder.set_max_steps(self.config.max_steps)
-        builder.set_max_tokens(self.config.max_tokens)
 
-        # Step A: GenerateBackstory
+        # Set workflow constraints
+        builder.set_max_time(self.max_time)
+        builder.set_max_steps(self.max_steps)
+        builder.set_max_tokens(self.max_tokens)
+
+        # Generate backstory step
         builder.generative_step(
             id="generate_backstory",
             path=get_abs_path("prompt.md"),
@@ -51,33 +59,31 @@ class BackStoryStep(StepTemplate):
             outputs=[Write.new("backstory")],
         )
 
+        # Define workflow flow
         flow = [Edge(source="generate_backstory", target="_end")]
         builder.flow(flow)
+
+        # Set return value
         builder.set_return_value("backstory")
         return builder.build()
 
-    def callback(self, step: Step) -> List[TaskInput]:
+    def callback(self, result: List[TaskResult]) -> List[BackstoryOutput]:
         """
-        Process the output of the backstory generation step.
+        Parse the results into validated BackstoryOutput objects
 
         Args:
-            step (Step): The Step object containing input and output data.
+            result: List of TaskResult objects
 
         Returns:
-            List[TaskInput]: A list of TaskInput objects for the next step.
-
-        Raises:
-            Exception: If there's an error processing the step output.
+            List[BackstoryOutput]: List of validated backstory outputs
         """
-        chunked_context = self.params.chunks
-        if not step.output:
+        if not result:
             raise ValueError("Backstory generation failed")
 
-        try:
-            return [
-                TaskInput(backstory=backstory.result, context=chunk)
-                for chunk in chunked_context
-                for backstory in step.output
-            ]
-        except Exception as e:
-            raise e
+        return [
+            BackstoryOutput(
+                backstory=r.result,
+                model=r.model
+            )
+            for r in result
+        ]

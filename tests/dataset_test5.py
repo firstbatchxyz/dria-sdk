@@ -1,12 +1,12 @@
 import json
 from dria import DriaDataset, DatasetGenerator, Model
-from dria.factory.qa_pipeline import RandomVars
+from dria.factory.qa_pipeline import RandomVars, BackStory
 import asyncio
 
 my_dataset = DriaDataset(
     name="pages",
     description="A dataset for pages",
-    schema=RandomVars.OutputSchema,
+    schema=BackStory.OutputSchema,
 )
 
 generator = DatasetGenerator(dataset=my_dataset)
@@ -23,9 +23,10 @@ instructions = [
 asyncio.run(
     generator.generate_data(
         instructions=instructions,
-        singletons=RandomVars,
+        singletons=[RandomVars, BackStory],
         models=[Model.ANTHROPIC_HAIKU_3_5_OR, Model.QWEN2_5_72B_OR],
     )
 )
 
-print(my_dataset.to_pandas())
+
+print(my_dataset.to_jsonl())
