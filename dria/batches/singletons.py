@@ -69,6 +69,8 @@ class ParallelSingletonExecutor:
         return entry_ids, input_ids
 
     def _create_task(self, data: Dict[str, Any]) -> Task:
+        # Remove unnecessary fields from the input data
+        data = {k: data[k] for k in self.singleton.model_fields.keys() if k != "params"}
         workflow_data = self.singleton.create(**data).workflow()
         return Task(workflow=workflow_data, models=self.models)
 
@@ -101,7 +103,12 @@ class ParallelSingletonExecutor:
                 result, task_input = result_lookup[lookup_key]
 
                 # Initialize singleton with original input context
-                singleton_instance = self.singleton.create(**original_input)
+                data = {
+                    k: original_input[k]
+                    for k in self.singleton.model_fields.keys()
+                    if k != "params"
+                }
+                singleton_instance = self.singleton.create(**data)
 
                 # Process the result with contextualized callback
                 try:

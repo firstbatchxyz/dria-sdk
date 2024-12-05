@@ -23,6 +23,7 @@ class RandomVarOutput(BaseModel):
     simulation_description: str = Field(
         ..., description="Description of the simulation"
     )
+    model: str = Field(..., description="Model used for generation")
 
 
 class RandomVariables(BaseModel):
@@ -68,7 +69,7 @@ class RandomVars(SingletonTemplate):
         builder.set_return_value("random_vars")
         return builder.build()
 
-    def callback(self, result: List[TaskResult]) -> List[RandomVariables]:
+    def callback(self, result: List[TaskResult]) -> List[RandomVarOutput]:
         """
         Parse the results into validated RandomVarOutput objects
 
@@ -92,9 +93,10 @@ class RandomVars(SingletonTemplate):
                         RandomVarOutput(
                             persona_traits=persona_traits,
                             simulation_description=self.simulation_description,
+                            model=r.model,
                         )
                     )
-                outputs.append(RandomVariables(variables=variables, model=r.model))
+                outputs.extend(variables)
             except Exception as e:
                 raise e
         return outputs

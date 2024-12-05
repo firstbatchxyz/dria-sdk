@@ -1,6 +1,6 @@
 import json
 from dria import DriaDataset, DatasetGenerator, Model
-from dria.factory.subtopic.generate_subtopics import GenerateSubtopics
+from dria.factory.subtopic import GenerateSubtopics
 import asyncio
 
 my_dataset = DriaDataset(

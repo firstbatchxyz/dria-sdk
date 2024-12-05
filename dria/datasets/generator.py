@@ -100,7 +100,7 @@ class DatasetGenerator:
                 )
 
         for i in range(len(singletons) - 1):
-            current_schema = singletons[i].OutputSchema.model_json_schema()
+            current_schema = singletons[i].OutputSchema
             next_element = singletons[i + 1]
             # check if matches
             if not schemas_match(current_schema, next_element):
@@ -108,10 +108,7 @@ class DatasetGenerator:
                     f"Schema mismatch. Outputs for {singletons[i].__name__} doesn't match inputs for {singletons[i + 1].__name__}."
                 )
 
-        if not schemas_match(
-            singletons[-1].OutputSchema.model_json_schema(),
-            self.dataset.schema.model_json_schema(),
-        ):
+        if not schemas_match(singletons[-1].OutputSchema, self.dataset.schema):
             raise ValueError(
                 f"Schema mismatch. Output of the last step: f{singletons[-1].__name__} doesn't match dataset schema."
             )
@@ -202,13 +199,15 @@ class DatasetGenerator:
             ]
         )
 
-        for singleton in singletons[1:]:
-            name = self.dataset.name + "_" + singleton.__name__
+        for i in range(1, len(singletons)):
+            name = self.dataset.name + "_" + singletons[i - 1].__name__
             dataset_id = self.dataset.db.get_dataset_id_by_name(name)
             instructions = self.dataset.db.get_dataset_entries(
                 dataset_id, data_only=True
             )
-            entry_ids, input_ids = await self._executor(instructions, singleton, models)
+            entry_ids, input_ids = await self._executor(
+                instructions, singletons[i], models
+            )
             step_map.append(
                 [
                     {"entry_id": entry_id, "input_id": input_id}
