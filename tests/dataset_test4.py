@@ -20,7 +20,7 @@ prompter = Prompt(prompt="Write a tweet about {{topic}}", schema=Tweet)
 generator = DatasetGenerator(dataset=dataset)
 
 asyncio.run(
-    generator.generate_data(
+    generator.generate(
         instructions=instructions, singletons=prompter, models=Model.GPT4O
     )
 )

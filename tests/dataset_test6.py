@@ -17,7 +17,7 @@ instructions = [
 ]
 
 asyncio.run(
-    generator.generate_data(
+    generator.generate(
         instructions=instructions,
         singletons=SearchWeb,
     )

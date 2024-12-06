@@ -18,7 +18,7 @@ instructions = [
 ]
 
 asyncio.run(
-    generator.generate_data(
+    generator.generate(
         instructions=instructions,
         singletons=GenerateSubtopics,
         models=[Model.ANTHROPIC_HAIKU_3_5_OR],

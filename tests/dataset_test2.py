@@ -31,7 +31,7 @@ instructions = [
 
 
 asyncio.run(
-    generator.generate_dataset(
+    generator.generate(
         instructions=instructions,
         singletons=SemanticTriplet,
         models=[Model.QWEN2_5_72B_OR],

@@ -21,10 +21,18 @@ instructions = [
 ]
 
 asyncio.run(
-    generator.generate_data(
+    generator.generate(
         instructions=instructions,
         singletons=PersonaBio,
-        models=[Model.ANTHROPIC_HAIKU_3_5_OR, Model.QWEN2_5_72B_OR],
+        models=[
+            [Model.ANTHROPIC_HAIKU_3_5_OR, Model.QWEN2_5_72B_OR],
+            [
+                Model.LLAMA3_1_8B_FP16,
+                Model.QWEN2_5_7B_FP16,
+                Model.LLAMA_3_1_8B_OR,
+                Model.QWEN2_5_7B_OR,
+            ],
+        ],
     )
 )
 

@@ -37,7 +37,7 @@ generator = DatasetGenerator(dataset=my_dataset)
 
 
 asyncio.run(
-    generator.generate_dataset(
+    generator.generate(
         instructions,
         MagPie,
         [

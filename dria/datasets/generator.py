@@ -133,7 +133,7 @@ class DatasetGenerator:
             executor.load_instructions(instructions)
             return await executor.run()
 
-    async def generate_data(
+    async def generate(
         self,
         instructions: List[Dict[str, Any]],
         singletons: Union[
