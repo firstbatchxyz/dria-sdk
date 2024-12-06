@@ -21,7 +21,7 @@ class DatasetField:
 
 
 class DatasetGenerator:
-    def __init__(self, dataset: DriaDataset, dria_client: Optional[Dria] = None):
+    def __init__(self, dataset: DriaDataset, dria_client: Optional[Dria] = None, log_level=logging.INFO):
         self.dataset = dataset
 
         if dria_client is None:
@@ -37,7 +37,7 @@ class DatasetGenerator:
 
             token = self.dataset.db.get_dataset_entries(_id, data_only=True)[0]["token"]
             self.dria_client = dria_client or Dria(
-                rpc_token=token, log_level=logging.DEBUG
+                rpc_token=token, log_level=log_level
             )
         else:
             self.dria_client = dria_client
