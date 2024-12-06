@@ -75,10 +75,10 @@ class ParallelPromptExecutor:
                     self.dataset.db.add_entries(self.dataset_id, ordered_entries)
                 )
                 input_ids.extend(input_index)
-            except RuntimeError as e:
+            except Exception as e:
                 failed_data = [
                     {
-                        "workflow": b.workflow,
+                        "workflow": b.workflow.model_dump(),
                         "id": b.id,
                         "models": [model.value for model in b.models],
                     }

@@ -110,7 +110,7 @@ class Dria:
         """Initialize background monitoring and polling tasks."""
         if self.background_tasks:
             if not self.background_tasks.done():
-                logger.info("Background tasks already running")
+                logger.debug("Background tasks already running")
                 return
         self.background_tasks = asyncio.create_task(self._start_background_tasks())
 
