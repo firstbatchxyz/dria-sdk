@@ -1,3 +1,1 @@
-from .pipeline import SubTopicPipeline
-
-__all__ = ["SubTopicPipeline"]
+from .task import GenerateSubtopics

@@ -1,23 +1,52 @@
-from typing import List, Dict, Any
-from dria.models import TaskResult
-from dria_workflows import Workflow, WorkflowBuilder, Operator, Write, Edge
+from typing import Any, List, Dict
+from pydantic import BaseModel, Field
+from dria_workflows import (
+    Workflow,
+    WorkflowBuilder,
+    Operator,
+    Write,
+    Edge,
+)
 from dria.factory.utilities import get_abs_path
 from dria.factory.workflows.template import SingletonTemplate
+from dria.models import TaskResult
+
+
+class ValidationOutput(BaseModel):
+    prediction: str = Field(..., description="The prediction result.")
+    correct_answer: str = Field(..., description="The correct answer.")
+    validation: bool = Field(..., description="Validation result (True/False)")
+    model: str = Field(..., description="Model used for validation")
+
+
+class EvaluationOutput(BaseModel):
+    question: str = Field(..., description="Question used for evaluation")
+    prediction: str = Field(..., description="Prediction result (True/False)")
+    evaluation: str = Field(..., description="Evaluation result")
+    model: str = Field(..., description="Model used for evaluation")
 
 
 class ValidatePrediction(SingletonTemplate):
+    # Input fields
+    prediction: str = Field(..., description="The predicted answer to be evaluated")
+    correct_answer: str = Field(
+        ..., description="The correct answer to compare against"
+    )
 
-    def workflow(self, prediction: str, correct_answer: str) -> Workflow:
+    # Output schema
+    OutputSchema = ValidationOutput
+
+    def workflow(self) -> Workflow:
         """
-        Generate a Task to determine if the predicted answer is contextually and semantically correct compared to the correct answer.
+        Generate a Task to determine if the predicted answer is contextually and semantically correct.
 
-        :param prediction: The predicted answer to be evaluated.
-        :param correct_answer: The correct answer to compare against.
-        :return: A Task object representing the workflow.
+        Returns:
+            Workflow: The constructed workflow
         """
-
         # Initialize the workflow with variables
-        builder = WorkflowBuilder(prediction=prediction, correct_answer=correct_answer)
+        builder = WorkflowBuilder(
+            prediction=self.prediction, correct_answer=self.correct_answer
+        )
 
         # Add a generative step using the prompt
         builder.generative_step(
@@ -34,30 +63,53 @@ class ValidatePrediction(SingletonTemplate):
         builder.set_return_value("validation_result")
         return builder.build()
 
-    def parse_result(self, result: List[TaskResult]) -> Dict[str, Any]:
-        if result[0].result.lower() == "true":
-            return {"validation": True, "model": result[0].model}
-        elif result[0].result.lower() == "false":
-            return {"validation": False, "model": result[0].model}
-        else:
-            raise ValueError("The result is not a boolean value.")
+    def callback(self, result: List[TaskResult]) -> List[ValidationOutput]:
+        """
+        Parse the results into validated ValidationOutput objects
+
+        Args:
+            result: List of TaskResult objects
+
+        Returns:
+            List[ValidationOutput]: List of validated outputs
+        """
+        outputs = []
+        for r in result:
+            if r.result.lower() == "true":
+                outputs.append(
+                    ValidationOutput(
+                        prediction=self.prediction,
+                        correct_answer=self.correct_answer,
+                        validation=True,
+                        model=r.model,
+                    )
+                )
+            elif r.result.lower() == "false":
+                outputs.append(ValidationOutput(validation=False, model=r.model))
+            else:
+                raise ValueError("The result is not a boolean value.")
+        return outputs
 
 
 class EvaluatePrediction(SingletonTemplate):
+    # Input fields
+    prediction: str = Field(..., description="The predicted answer to be evaluated")
+    question: str = Field(..., description="The question to compare against")
+    context: str = Field(..., description="The context to compare against")
 
-    def workflow(self, prediction: str, question: str, context: str) -> Workflow:
+    # Output schema
+    OutputSchema = EvaluationOutput
+
+    def workflow(self) -> Workflow:
         """
-        Generate a Task to determine if the predicted answer is contextually and semantically correct compared to the correct answer.
+        Generate a Task to determine if the predicted answer is contextually and semantically correct.
 
-        :param prediction: The predicted answer to be evaluated.
-        :param question: The question to compare against.
-        :param context: The context to compare against.
-        :return: A Task object representing the workflow.
+        Returns:
+            Workflow: The constructed workflow
         """
-
         # Initialize the workflow with variables
         builder = WorkflowBuilder(
-            prediction=prediction, question=question, context=context
+            prediction=self.prediction, question=self.question, context=self.context
         )
 
         # Add a generative step using the prompt
@@ -75,5 +127,22 @@ class EvaluatePrediction(SingletonTemplate):
         builder.set_return_value("evaluation_result")
         return builder.build()
 
-    def parse_result(self, result: List[TaskResult]) -> List[Dict[str, Any]]:
-        return [{"evaluation": r.result, "model": r.model} for r in result]
+    def callback(self, result: List[TaskResult]) -> List[EvaluationOutput]:
+        """
+        Parse the results into validated EvaluationOutput objects
+
+        Args:
+            result: List of TaskResult objects
+
+        Returns:
+            List[EvaluationOutput]: List of validated outputs
+        """
+        return [
+            EvaluationOutput(
+                question=self.question,
+                prediction=self.prediction,
+                evaluation=r.result,
+                model=r.model,
+            )
+            for r in result
+        ]

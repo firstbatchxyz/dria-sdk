@@ -1,3 +1,4 @@
-from .batches import ParallelSingletonExecutor
+from .singletons import ParallelSingletonExecutor
+from .prompts import ParallelPromptExecutor
 
-__all__ = ["ParallelSingletonExecutor"]
+__all__ = ["ParallelSingletonExecutor", "ParallelPromptExecutor"]

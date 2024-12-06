@@ -1,106 +1,79 @@
 import json
-import logging
-import random
-from typing import Dict, List
-
+from typing import List
+from pydantic import BaseModel, Field
 from dria_workflows import (
+    Workflow,
     WorkflowBuilder,
     Operator,
     Write,
     Edge,
-    Read,
-    Workflow,
 )
-
-from dria.models import TaskInput
-from dria.pipelines import Step, StepTemplate
-
-logger = logging.getLogger(__name__)
+from dria.factory.utilities import parse_json
+from dria.factory.workflows.template import SingletonTemplate
+from dria.models import TaskResult
 
 
-class PageAggregator(StepTemplate):
+class WebSearchResult(BaseModel):
+    query: str = Field(..., description="Query used for search")
+    link: str = Field(..., description="Link of the search result")
+    snippet: str = Field(..., description="Snippet of the search result")
+    title: str = Field(..., description="Title of the search result")
 
-    def create_workflow(
-        self,
-        topic: str,
-    ) -> Workflow:
-        """Collect web pages related to topic
 
-        Args:
-            :param topic:
+class SearchWeb(SingletonTemplate):
+    # Input fields
+    query: str = Field(..., description="Query to search for")
+    lang: str = Field("en", description="Language to search in")
+    n_results: int = Field(5, gt=0, lte=25, description="Number of results to return")
+
+    # Output schema
+    OutputSchema = WebSearchResult
+
+    def workflow(self) -> Workflow:
+        """
+        Creates a workflow for generating subtopics for a given topic.
 
         Returns:
-            dict: collected pages
+            Workflow: The constructed workflow
         """
-        builder = WorkflowBuilder(topic=topic)
-        builder.set_max_time(self.config.max_time)
-        builder.set_max_tokens(self.config.max_tokens)
-        builder.set_max_steps(self.config.max_steps)
+        # Initialize the workflow with variables
+        builder = WorkflowBuilder(query=self.query)
 
-        # Step A: RandomVarGen
-        builder.generative_step(
-            id="search",
-            prompt="Search for following topic: {{topic}}",
-            operator=Operator.FUNCTION_CALLING,
-            inputs=[
-                Read.new(key="topic", required=True),
-            ],
-            outputs=[Write.new("links")],
+        # Generate subtopics
+        builder.search_step(
+            search_query="{{query}}",
+            lang=self.lang,
+            n_results=self.n_results,
+            outputs=[Write.new("results")],
         )
 
-        flow = [Edge(source="search", target="_end")]
+        # Define the flow
+        flow = [Edge(source="0", target="_end")]
         builder.flow(flow)
-        builder.set_return_value("links")
+
+        # Set the return value of the workflow
+        builder.set_return_value("results")
         return builder.build()
 
-    def callback(self, step: Step) -> List[TaskInput]:
+    def callback(self, result: List[TaskResult]) -> List[WebSearchResult]:
         """
-        Process the output of the random variable generation step.
+        Parse the results into validated SubtopicsOutput objects
 
         Args:
-            step (Step): The Step object containing input and output data.
+            result: List of TaskResult objects
 
         Returns:
-            Dict[str, Any]: A dictionary containing persona traits and simulation description.
-
-        Raises:
-            Exception: If there's an error processing the step output.
+            List[SubtopicsOutput]: List of validated subtopics outputs
         """
+        results = []
+        for r in result:
+            try:
+                parsed_ = parse_json(r.result)["organic"]
+            except Exception as e:
+                parsed_ = parse_json(r.result)
 
-        return self.parse(step.output[0].result)
-
-    @staticmethod
-    def parse(result: str) -> List[TaskInput]:
-        """
-        Parse input string into a list of TaskInput objects.
-
-        Args:
-            result (str): Input string in either JSON format or newline-separated format
-
-        Returns:
-            List[TaskInput]: List of parsed TaskInput objects
-        """
-        try:
-            # Try parsing as JSON first
-            data = json.loads(result)
-            return [
-                TaskInput(
-                    title=item["title"],
-                    url=f"https://{item['link']}",
-                    summary=item["snippet"],
-                    id=str(random.randint(10000, 99999)),
-                )
-                for item in data
-            ]
-        except json.JSONDecodeError:
-            # Fall back to parsing newline-separated format
-            lines = result.strip().split("\n")
-            return [
-                TaskInput(
-                    title=lines[i].strip(),
-                    url=lines[i + 1].strip(),
-                    summary=lines[i + 2].strip(),
-                    id=int(lines[i + 4].strip()),
-                )
-                for i in range(0, len(lines), 5)
-            ]
+            for d in parsed_:
+                data = {key: d[key] for key in ["link", "snippet", "title"] if key in d}
+                data["query"] = self.query
+                results.append(WebSearchResult(**data))
+        return results
