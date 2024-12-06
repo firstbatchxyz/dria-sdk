@@ -14,7 +14,6 @@ class SimpleOutput(BaseModel):
 class Simple(SingletonTemplate):
     # Input fields
     prompt: str = Field(..., description="Input prompt for generation")
-    max_tokens: int = Field(default=1000, description="Maximum tokens for generation")
 
     # Output schema
     OutputSchema = SimpleOutput
@@ -26,8 +25,9 @@ class Simple(SingletonTemplate):
         Returns:
             Workflow: The constructed workflow
         """
+        max_tokens = getattr(self.params, "max_tokens", 1000)
         builder = WorkflowBuilder()
-        builder.set_max_tokens(self.max_tokens)
+        builder.set_max_tokens(max_tokens)
 
         builder.generative_step(
             prompt=self.prompt,

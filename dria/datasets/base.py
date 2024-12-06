@@ -281,3 +281,9 @@ class DriaDataset:
         if filepath is None:
             filepath = self.name + ".jsonl"
         self.to_pandas().to_json(filepath, orient="records", lines=True)
+
+    def to_json(self, filepath: Optional[str] = None):
+        """Convert dataset to JSON."""
+        if filepath is None:
+            filepath = self.name + ".json"
+        self.to_pandas().to_json(filepath, orient="records", lines=False)

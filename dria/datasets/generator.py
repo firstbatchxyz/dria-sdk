@@ -135,11 +135,11 @@ class DatasetGenerator:
 
     async def generate(
         self,
-        instructions: List[Dict[str, Any]],
+        instructions: Union[List[Dict[str, Any]], DriaDataset],
         singletons: Union[
             Type[SingletonTemplate], List[Type[SingletonTemplate]], Prompt
         ],
-        models: Optional[Model, List[Model], List[List[Model]]] = None,
+        models: Optional[Union[Model, List[Model], List[List[Model]]]] = None,
     ) -> None:
 
         if models is None:
@@ -150,6 +150,10 @@ class DatasetGenerator:
                 Model.QWEN2_5_7B_FP16,
                 Model.LLAMA3_1_8B_FP16,
             ]
+
+        # TODO: Handle streaming for large instructions
+        if isinstance(instructions, DriaDataset):
+            instructions = instructions.get_entries(data_only=True)
 
         if isinstance(singletons, Prompt):
             await self._with_prompt(instructions, singletons, models)
@@ -184,7 +188,7 @@ class DatasetGenerator:
 
     async def _with_singletons(
         self,
-        instructions: List[Dict],
+        instructions: List[Dict[str, Any]],
         singletons: Union[Type[SingletonTemplate], List[Type[SingletonTemplate]]],
         models: Union[Model, List[Model], List[List[Model]]],
     ) -> None:
