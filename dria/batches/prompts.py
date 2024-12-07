@@ -79,7 +79,9 @@ class ParallelPromptExecutor:
             except Exception as e:
                 failed_data = [
                     {
-                        "workflow": b.workflow.model_dump(),
+                        "workflow": b.workflow.model_dump(
+                            exclude={"tasks": {"__all__": {"schema"}}}
+                        ),
                         "id": b.id,
                         "models": [model.value for model in b.models],
                         "traceback": str(traceback.format_exc()),
