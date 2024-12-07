@@ -159,7 +159,7 @@ class DriaDataset:
         dataset.db.add_entries(dataset.dataset_id, mapped_data)
         return dataset
 
-    def update_schema(self, new_fields: Dict[str, Type]):
+    def _update_schema(self, new_fields: Dict[str, Type]):
         """
         Update schema with new fields.
 
@@ -212,7 +212,7 @@ class DriaDataset:
             field_type = type(values[0]) if values else Any
 
         # Update schema
-        self.update_schema({field_name: (field_type, ...)})
+        self._update_schema({field_name: (field_type, ...)})
 
     def format_for_training(
         self,
