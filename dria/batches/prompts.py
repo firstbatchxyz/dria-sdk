@@ -1,5 +1,6 @@
 import json
 import logging
+import traceback
 from typing import List, Dict, Any, Tuple, Type
 from dria.constants import TASK_TIMEOUT
 from dria.client import Dria
@@ -81,6 +82,7 @@ class ParallelPromptExecutor:
                         "workflow": b.workflow.model_dump(),
                         "id": b.id,
                         "models": [model.value for model in b.models],
+                        "traceback": str(traceback.format_exc()),
                     }
                     for b in batch
                 ]

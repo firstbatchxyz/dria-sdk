@@ -272,7 +272,7 @@ class Dria:
                 )
 
                 results.extend(new_results.values())
-                
+
                 current_time = time.time()
                 if current_time - last_update >= 1.0:
                     pbar.n = len(results)

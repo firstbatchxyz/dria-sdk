@@ -8,7 +8,7 @@ from dria.constants import (
     HEARTBEAT_OUTPUT_TOPIC,
     HEARTBEAT_TOPIC,
     MAX_OLLAMA_QUEUE,
-    MAX_API_QUEUE
+    MAX_API_QUEUE,
 )
 from dria.db.mq import KeyValueQueue
 from dria.db.storage import Storage
@@ -154,11 +154,13 @@ class Monitor:
                 for model_id, model_name in metadata["models"]:
                     if "pending_tasks" not in metadata:
                         continue
-                    
-                    max_queue = MAX_OLLAMA_QUEUE if model_id == "ollama" else MAX_API_QUEUE
+
+                    max_queue = (
+                        MAX_OLLAMA_QUEUE if model_id == "ollama" else MAX_API_QUEUE
+                    )
                     if metadata["pending_tasks"][0] > max_queue:
                         continue
-                        
+
                     node_addresses[model_name].append(address)
                     node_addresses[model_id].append(address)
 

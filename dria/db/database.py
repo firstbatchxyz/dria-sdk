@@ -1,10 +1,13 @@
+from pathlib import Path
 import duckdb
 import json
 from typing import Dict, List, Any
 
 
 class DatasetDB:
-    def __init__(self, db_path: str = "datasets.duckdb"):
+    def __init__(
+        self, db_path: str = str(Path(__file__).resolve().parent / "datasets.duckdb")
+    ):
         try:
             self.conn = duckdb.connect(db_path)
             self._initialize_tables()
