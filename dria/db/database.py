@@ -99,6 +99,62 @@ class DatasetDB:
         except Exception as e:
             raise DatabaseError(f"Failed to add entries: {str(e)}")
 
+    def remove_entry(self, entry_id: int, db_id: int) -> None:
+        """Remove an entry from the database."""
+        try:
+            result = self.conn.execute(
+                "SELECT 1 FROM entries WHERE entry_id = ? AND dataset_id = ?",
+                (entry_id, db_id),
+            ).fetchone()
+
+            if not result:
+                raise DatabaseError(
+                    f"Entry with ID {entry_id} not found in dataset {db_id}"
+                )
+
+            self.conn.execute(
+                "DELETE FROM entries WHERE entry_id = ? AND dataset_id = ?",
+                (entry_id, db_id),
+            )
+
+            self.conn.execute(
+                """
+                UPDATE datasets 
+                SET updated_at = CURRENT_TIMESTAMP 
+                WHERE dataset_id = ?
+                """,
+                (db_id,),
+            )
+        except Exception as e:
+            raise DatabaseError(f"Failed to remove entry: {str(e)}")
+
+    def remove_dataset(self, dataset_id: int) -> None:
+        """Remove a dataset and all its entries from the database."""
+        try:
+            result = self.conn.execute(
+                "SELECT 1 FROM datasets WHERE dataset_id = ?", (dataset_id,)
+            ).fetchone()
+
+            if not result:
+                raise DatabaseError(f"Dataset with ID {dataset_id} not found")
+
+            self.conn.execute("DELETE FROM entries WHERE dataset_id = ?", (dataset_id,))
+
+            self.conn.execute(
+                "DELETE FROM datasets WHERE dataset_id = ?", (dataset_id,)
+            )
+        except Exception as e:
+            raise DatabaseError(f"Failed to remove dataset: {str(e)}")
+
+    def flush_datasets(self) -> None:
+        """Remove all datasets and their entries from the database."""
+        try:
+            self.conn.execute("DELETE FROM entries")
+            self.conn.execute("DELETE FROM datasets")
+            self.conn.execute("VACUUM ANALYZE")
+        except Exception as e:
+            raise DatabaseError(f"Failed to flush datasets: {str(e)}")
+
     def get_dataset_entries(self, dataset_id: int, data_only=False) -> List[Dict]:
         """Get all entries for a dataset."""
         try:

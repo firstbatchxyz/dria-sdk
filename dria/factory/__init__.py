@@ -1,5 +1,3 @@
-from importlib.metadata import version, PackageNotFoundError
-
 from .workflows import *
 from .persona import *
 from .subtopic import *
@@ -15,7 +13,6 @@ __core_exports = [
     "EvolveInstruct",
     "EvolveQuality",
     "GenerateGraph",
-    "TextRetrieval",
     "TextMatching",
     "TextClassification",
     "SemanticTriplet",

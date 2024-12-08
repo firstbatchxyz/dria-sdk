@@ -272,6 +272,17 @@ class DriaDataset:
         """Get all entries in the dataset."""
         return self.db.get_dataset_entries(self.dataset_id, data_only)
 
+    def remove_entry(self, entry_id: int) -> None:
+        """Remove an entry from the dataset."""
+        self.db.remove_entry(entry_id, self.dataset_id)
+
+    def remove_dataset(self) -> None:
+        """Remove the dataset and all its entries from the database."""
+        self.db.remove_dataset(self.dataset_id)
+        self.dataset_id = None
+        self.name = None
+        self.db = None
+
     def to_pandas(self) -> pd.DataFrame:
         """Convert dataset to Pandas DataFrame."""
         return pd.DataFrame(self.get_entries(data_only=True))
