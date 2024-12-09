@@ -13,13 +13,6 @@ from .prompter import Prompt
 logger = logging.getLogger(__name__)
 
 
-class DatasetField:
-    name: str
-    prompt: Optional[str] = None
-    workflow: Optional[Union[SingletonTemplate, List[SingletonTemplate]]] = None
-    models: List[Model] = [Model.SMALL]
-
-
 class DatasetGenerator:
     def __init__(
         self,
@@ -48,7 +41,7 @@ class DatasetGenerator:
     def _validate_prompt(self, instructions: List[Dict[str, Any]], prompt: Prompt):
 
         for i, instruction in enumerate(instructions):
-            if not set(instruction.keys()) == set(prompt.variables):
+            if not set(prompt.variables).issubset(set(instruction.keys())):
                 raise ValueError(
                     f"Schema mismatch between the prompt {prompt.prompt} and {i+1}. instruction. \n{json.dumps(instruction, indent=2)}"
                 )
@@ -262,10 +255,33 @@ class DatasetGenerator:
         # TODO: decide what to do with step_map, write on db, or store locally, or none
 
     async def transform_and_update_dataset(
-        self, field: DatasetField
+        self, prompt: Prompt, models: Union[Model, List[Model]],
     ) -> "DatasetGenerator":
         """
-        Augments the dataset by adding a new field to the dataset.
-        :param field: Dataset field
+        Augments the dataset by adding a new field to the dataset or updating an existing field.
+        :param prompt: Singleton or Prompt
+        :param models: Model or List of Models
         """
-        pass
+        instructions = self.dataset.get_entries(data_only=True)
+        try:
+            self._validate_prompt(instructions, prompt)
+        except ValueError as e:
+            raise e
+
+        if not isinstance(models, list):
+            models = [models]
+
+        _, _ = await self._executor(instructions, prompt, models)
+
+        name = (
+            self.dataset.name + "_" + sha256(prompt.prompt.encode("utf-8")).hexdigest()
+        )
+        dataset_id = self.dataset.db.get_dataset_id_by_name(name)
+        final_entries = self.dataset.db.get_dataset_entries(dataset_id, data_only=True)
+        transformed_dict = {
+            key: [d[key] for d in final_entries]
+            for key in final_entries[0].keys()
+        }
+        _id = self.dataset.dataset_id
+        self.dataset.db.add_fields_to_entries(_id, transformed_dict)
+        return self
