@@ -1,3 +1,1 @@
-from .pipeline import SearchPipeline
-
-__all__ = ["SearchPipeline"]
+from .aggregate_pages import SearchWeb

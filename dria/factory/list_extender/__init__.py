@@ -1,1 +1,1 @@
-from .pipeline import ListExtenderPipeline
+from .extender import ListExtender

@@ -1,1 +1,1 @@
-from .task import PageAggregator
+from .task import SearchWeb

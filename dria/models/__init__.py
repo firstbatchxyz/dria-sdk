@@ -14,7 +14,7 @@ from .models import (
     P2PMessage,
     TaskResult,
     TaskInput,
-    InputParam
+    InputParam,
 )
 
 __all__ = [
@@ -32,5 +32,5 @@ __all__ = [
     "FunctionCallingModels",
     "OpenAIModels",
     "OllamaModels",
-    "InputParam"
+    "InputParam",
 ]

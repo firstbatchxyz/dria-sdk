@@ -1,10 +1,17 @@
-from dria_workflows import Workflow, WorkflowBuilder, Operator, Write, Edge
+from typing import List, Dict, Literal
+from pydantic import BaseModel, Field
+from dria_workflows import (
+    Workflow,
+    WorkflowBuilder,
+    Operator,
+    Write,
+    Edge,
+)
 from dria.factory.workflows.template import SingletonTemplate
 from dria.models import TaskResult
-from typing import Dict, List, Literal
 import re
 
-Language = Literal[
+Language = [
     "python",
     "javascript",
     "java",
@@ -21,7 +28,98 @@ Language = Literal[
 ]
 
 
-def parser(code: str, language: Language) -> str:
+class CodeOutput(BaseModel):
+    instruction: str = Field(..., description="The instruction used to generate code")
+    language: str = Field(..., description="The programming language used")
+    code: str = Field(..., description="The generated code")
+    model: str = Field(..., description="Model used for generation")
+
+
+class IteratedCodeOutput(CodeOutput):
+    iterated_code: str = Field(..., description="The iterated version of the code")
+
+
+class GenerateCode(SingletonTemplate):
+    # Input fields
+    instruction: str = Field(..., description="The instruction to generate code for")
+    language: str = Field(
+        ..., description="The programming language to generate code for"
+    )
+
+    # Output schema
+    OutputSchema = CodeOutput
+
+    def workflow(self) -> Workflow:
+        builder = WorkflowBuilder(instruction=self.instruction, language=self.language)
+        builder.set_max_tokens(750)
+
+        builder.generative_step(
+            prompt="You have been given the following instruction: "
+            "{{instruction}}. Write clean, commented and robust code in {{language}}. Code: ",
+            operator=Operator.GENERATION,
+            outputs=[Write.new("code")],
+        )
+
+        flow = [Edge(source="0", target="_end")]
+        builder.flow(flow)
+        builder.set_return_value("code")
+        return builder.build()
+
+    def callback(self, result: List[TaskResult]) -> List[CodeOutput]:
+        return [
+            CodeOutput(
+                instruction=self.instruction,
+                language=self.language,
+                code=parser(r.result.strip(), self.language),
+                model=r.model,
+            )
+            for r in result
+        ]
+
+
+class IterateCode(SingletonTemplate):
+    # Input fields
+    code: str = Field(..., description="The code to iterate over")
+    instruction: str = Field(..., description="The instruction to generate code for")
+    language: str = Field(
+        ..., description="The programming language to generate code for"
+    )
+
+    # Output schema
+    OutputSchema = IteratedCodeOutput
+
+    def workflow(self) -> Workflow:
+        builder = WorkflowBuilder(
+            instruction=self.instruction, code=self.code, language=self.language
+        )
+        builder.set_max_tokens(750)
+
+        builder.generative_step(
+            prompt="Here is you previous code: {{code}}.\n Iterate your previous code based on the instruction: "
+            "{{instruction}}. Write clean, commented and robust code in {{language}}. Code: ",
+            operator=Operator.GENERATION,
+            outputs=[Write.new("code")],
+        )
+
+        flow = [Edge(source="0", target="_end")]
+        builder.flow(flow)
+        builder.set_return_value("code")
+        return builder.build()
+
+    def callback(self, result: List[TaskResult]) -> List[IteratedCodeOutput]:
+        return [
+            IteratedCodeOutput(
+                instruction=self.instruction,
+                language=self.language,
+                code=self.code,
+                iterated_code=parser(r.result.strip(), self.language),
+                model=r.model,
+            )
+            for r in result
+        ]
+
+
+def parser(code: str, language: str) -> str:
     """
     Extracts the code block for the specified language from the provided text.
 
@@ -30,95 +128,17 @@ def parser(code: str, language: Language) -> str:
         language (Language): The programming language enum to extract.
 
     Returns:
-        Dict[str, Any]: A dictionary containing the extracted code.
+        str: The extracted code.
 
     Raises:
         ValueError: If the specified code block for the language is not found.
     """
-    # Construct the regex pattern using the language's value
     pattern = rf"```{re.escape(language)}\s*\n?(.*?)```"
-
-    # Search for the pattern in the input code
     match = re.search(pattern, code, re.DOTALL | re.IGNORECASE)
 
     if match:
-        extracted_code = match.group(1).strip()
-        return extracted_code
+        return match.group(1).strip()
     else:
         raise ValueError(
             f"Code block for language '{language}' not found in the provided text."
         )
-
-
-class GenerateCode(SingletonTemplate):
-
-    def workflow(self, instruction: str, language: Language) -> Workflow:
-        """
-
-        :param instruction: The instruction to generate code for.
-        :param language: The programming language to generate code for.
-        :return:
-        """
-        self.params.instruction = instruction
-        self.params.language = language
-        builder = WorkflowBuilder(instruction=instruction, language=language)
-        builder.set_max_tokens(750)
-        builder.generative_step(
-            prompt="You have been given the following instruction: "
-            "{{instruction}}. Write clean, commented and robust code in {{language}}. Code: ",
-            operator=Operator.GENERATION,
-            outputs=[Write.new("code")],
-        )
-        flow = [Edge(source="0", target="_end")]
-        builder.flow(flow)
-        builder.set_return_value("code")
-        return builder.build()
-
-    def parse_result(self, result: List[TaskResult]) -> List[Dict[str, str]]:
-        return [
-            {
-                "instruction": self.params.instruction,
-                "language": self.params.language,
-                "code": parser(r.result.strip(), self.params.language),
-                "model": r.model,
-            }
-            for r in result
-        ]
-
-
-class IterateCode(SingletonTemplate):
-
-    def workflow(self, code: str, instruction: str, language: Language) -> Workflow:
-        """
-        :param code: The code to iterate over.
-        :param instruction: The instruction to generate code for.
-        :param language: The programming language to generate code for.
-        :return:
-        """
-        self.params.instruction = instruction
-        self.params.language = language
-        self.params.code = code
-        builder = WorkflowBuilder(instruction=instruction, code=code, language=language)
-        builder.set_max_tokens(750)
-        builder.generative_step(
-            prompt="Here is you previous code: {{code}}.\n Iterate your previous code based on the instruction: "
-            "{{instruction}}. Write clean, commented and robust code in {{language}}. Code: ",
-            operator=Operator.GENERATION,
-            outputs=[Write.new("code")],
-        )
-        flow = [Edge(source="0", target="_end")]
-        builder.flow(flow)
-        builder.set_return_value("code")
-        return builder.build()
-
-    def parse_result(self, result: List[TaskResult]) -> List[Dict[str, str]]:
-        return [
-            {
-                "instruction": self.params.instruction,
-                "language": self.params.language,
-                "iterated_code": parser(r.result.strip(), self.params.language),
-                "code": self.params.code,
-                "model": r.model,
-            }
-            for r in result
-        ]

@@ -1,11 +1,11 @@
 from abc import ABC, abstractmethod
-from typing import List, Optional
-from dria.utils import FormatType
+from typing import List, Type, ClassVar
 from types import SimpleNamespace
 from dria.models import TaskResult
+from pydantic import BaseModel
 
 
-class SingletonTemplate(ABC):
+class SingletonTemplate(BaseModel, ABC):
     """
     An abstract base class representing a singleton template.
 
@@ -13,10 +13,19 @@ class SingletonTemplate(ABC):
     """
 
     params: SimpleNamespace = SimpleNamespace()
+    OutputSchema: ClassVar[Type[BaseModel]]
 
-    def __init__(self, **kwargs):
-        super().__init__()
-        self.params = SimpleNamespace(**kwargs)
+    class Config:
+        arbitrary_types_allowed = True
+        extra = "forbid"
+
+    def preprocess(self):
+        pass
+
+    @classmethod
+    def create(cls, **data):
+        """Factory method to create an instance with validated input"""
+        return cls(**data)
 
     @abstractmethod
     def workflow(self, **kwargs):
@@ -28,11 +37,8 @@ class SingletonTemplate(ABC):
         pass
 
     @abstractmethod
-    def parse_result(self, result: List[TaskResult]):
+    def callback(self, result: List[TaskResult]) -> List[Type[BaseModel]]:
         """
-        The parse_result method for the singleton template.
-        Args:
-            result: The result to be parsed.
-        Returns:
+        The callback method for the singleton template.
         """
         pass

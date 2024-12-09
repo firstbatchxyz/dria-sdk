@@ -1,65 +1,82 @@
-import logging
-from dria.models import TaskInput
-from dria.factory.utilities import get_abs_path, parse_json, get_tags
+import json
+from typing import Any, List, Dict
+from pydantic import BaseModel, Field
 from dria_workflows import (
+    Workflow,
     WorkflowBuilder,
     Operator,
     Write,
     Edge,
-    Workflow,
 )
-from typing import Dict, List
-from dria.pipelines import Step, StepTemplate
+from dria.factory.utilities import get_abs_path, parse_json, get_tags
+from dria.factory.workflows.template import SingletonTemplate
+from dria.models import TaskResult, TaskInput
 
 
-logger = logging.getLogger(__name__)
+class ExtendedListOutput(BaseModel):
+    extended_list: List[str] = Field(..., description="Extended list of items")
+    model: str = Field(..., description="Model used for generation")
 
 
-class ListExtender(StepTemplate):
+class ListExtender(SingletonTemplate):
+    # Input fields
+    e_list: List[str] = Field(..., description="Initial list to be extended")
 
-    def create_workflow(self, e_list: List[str]) -> Workflow:
-        """Generate random variables for simulation
+    # Output schema
+    OutputSchema = ExtendedListOutput
 
-        Args:
-            :param e_list: The description of the simulation.
-        Returns:
-            dict: The generated random variables.
+    def workflow(self) -> Workflow:
         """
-        builder = WorkflowBuilder(e_list=e_list)
+        Creates a workflow for extending a list.
+
+        Returns:
+            Workflow: The constructed workflow
+        """
+        # Initialize the workflow with variables
+        builder = WorkflowBuilder(e_list=self.e_list)
+
+        # Set workflow constraints
         builder.set_max_time(self.config.max_time)
         builder.set_max_tokens(self.config.max_tokens)
         builder.set_max_steps(self.config.max_steps)
-        # Step A: RandomVarGen
+
+        # Define the generation step
         builder.generative_step(
-            id="extend_list",
             path=get_abs_path("prompt.md"),
             operator=Operator.GENERATION,
             outputs=[Write.new("extended_list")],
         )
 
+        # Define the flow
         flow = [
-            Edge(source="extend_list", target="_end"),
+            Edge(source="0", target="_end"),
         ]
         builder.flow(flow)
+
+        # Set the return value of the workflow
         builder.set_return_value("extended_list")
         return builder.build()
 
-    def callback(self, step: Step) -> List[TaskInput]:
+    def callback(self, result: List[TaskResult]) -> List[ExtendedListOutput]:
         """
-        Process the output of the random variable generation step.
+        Parse the results into validated ExtendedListOutput objects
 
         Args:
-            step (Step): The Step object containing input and output data.
+            result: List of TaskResult objects
 
         Returns:
-            Dict[str, Any]: A dictionary containing persona traits and simulation description.
-
-        Raises:
-            Exception: If there's an error processing the step output.
+            List[ExtendedListOutput]: List of validated extended list outputs
         """
-
-        output = step.output[0].result
-        new_list = parse_json(
-            get_tags(output, "extended_list")[0].replace("\n", "").replace("'", '"')
-        )
-        return [TaskInput(**{"topic": el}) for el in new_list + step.input[0].e_list]
+        outputs = []
+        for r in result:
+            new_list = parse_json(
+                get_tags(r.result, "extended_list")[0]
+                .replace("\n", "")
+                .replace("'", '"')
+            )
+            # Combine the new list with the original list
+            combined_list = list(set(new_list + self.e_list))
+            outputs.append(
+                ExtendedListOutput(extended_list=combined_list, model=r.model)
+            )
+        return outputs

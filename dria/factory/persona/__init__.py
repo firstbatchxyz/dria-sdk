@@ -1,3 +1,9 @@
-from .pipeline import PersonaPipeline
+from .random_vars import RandomVars
+from .backstory import BackStory
+from .short_bio import ShortBio
 
-__all__ = ["PersonaPipeline"]
+PersonaBackstory = [RandomVars, BackStory]
+PersonaBio = [RandomVars, ShortBio]
+
+
+__all__ = ["RandomVars", "BackStory", "PersonaBio", "PersonaBackstory"]
