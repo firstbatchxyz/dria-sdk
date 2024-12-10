@@ -46,8 +46,8 @@ class DatasetGenerator:
                     f"Schema mismatch between the prompt {prompt.prompt} and {i+1}. instruction. \n{json.dumps(instruction, indent=2)}"
                 )
         if not schemas_match(
-            prompt.schema.model_json_schema(),
-            self.dataset.schema.model_json_schema(),
+            prompt.schema,
+            self.dataset.schema,
         ):
             raise ValueError(
                 f"Schema mismatch. Schema of the Prompt doesn't match dataset schema."
@@ -106,7 +106,7 @@ class DatasetGenerator:
 
         if not schemas_match(singletons[-1].OutputSchema, self.dataset.schema):
             raise ValueError(
-                f"Schema mismatch. Output of the last step: f{singletons[-1].__name__} doesn't match dataset schema."
+                f"Schema mismatch. Output of the last step: {singletons[-1].__name__} doesn't match dataset schema."
             )
 
     async def _executor(

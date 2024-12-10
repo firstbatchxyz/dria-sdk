@@ -17,7 +17,7 @@ class SingletonTemplate(BaseModel, ABC):
 
     class Config:
         arbitrary_types_allowed = True
-        extra = "forbid"
+        extra = "allow"
 
     def preprocess(self):
         pass

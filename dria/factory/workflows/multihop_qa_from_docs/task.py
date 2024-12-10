@@ -86,10 +86,10 @@ class MultiHopQuestion(SingletonTemplate):
         """
         results = []
         for r in result:
-            onehop = get_tags(r.result, "1hop")
-            twohop = get_tags(r.result, "2hop")
-            threehop = get_tags(r.result, "3hop")
-            answer = get_tags(r.result, "answer")
+            onehop = get_tags(r.result, "1hop")[0]
+            twohop = get_tags(r.result, "2hop")[0]
+            threehop = get_tags(r.result, "3hop")[0]
+            answer = get_tags(r.result, "answer")[0]
 
             if None in [onehop, twohop, threehop, answer]:
                 logging.debug(

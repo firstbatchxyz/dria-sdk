@@ -95,12 +95,9 @@ class EvolveInstruct(SingletonTemplate):
         """
         outputs = []
         for r in result:
-            parts = r.result.split("## New Prompt:")
-            if len(parts) != 2:
-                raise ValueError(f"Invalid result format: {r.result}")
-
+            part = r.result.split("## New Prompt:")[-1]
             new_prompt = (
-                parts[1]
+                part
                 .strip()
                 .replace("##", "")
                 .strip()
