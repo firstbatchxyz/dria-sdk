@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "dria"
-version = "0.0.96"
+version = "0.0.99"
 description = "Dria SDK - A Python library for interacting with the Dria Network"
 authors = ["andthattoo <omer@firstbatch.xyz>", "Anil <anil@firstbatch.xyz>"]
 readme = "README.md"
@@ -22,7 +22,7 @@ coincurve = "^18.0.0"
 pydantic = "2.9.1"
 python-dotenv = "^1.0.1"
 dria-workflows = "^0.3.5"
-aiohttp = "^3.10.9"
+aiohttp = "^3.11.10"
 eciespy = "0.4.1"
 fastbloom-rs = "0.5.9"
 tqdm = "4.66.5"
