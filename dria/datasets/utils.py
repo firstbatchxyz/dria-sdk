@@ -1,5 +1,5 @@
-from pydantic import BaseModel
-from typing import Dict, Any, Union, Type
+from pydantic import BaseModel, create_model
+from typing import Dict, Any, Union, Type, List
 import requests
 
 

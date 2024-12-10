@@ -1,7 +1,7 @@
 from typing import List, Dict, Optional, Type, Any, Literal, Union
 
 import pandas as pd
-from pydantic import BaseModel, create_model, ValidationError, Field
+from pydantic import BaseModel, create_model, ValidationError
 from datasets import load_dataset
 from datasets import Dataset as HFDataset
 import json
@@ -135,27 +135,29 @@ class DriaDataset:
 
     @classmethod
     def from_huggingface(
-        cls,
-        name: str,
-        description: str,
-        schema: Type[BaseModel],
-        dataset_id: str,
-        mapping: Dict[str, str],
-        split="train",
+            cls,
+            name: str,
+            description: str,
+            dataset_id: str,
+            schema: Type[BaseModel],
+            mapping: Optional[Dict[str, str]] = None,
+            split: str = "train",
     ) -> "DriaDataset":
-        """Create dataset from HuggingFace dataset."""
         db = DatasetDB()
-        dataset = cls(name, description, schema, db)
-        # Map HF dataset fields to schema fields
-        mapped_data = []
         hf_dataset = load_dataset(dataset_id)[split]
 
+        mapped_data = []
         for item in hf_dataset:
-            entry = {
-                schema_field: item[hf_field]
-                for schema_field, hf_field in mapping.items()
-            }
-            mapped_data.append(schema(**entry).model_dump())
+            if mapping is not None:
+                entry = {k: item[v] for k, v in mapping.items()}
+            else:
+                entry = item
+            try:
+                mapped_data.append(schema(**entry).model_dump())
+            except ValidationError:
+                raise ValueError(f"Failed to map entry to schema: {entry}")
+
+        dataset = cls(name, description, schema, db)
         dataset.db.add_entries(dataset.dataset_id, mapped_data)
         return dataset
 
