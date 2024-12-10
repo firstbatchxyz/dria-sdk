@@ -97,8 +97,7 @@ class EvolveInstruct(SingletonTemplate):
         for r in result:
             part = r.result.split("## New Prompt:")[-1]
             new_prompt = (
-                part
-                .strip()
+                part.strip()
                 .replace("##", "")
                 .strip()
                 .replace("{", "")

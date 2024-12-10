@@ -3,9 +3,7 @@ from dria.factory import GenerateCode
 import asyncio
 
 my_dataset = DriaDataset(
-    name="code",
-    description="A dataset for code",
-    schema=GenerateCode.OutputSchema
+    name="code", description="A dataset for code", schema=GenerateCode.OutputSchema
 )
 
 generator = DatasetGenerator(dataset=my_dataset)

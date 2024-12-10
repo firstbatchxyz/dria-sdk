@@ -14,7 +14,7 @@ instructions = [
     {
         "instructor_persona": "Researcher on quantum computing at @Google",
         "responding_persona": "An AI assistant",
-        "num_turns": 3
+        "num_turns": 3,
     }
 ]
 

@@ -12,7 +12,7 @@ generator = DatasetGenerator(dataset=my_dataset)
 instructions = [
     {
         "prediction": "Task management capabilities include creating tasks, setting deadlines, organizing priorities, and tracking completion status",
-        "correct_answer": "Task management capabilities include creating tasks, setting deadlines, organizing priorities, and monitoring progress", 
+        "correct_answer": "Task management capabilities include creating tasks, setting deadlines, organizing priorities, and monitoring progress",
     }
 ]
 

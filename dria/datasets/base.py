@@ -49,10 +49,10 @@ class DriaDataset:
         name: str,
         description: str,
         schema: Type[BaseModel],
-        db: DatasetDB,
         json_path: str,
     ) -> "DriaDataset":
         """Create dataset from JSON file."""
+        db = DatasetDB()
         dataset = cls(name, description, schema, db)
         with open(json_path, "r") as f:
             data = json.load(f)
@@ -73,7 +73,6 @@ class DriaDataset:
         name: str,
         description: str,
         schema: Type[BaseModel],
-        db: DatasetDB,
         csv_path: str,
         delimiter: str = ",",
         has_header: bool = True,
@@ -93,6 +92,7 @@ class DriaDataset:
         Returns:
             DriaDataset instance
         """
+        db = DatasetDB()
         dataset = cls(name, description, schema, db)
 
         try:
@@ -139,12 +139,12 @@ class DriaDataset:
         name: str,
         description: str,
         schema: Type[BaseModel],
-        db: DatasetDB,
         dataset_id: str,
         mapping: Dict[str, str],
         split="train",
     ) -> "DriaDataset":
         """Create dataset from HuggingFace dataset."""
+        db = DatasetDB()
         dataset = cls(name, description, schema, db)
         # Map HF dataset fields to schema fields
         mapped_data = []
@@ -298,3 +298,7 @@ class DriaDataset:
         if filepath is None:
             filepath = self.name + ".json"
         self.to_pandas().to_json(filepath, orient="records", lines=False)
+
+    def to_hf_dataset(self) -> HFDataset:
+        """Convert dataset to HuggingFace dataset."""
+        HFDataset.from_pandas(self.to_pandas())

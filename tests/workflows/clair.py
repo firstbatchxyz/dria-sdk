@@ -6,7 +6,7 @@ import asyncio
 my_dataset = DriaDataset(
     name="clair_test",  # Title of the dataset
     description="A test dataset",  # Brief description of the dataset
-    schema=Clair.OutputSchema  # Schema defining the expected structure of dataset entries
+    schema=Clair.OutputSchema,  # Schema defining the expected structure of dataset entries
 )
 
 generator = DatasetGenerator(dataset=my_dataset)

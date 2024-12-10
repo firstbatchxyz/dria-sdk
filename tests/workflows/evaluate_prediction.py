@@ -14,7 +14,7 @@ instructions = [
     {
         "prediction": "The AI assistant will help with task management by providing features like task creation, scheduling, prioritization, reminders, and progress tracking.",
         "question": "What capabilities will the AI assistant provide for task management?",
-        "context": "Professional work environment"
+        "context": "Professional work environment",
     }
 ]
 

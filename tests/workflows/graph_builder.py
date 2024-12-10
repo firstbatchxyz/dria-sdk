@@ -10,11 +10,7 @@ my_dataset = DriaDataset(
 
 generator = DatasetGenerator(dataset=my_dataset)
 
-instructions = [
-    {
-        "context": "The advantage of using AI on the healthcare"
-    }
-]
+instructions = [{"context": "The advantage of using AI on the healthcare"}]
 
 asyncio.run(
     generator.generate(

@@ -32,8 +32,9 @@ def schemas_match(
             return True
         except TypeError:
             return False
+
     def extract_properties(
-            schema: Union[Dict[str, Any], Type[BaseModel]]
+        schema: Union[Dict[str, Any], Type[BaseModel]]
     ) -> Dict[str, Any]:
         # Handle Pydantic model or model_fields
         if hasattr(schema, "model_fields"):
