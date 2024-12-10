@@ -6,6 +6,7 @@ from datasets import load_dataset
 from datasets import Dataset as HFDataset
 import json
 import os
+import csv
 from dria.utils import FieldMapping, DataFormatter, FormatType, ConversationMapping
 from dria.db.database import DatasetDB
 
@@ -60,22 +61,21 @@ class DriaDataset:
         validated_data = []
         for entry in data:
             try:
-                entry = json.loads(entry)
                 validated_data.append(schema(**entry).model_dump())
             except ValidationError as e:
-                print(f"Validation error: {e}. Skipping: {entry}")
+                raise ValueError(f"Validation error: {e}. Skipping: {entry}")
         dataset.db.add_entries(dataset.dataset_id, validated_data)
         return dataset
 
     @classmethod
     def from_csv(
-        cls,
-        name: str,
-        description: str,
-        schema: Type[BaseModel],
-        csv_path: str,
-        delimiter: str = ",",
-        has_header: bool = True,
+            cls,
+            name: str,
+            description: str,
+            schema: Type[BaseModel],
+            csv_path: str,
+            delimiter: str = ",",
+            has_header: bool = True,
     ) -> "DriaDataset":
         """
         Create dataset from CSV file.
@@ -84,7 +84,6 @@ class DriaDataset:
             name: Name of the dataset
             description: Description of the dataset
             schema: Pydantic model defining the structure
-            db: Database connection
             csv_path: Path to CSV file
             delimiter: CSV delimiter (default: ',')
             has_header: Whether CSV has header row (default: True)
@@ -97,31 +96,21 @@ class DriaDataset:
 
         try:
             with open(csv_path, "r", encoding="utf-8") as f:
-                # Read header if exists
-                if has_header:
-                    headers = f.readline().strip().split(delimiter)
-                else:
-                    # If no header, use schema field names in order
+                reader = csv.DictReader(f, delimiter=delimiter) if has_header else csv.reader(f, delimiter=delimiter)
+
+                # If no header, use schema fields as keys
+                if not has_header:
                     headers = list(schema.model_fields.keys())
+                    reader = (dict(zip(headers, row)) for row in reader)
 
-                # Read and parse data
                 entries = []
-                for line in f:
-                    values = line.strip().split(delimiter)
-                    if len(values) != len(headers):
-                        continue  # Skip malformed lines
-
-                    # Create dict from headers and values
-                    entry = {
-                        headers[i]: values[i].strip("\"'") for i in range(len(headers))
-                    }
-
+                for row in reader:
                     try:
                         # Validate against schema
-                        validated_entry = schema(**entry).model_dump()
+                        validated_entry = schema(**row).model_dump()
                         entries.append(validated_entry)
                     except Exception as e:
-                        print(f"Skipping invalid entry: {entry}. Error: {str(e)}")
+                        print(f"Skipping invalid entry: {row}. Error: {str(e)}")
                         continue
 
                 # Add validated entries to database
