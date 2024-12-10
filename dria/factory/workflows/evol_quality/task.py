@@ -25,20 +25,13 @@ class EvolveQuality(SingletonTemplate):
 
     prompt: str
     response: str
-    method: Literal[
-        "HELPFULNESS", "RELEVANCE", "DEEPENING", "CREATIVITY", "DETAILS"
-    ] = Field(default="HELPFULNESS", description="Evolution method to apply")
+    method: str
     OutputSchema = Output
 
     def workflow(self) -> Workflow:
 
-        selected_method = (
-            MUTATION_TEMPLATES[self.method]
-            if self.method in MUTATION_TEMPLATES
-            else MUTATION_TEMPLATES["DETAILS"]
-        )
         builder = WorkflowBuilder(
-            prompt=self.prompt, response=self.response, method=selected_method
+            prompt=self.prompt, response=self.response, method=self.method
         )
         builder.generative_step(
             path=get_abs_path("rewrite.md"),

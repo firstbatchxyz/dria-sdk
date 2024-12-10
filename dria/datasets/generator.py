@@ -254,7 +254,7 @@ class DatasetGenerator:
 
         # TODO: decide what to do with step_map, write on db, or store locally, or none
 
-    async def transform_and_update_dataset(
+    async def enrich(
         self,
         prompt: Prompt,
         models: Union[Model, List[Model]],

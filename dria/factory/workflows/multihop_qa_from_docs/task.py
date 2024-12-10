@@ -25,7 +25,7 @@ class QuestionSet(BaseModel):
 class MultiHopQuestion(SingletonTemplate):
     # Input fields
     chunks: List[str] = Field(
-        ..., min_items=3, max_items=3, description="List of three document chunks"
+        ..., min_length=3, max_length=3, description="List of three document chunks"
     )
 
     # Output schema

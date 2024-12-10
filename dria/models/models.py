@@ -1,8 +1,8 @@
-from typing import List, Dict, Any, Optional, Union
-
-from dria_workflows import OpenAIParser, NousParser, LlamaParser, Workflow
+import warnings
+warnings.filterwarnings("ignore", module="pydantic")
+from typing import List, Dict, Any, Optional
+from dria_workflows import OpenAIParser, NousParser, LlamaParser
 from pydantic import BaseModel, Field
-
 from dria.models import Model
 
 

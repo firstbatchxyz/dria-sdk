@@ -1,6 +1,7 @@
 from dria import DriaDataset, DatasetGenerator, Model
 from dria.factory import EvolveQuality
 import asyncio
+from dria.factory.workflows.evol_quality.task import MUTATION_TEMPLATES
 
 my_dataset = DriaDataset(
     name="evolve_q_test",
@@ -14,7 +15,7 @@ instructions = [
     {
         "prompt": "Explain the concept of photosynthesis.",
         "response": "Photosynthesis is the process by which plants make their own food using sunlight.",
-        "method": "DEEPENING",
+        "method": MUTATION_TEMPLATES["DEEPENING"],
     }
 ]
 
