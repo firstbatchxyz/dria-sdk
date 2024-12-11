@@ -1,5 +1,5 @@
-from pydantic import BaseModel
-from typing import Dict, Any, Union, Type
+from pydantic import BaseModel, create_model
+from typing import Dict, Any, Union, Type, List
 import requests
 
 
@@ -16,7 +16,7 @@ def get_community_token() -> str:
 
 def schemas_match(
     input_schema: Union[Dict[str, Any], Type[BaseModel]],
-    output_schema: Union[Dict[str, Any], Type[BaseModel]],
+    output_schema: Type[BaseModel],
 ) -> bool:
     """
     Check if two schemas (Pydantic or Dict) match by comparing keys and types.
@@ -25,6 +25,13 @@ def schemas_match(
     :param output_schema: Output schema (Pydantic model or dict).
     :return: True if schemas match, False otherwise.
     """
+
+    if isinstance(input_schema, Dict):
+        try:
+            output_schema(**input_schema)
+            return True
+        except TypeError:
+            return False
 
     def extract_properties(
         schema: Union[Dict[str, Any], Type[BaseModel]]
@@ -35,9 +42,6 @@ def schemas_match(
             if "params" in s:
                 del s["params"]
             return s
-        # Handle plain dictionaries
-        elif isinstance(schema, dict):
-            return {k: type(v) for k, v in schema.items()}
         raise ValueError("Unsupported schema type. Must be Pydantic BaseModel or dict.")
 
     # Extract properties

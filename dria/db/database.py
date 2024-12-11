@@ -2,7 +2,7 @@ from pathlib import Path
 import duckdb
 import json
 from typing import Dict, List, Any
-
+from tqdm import tqdm
 
 class DatasetDB:
     def __init__(
@@ -69,7 +69,7 @@ class DatasetDB:
         """Add multiple entries to a dataset."""
         try:
             entry_ids = []
-            for entry in entries:
+            for entry in tqdm(entries, desc="Adding entries to DB"):
                 result = self.conn.execute(
                     """
                     WITH new_id AS (

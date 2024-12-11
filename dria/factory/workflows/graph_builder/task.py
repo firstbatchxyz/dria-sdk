@@ -8,7 +8,7 @@ from dria_workflows import (
     Write,
     Edge,
 )
-from dria.factory.utilities import get_abs_path
+from dria.factory.utilities import get_abs_path, parse_json
 from dria.factory.workflows.template import SingletonTemplate
 from dria.models import TaskResult
 
@@ -72,9 +72,10 @@ class GenerateGraph(SingletonTemplate):
         outputs = []
         for r in result:
             try:
-                graph_data = json.loads(r.result.strip())
-                graph_relation = GraphRelation(**graph_data)
-                outputs.append(GraphOutput(graph=graph_relation, model=r.model))
+                graph_data = parse_json(r.result.strip())
+                for g in graph_data:
+                    graph_relation = GraphRelation(**g)
+                    outputs.append(GraphOutput(graph=graph_relation, model=r.model))
             except json.JSONDecodeError:
                 # Handle the case where the result is not valid JSON
                 graph_data = r.result.strip()

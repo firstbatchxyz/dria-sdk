@@ -85,7 +85,14 @@ class ValidatePrediction(SingletonTemplate):
                     )
                 )
             elif r.result.lower() == "false":
-                outputs.append(ValidationOutput(validation=False, model=r.model))
+                outputs.append(
+                    ValidationOutput(
+                        prediction=self.prediction,
+                        correct_answer=self.correct_answer,
+                        validation=False,
+                        model=r.model,
+                    )
+                )
             else:
                 raise ValueError("The result is not a boolean value.")
         return outputs

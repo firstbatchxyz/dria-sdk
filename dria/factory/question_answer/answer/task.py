@@ -15,7 +15,8 @@ from dria.models import TaskResult
 
 class AnswerOutput(BaseModel):
     question: str = Field(..., description="The original question")
-    answer: str = Field(..., description="Generated answer")
+    prediction: str = Field(..., description="Generated answer")
+    context: str = Field(..., description="Context for answering the question")
     model: str = Field(..., description="Model used for generation")
 
 
@@ -80,7 +81,7 @@ class Answer(SingletonTemplate):
             if entry is not None:
                 returns.append(
                     AnswerOutput(
-                        question=self.question, answer=entry.strip(), model=r.model
+                        question=self.question, prediction=entry.strip(), context=self.context, model=r.model
                     )
                 )
         return returns
