@@ -1,5 +1,0 @@
-dria
-instructor
-RAGatouille
-datasets
-openai
