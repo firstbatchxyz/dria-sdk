@@ -1,5 +1,5 @@
 import re
-from typing import Union, List
+from typing import Union, List, Any
 from json_repair import repair_json
 
 
@@ -40,36 +40,20 @@ def get_tags(text: str, tag: str) -> List[str]:
     return re.findall(rf"<{tag}>(.*?)</{tag}>", text, re.DOTALL)
 
 
-def parse_json(text: Union[str, List]) -> Union[list[dict], dict, list[str]]:
+def parse_json(str_text: str) -> Any:
     """Parse the JSON text.
 
     Args:
-        text (str): The text to parse.
+        str_text (str): The text to parse.
 
     Returns:
         dict: JSON output.
     """
 
-    def parse_single_json(result: str) -> dict:
-        """Parse JSON text from a string, use json_repair to fix the JSON.
-        Args:
-            result (str): The text to parse.
-
-        Returns:
-            dict: Parsed JSON output.
-
-        Raises:
-            ValueError: If JSON cannot be parsed.
-        """
-        json_text = repair_json(result, return_objects=True)
-        if json_text == "":
-            raise ValueError(f"Could not parse JSON from result: {result}")
-        return json_text
-
-    if isinstance(text, list):
-        return [parse_single_json(item) for item in text]
-    else:
-        return parse_single_json(text)
+    json_text = repair_json(str_text, return_objects=True)
+    if json_text == "":
+        raise ValueError(f"Could not parse JSON from result: {str_text}")
+    return json_text
 
 
 def remove_text_between_tags(text: str, tag: str) -> Union[None, str]:

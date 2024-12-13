@@ -1,5 +1,5 @@
 import logging
-from typing import Any, List, Dict, Optional
+from typing import List
 from pydantic import BaseModel, Field
 from dria_workflows import (
     Workflow,

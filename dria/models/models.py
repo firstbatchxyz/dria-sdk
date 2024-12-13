@@ -1,4 +1,5 @@
 import warnings
+
 warnings.filterwarnings("ignore", module="pydantic")
 from typing import List, Dict, Any, Optional
 from dria_workflows import OpenAIParser, NousParser, LlamaParser
@@ -47,7 +48,7 @@ class Task(BaseModel):
     step_name: str = ""
     processed: bool = False
 
-    def dict(self) -> Dict[str, Any]:
+    def model_dump(self, **kwargs) -> Dict[str, Any]:
         return {
             "id": self.id,
             "workflow": self.workflow,
@@ -69,7 +70,7 @@ class TaskResult(BaseModel):
     result: Any
     model: str
 
-    def dict(self) -> Dict[str, Any]:
+    def model_dump(self, **kwargs) -> Dict[str, Any]:
         return {
             "id": self.id,
             "task_input": self.task_input,
@@ -94,6 +95,7 @@ class TaskResult(BaseModel):
             Model.MIXTRAL_8_7B: OpenAIParser(),
             Model.LLAMA3_1_8B_FP16: LlamaParser(),
             Model.LLAMA3_1_70B: LlamaParser(),
+            Model.LLAMA3_3_70B: LlamaParser(),
             Model.LLAMA3_1_70BQ8: LlamaParser(),
             Model.LLAMA3_2_1B: LlamaParser(),
             Model.LLAMA3_2_3B: LlamaParser(),
@@ -101,6 +103,7 @@ class TaskResult(BaseModel):
             Model.NOUS_THETA: NousParser(),
             Model.GEMINI_15_PRO: OpenAIParser(),
             Model.GEMINI_15_FLASH: OpenAIParser(),
+            Model.GEMINI_20_FLASH: OpenAIParser(),
         }
 
         parser = model_parsers.get(Model(self.model))

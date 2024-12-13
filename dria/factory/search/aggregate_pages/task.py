@@ -1,10 +1,9 @@
-import json
+import logging
 from typing import List
 from pydantic import BaseModel, Field
 from dria_workflows import (
     Workflow,
     WorkflowBuilder,
-    Operator,
     Write,
     Edge,
 )
@@ -70,6 +69,7 @@ class SearchWeb(SingletonTemplate):
             try:
                 parsed_ = parse_json(r.result)["organic"]
             except Exception as e:
+                logging.debug(e)
                 parsed_ = parse_json(r.result)
 
             for d in parsed_:

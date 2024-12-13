@@ -1,5 +1,5 @@
-from pydantic import BaseModel, create_model
-from typing import Dict, Any, Union, Type, List
+from pydantic import BaseModel
+from typing import Dict, Any, Union, Type
 import requests
 
 
@@ -25,6 +25,9 @@ def schemas_match(
     :param output_schema: Output schema (Pydantic model or dict).
     :return: True if schemas match, False otherwise.
     """
+
+    if not isinstance(output_schema, type) or not issubclass(output_schema, BaseModel):
+        raise ValueError("output_schema must be a Pydantic BaseModel.")
 
     if isinstance(input_schema, Dict):
         try:
@@ -74,8 +77,5 @@ if __name__ == "__main__":
         description: str
         range: int
 
-    tm = TestModel(name="test", description="test", value=0.0)
-    vm = ValidModel(name="valid", description="valid", value=2.0)
-    em = ErrorModel(name="err", description="err", range=10)
-    assert schemas_match(tm.model_json_schema(), vm.model_json_schema())
-    assert not schemas_match(tm.model_json_schema(), em.model_json_schema())
+    assert schemas_match(TestModel, ValidModel)
+    assert not schemas_match(TestModel, ErrorModel)

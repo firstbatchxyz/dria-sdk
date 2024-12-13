@@ -193,11 +193,11 @@ class DataFormatter:
 
         info = [
             f"\n=== {format_type.value} Format ===",
-            f"\nDescription:",
+            "\nDescription:",
             f"{schema.__doc__}",
-            f"\nRequired Field Mappings:",
+            "\nRequired Field Mappings:",
             f"{required_fields}",
-            f"\nOutput Format:",
+            "\nOutput Format:",
             f"{schema.model_json_schema()['properties']}",
         ]
 
@@ -217,34 +217,38 @@ class DataFormatter:
         formatted_data = []
         for item in data:
             try:
+                formatted = {}  # Initialize formatted to be a dict.
                 # Standard formats
-                if format_type == FormatType.STANDARD_LANGUAGE_MODELING:
-                    formatted = {"text": item[field_mapping.text]}
-                elif format_type == FormatType.STANDARD_PROMPT_ONLY:
-                    formatted = {
-                        "prompt": item[field_mapping.prompt],
-                    }
-                elif format_type == FormatType.STANDARD_PROMPT_COMPLETION:
-                    formatted = {
-                        "prompt": item[field_mapping.prompt],
-                        "completion": item[field_mapping.completion],
-                    }
-                elif format_type == FormatType.STANDARD_PREFERENCE:
-                    formatted = {
-                        "prompt": item[field_mapping.prompt],
-                        "chosen": item[field_mapping.chosen],
-                        "rejected": item[field_mapping.rejected],
-                    }
-                elif format_type == FormatType.STANDARD_UNPAIRED_PREFERENCE:
-                    formatted = {
-                        "prompt": item[field_mapping.prompt],
-                        "completion": item[field_mapping.completion],
-                        "label": item[field_mapping.label],
-                    }
+                if isinstance(field_mapping, FieldMapping):  # Check for type first
+                    if format_type == FormatType.STANDARD_LANGUAGE_MODELING:
+                        formatted = {"text": item[field_mapping.text]}
+                    elif format_type == FormatType.STANDARD_PROMPT_ONLY:
+                        formatted = {
+                            "prompt": item[field_mapping.prompt],
+                        }
+                    elif format_type == FormatType.STANDARD_PROMPT_COMPLETION:
+                        formatted = {
+                            "prompt": item[field_mapping.prompt],
+                            "completion": item[field_mapping.completion],
+                        }
+                    elif format_type == FormatType.STANDARD_PREFERENCE:
+                        formatted = {
+                            "prompt": item[field_mapping.prompt],
+                            "chosen": item[field_mapping.chosen],
+                            "rejected": item[field_mapping.rejected],
+                        }
+                    elif format_type == FormatType.STANDARD_UNPAIRED_PREFERENCE:
+                        formatted = {
+                            "prompt": item[field_mapping.prompt],
+                            "completion": item[field_mapping.completion],
+                            "label": item[field_mapping.label],
+                        }
 
                 # Conversational formats
-                elif format_type == FormatType.CONVERSATIONAL_LANGUAGE_MODELING:
-                    if field_mapping.conversation:
+                elif isinstance(
+                    field_mapping, ConversationMapping
+                ):  # Check for type first
+                    if format_type == FormatType.CONVERSATIONAL_LANGUAGE_MODELING:
                         dialogue_field, conv_mapping = (
                             field_mapping.field,
                             field_mapping.conversation,
@@ -278,8 +282,8 @@ class DataFormatter:
                                 ]
                             )
                         formatted = {"messages": messages}
-                elif format_type == FormatType.CONVERSATIONAL_PROMPT_ONLY:
-                    if field_mapping.conversation:
+                    elif format_type == FormatType.CONVERSATIONAL_PROMPT_ONLY:
+
                         dialogue_field, conv_mapping = (
                             field_mapping.field,
                             field_mapping.conversation,
@@ -305,8 +309,7 @@ class DataFormatter:
                                 }
                             )
 
-                elif format_type == FormatType.CONVERSATIONAL_PROMPT_COMPLETION:
-                    if field_mapping.conversation:
+                    elif format_type == FormatType.CONVERSATIONAL_PROMPT_COMPLETION:
                         dialogue_field, conv_mapping = (
                             field_mapping.field,
                             field_mapping.conversation,
@@ -338,8 +341,8 @@ class DataFormatter:
                                 }
                             )
 
-                elif format_type == FormatType.CONVERSATIONAL_PREFERENCE:
-                    if field_mapping.conversation:
+                    elif format_type == FormatType.CONVERSATIONAL_PREFERENCE:
+
                         dialogue_field, conv_mapping = (
                             field_mapping.field,
                             field_mapping.conversation,
@@ -379,8 +382,7 @@ class DataFormatter:
                                     }
                                 )
 
-                elif format_type == FormatType.CONVERSATIONAL_UNPAIRED_PREFERENCE:
-                    if field_mapping.conversation:
+                    elif format_type == FormatType.CONVERSATIONAL_UNPAIRED_PREFERENCE:
                         dialogue_field, conv_mapping = (
                             field_mapping.field,
                             field_mapping.conversation,
@@ -419,7 +421,9 @@ class DataFormatter:
 
                 # Validate the formatted data
                 schema = cls.FORMAT_SCHEMAS[format_type]
-                formatted_data.append(schema(**formatted).model_dump())
+                formatted_data.append(
+                    schema(**formatted).model_dump()
+                )  # Changed from .model_json_schema to .model_dump()
 
             except KeyError as e:
                 raise KeyError(

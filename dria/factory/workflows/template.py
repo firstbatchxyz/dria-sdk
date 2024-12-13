@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import List, Type, ClassVar
+from typing import List, Type, ClassVar, Sequence
 from types import SimpleNamespace
 from dria.models import TaskResult
 from pydantic import BaseModel
@@ -28,7 +28,7 @@ class SingletonTemplate(BaseModel, ABC):
         return cls(**data)
 
     @abstractmethod
-    def workflow(self, **kwargs):
+    def workflow(self):
         """
         The workflow method for the singleton template.
         Returns:
@@ -37,7 +37,7 @@ class SingletonTemplate(BaseModel, ABC):
         pass
 
     @abstractmethod
-    def callback(self, result: List[TaskResult]) -> List[Type[BaseModel]]:
+    def callback(self, result: List[TaskResult]) -> Sequence[BaseModel]:
         """
         The callback method for the singleton template.
         """

@@ -6,7 +6,6 @@ from Crypto.Hash import keccak
 
 from dria.constants import (
     HEARTBEAT_OUTPUT_TOPIC,
-    HEARTBEAT_TOPIC,
     MAX_OLLAMA_QUEUE,
     MAX_API_QUEUE,
 )
@@ -18,7 +17,6 @@ from dria.utils import (
     recover_public_key,
     base64_to_json,
     uncompressed_public_key,
-    str_to_base64,
 )
 from dria.utils.logging import logger
 from dria.utils.task_utils import TaskManager
@@ -59,29 +57,6 @@ class Monitor:
         except Exception as e:
             logger.error(f"Error during heartbeat process: {e}", exc_info=True)
             raise e
-
-    async def _send_heartbeat(self, payload: str) -> bool:
-        """
-        Send a heartbeat message to the network.
-
-        Args:
-            payload: Heartbeat message payload
-
-        Returns:
-            bool: True if heartbeat sent successfully, False otherwise
-        """
-        if not self.rpc:
-            logger.warning("RPC client not initialized, skipping heartbeat")
-            return False
-
-        status = await self.rpc.push_content_topic(
-            str_to_base64(payload), HEARTBEAT_TOPIC
-        )
-        if not status:
-            logger.error(f"Failed to send heartbeat: {payload}")
-            return False
-
-        return True
 
     async def _check_heartbeat(self) -> bool:
         """

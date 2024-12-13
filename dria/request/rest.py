@@ -1,4 +1,4 @@
-from typing import List, Union
+from typing import List, Union, Optional
 
 import aiohttp
 
@@ -22,7 +22,7 @@ class RPCClient:
 
     NETWORK_MAX_MESSAGE_SIZE = 256
 
-    def __init__(self, auth_token: str):
+    def __init__(self, auth_token: Optional[str] = None):
         if not auth_token:
             raise ValueError(
                 "RPC token is required for Dria RPC. "

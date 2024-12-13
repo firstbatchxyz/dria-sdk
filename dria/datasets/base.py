@@ -55,27 +55,41 @@ class DriaDataset:
         """Create dataset from JSON file."""
         db = DatasetDB()
         dataset = cls(name, description, schema, db)
-        with open(json_path, "r") as f:
-            data = json.load(f)
-        # Validate data against schema
-        validated_data = []
-        for entry in data:
-            try:
-                validated_data.append(schema(**entry).model_dump())
-            except ValidationError as e:
-                raise ValueError(f"Validation error: {e}. Skipping: {entry}")
-        dataset.db.add_entries(dataset.dataset_id, validated_data)
-        return dataset
+        try:
+            with open(json_path, "r") as f:
+                data = json.load(f)
+
+            # Handle both single dict and list of dicts
+            entries = [data] if isinstance(data, dict) else data
+
+            # Validate all entries against schema
+            validated_data = []
+            for entry in entries:
+                try:
+                    validated_data.append(schema(**entry).model_dump())
+                except ValidationError as e:
+                    print(f"Skipping invalid entry: {entry}. Error: {str(e)}")
+                    continue
+
+            if validated_data:
+                dataset.db.add_entries(dataset.dataset_id, validated_data)
+
+            return dataset
+
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Invalid JSON file: {e}")
+        except IOError as e:
+            raise ValueError(f"Error reading file {json_path}: {e}")
 
     @classmethod
     def from_csv(
-            cls,
-            name: str,
-            description: str,
-            schema: Type[BaseModel],
-            csv_path: str,
-            delimiter: str = ",",
-            has_header: bool = True,
+        cls,
+        name: str,
+        description: str,
+        schema: Type[BaseModel],
+        csv_path: str,
+        delimiter: str = ",",
+        has_header: bool = True,
     ) -> "DriaDataset":
         """
         Create dataset from CSV file.
@@ -96,7 +110,11 @@ class DriaDataset:
 
         try:
             with open(csv_path, "r", encoding="utf-8") as f:
-                reader = csv.DictReader(f, delimiter=delimiter) if has_header else csv.reader(f, delimiter=delimiter)
+                reader = (
+                    csv.DictReader(f, delimiter=delimiter)
+                    if has_header
+                    else csv.reader(f, delimiter=delimiter)
+                )
 
                 # If no header, use schema fields as keys
                 if not has_header:
@@ -124,13 +142,13 @@ class DriaDataset:
 
     @classmethod
     def from_huggingface(
-            cls,
-            name: str,
-            description: str,
-            dataset_id: str,
-            schema: Type[BaseModel],
-            mapping: Optional[Dict[str, str]] = None,
-            split: str = "train",
+        cls,
+        name: str,
+        description: str,
+        dataset_id: str,
+        schema: Type[BaseModel],
+        mapping: Optional[Dict[str, str]] = None,
+        split: str = "train",
     ) -> "DriaDataset":
         db = DatasetDB()
         hf_dataset = load_dataset(dataset_id)[split]
@@ -266,6 +284,10 @@ class DriaDataset:
     def remove_entry(self, entry_id: int) -> None:
         """Remove an entry from the dataset."""
         self.db.remove_entry(entry_id, self.dataset_id)
+
+    def reset(self) -> None:
+        """Remove an entry from the dataset."""
+        self.db.remove_all_entries(self.dataset_id)
 
     def remove_dataset(self) -> None:
         """Remove the dataset and all its entries from the database."""

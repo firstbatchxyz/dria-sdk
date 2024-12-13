@@ -1,6 +1,6 @@
 import json
 from typing import List
-from pydantic import BaseModel, Field, conint
+from pydantic import BaseModel, Field
 from dria_workflows import (
     Workflow,
     WorkflowBuilder,
@@ -95,7 +95,6 @@ class Question(SingletonTemplate):
             if r.result == "":
                 continue
 
-            questions = []
             q_round = json.loads(r.result)
 
             for q in q_round:

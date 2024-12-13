@@ -81,8 +81,8 @@ class Dria:
         self.background_tasks: Optional[asyncio.Task] = None
         self.shutdown_event = asyncio.Event()
         self.api_mode = api_mode
-        self.stats = {}
-        self.metrics = []
+        self.stats: Dict[str, Any] = {}
+        self.metrics: List[Any] = []
 
         # Register signal handlers
         signal.signal(signal.SIGTERM, self._signal_handler)
@@ -193,7 +193,7 @@ class Dria:
             nodes, filters, models = None, None, None
             attempts = 0
             while nodes is None:
-                if self.background_tasks.done():
+                if self.background_tasks and self.background_tasks.done():
                     return None
                 if attempts % 20 == 0 and attempts != 0:
                     logger.info("Waiting for nodes to be available...")
@@ -214,7 +214,7 @@ class Dria:
                     for idx, task in enumerate(tasks)
                 ]
             )
-            logger.debug(f"Task successfully published")
+            logger.debug("Task successfully published")
             return True
 
         except Exception as e:
@@ -494,7 +494,6 @@ class Dria:
             topic_results: Raw results from topic
         """
         current_time = int(time.time())
-        current_ns = time.time_ns()
 
         signature = None
         for item in topic_results:
@@ -507,7 +506,7 @@ class Dria:
                     result = json.loads(metadata_json)
                 identifier, rpc_auth = result["taskId"].split("--")
                 task_data = await self.storage.get_value(identifier)
-                if not task_data:
+                if not task_data or task_data is None:
                     logger.debug(f"Task data not found for identifier: {identifier}")
                     continue
 
@@ -536,7 +535,7 @@ class Dria:
                     public_key = uncompressed_public_key(public_key)
                     address = (
                         keccak.new(digest_bits=256)
-                        .update(public_key[1:])
+                        .update(bytes(public_key[1:]))
                         .digest()[-20:]
                         .hex()
                     )
@@ -552,7 +551,8 @@ class Dria:
                             f"ID: {identifier} {result['error']}. Task retrying.."
                         )
                     if "stats" in result.keys():
-                        l = {
+                        current_ns = time.time_ns()
+                        metric_log = {
                             "node_address": address,
                             "model": result["model"],
                             "publish_latency": (
@@ -567,9 +567,9 @@ class Dria:
                             "roundtrip": (current_ns - task_data["created_ts"]) / 1e9,
                         }
                         if "error" in result:
-                            l["error"] = True
-                        logger.debug(f"Metrics: {l}")
-                        self.metrics.append(l)
+                            metric_log["error"] = True
+                        logger.debug(f"Metrics: {metric_log}")
+                        self.metrics.append(metric_log)
                     workflow = await self.storage.get_value(f"{task.id}:workflow")
                     t = Task(
                         id=task.id,
@@ -591,7 +591,8 @@ class Dria:
 
                     pipeline_id = task.pipeline_id or ""
                     if "stats" in result.keys():
-                        l = {
+                        current_ns = time.time_ns()
+                        metric_log = {
                             "node_address": address,
                             "model": result["model"],
                             "publish_latency": (
@@ -606,9 +607,9 @@ class Dria:
                             "roundtrip": (current_ns - task_data["created_ts"]) / 1e9,
                         }
                         if "error" in result:
-                            l["error"] = True
-                        logger.debug(f"Task id: {identifier}, Metrics: {l}")
-                        self.metrics.append(l)
+                            metric_log["error"] = True
+                        logger.debug(f"Task id: {identifier}, Metrics: {metric_log}")
+                        self.metrics.append(metric_log)
                     await self.kv.push(
                         f"{pipeline_id}:{identifier}",
                         {"result": processed_result, "model": result["model"]},
@@ -690,7 +691,7 @@ class Dria:
             return False
         return True
 
-    async def get_retried_tasks(self, task_ids: List[str]) -> Dict[str, Optional[str]]:
+    async def get_retried_tasks(self, task_ids: List[str]) -> Dict[str, str | None]:
         """
         Get tasks that need to be retried.
 
@@ -700,7 +701,7 @@ class Dria:
         Returns:
             Dict mapping original task IDs to new task IDs (None if no new task ID)
         """
-        task_map = {}
+        task_map: Dict[str, str | None] = {}
 
         for task_id in task_ids:
             current_task_id = task_id

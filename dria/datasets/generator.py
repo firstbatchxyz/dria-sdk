@@ -25,13 +25,14 @@ class DatasetGenerator:
         if dria_client is None:
             try:
                 _id = self.dataset.db.get_dataset_id_by_name("rpc_url")
-            except:
+            except Exception as e:
+                logging.debug(e)
                 token = get_community_token()
                 _id = self.dataset.db.create_dataset(
                     "rpc_url", "Stores the community rpc url"
                 )
                 self.dataset.db.add_entries(_id, [{"token": token}])
-                logger.info(f"Created RPC token!")
+                logger.info("Created RPC token!")
 
             token = self.dataset.db.get_dataset_entries(_id, data_only=True)[0]["token"]
             self.dria_client = dria_client or Dria(rpc_token=token, log_level=log_level)
@@ -50,13 +51,13 @@ class DatasetGenerator:
             self.dataset.schema,
         ):
             raise ValueError(
-                f"Schema mismatch. Schema of the Prompt doesn't match dataset schema."
+                "Schema mismatch. Schema of the Prompt doesn't match dataset schema."
             )
 
     def _validate_singletons(
         self,
         instructions: List[Dict[str, Any]],
-        singletons: Union[Type[SingletonTemplate], List[Type[SingletonTemplate]]],
+        singletons: List[Type[SingletonTemplate]],
     ):
         """
         Validate singletons
@@ -143,6 +144,7 @@ class DatasetGenerator:
                 Model.GPT4O,
                 Model.GPT4O_MINI,
                 Model.GEMINI_15_FLASH,
+                Model.GEMINI_20_FLASH,
                 Model.QWEN2_5_7B_FP16,
                 Model.LLAMA3_1_8B_FP16,
             ]
