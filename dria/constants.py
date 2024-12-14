@@ -20,8 +20,8 @@ MAX_API_QUEUE: Final[int] = 50
 
 MAX_RETRIES_FOR_AVAILABILITY: Final[int] = 10
 
-RPC_BASE_URL: Final[str] = "http://52.7.164.208:8006"
-RPC_BASE_URL_COMMUNITY: Final[str] = "http://rpc1.dria.co:8006"
+RPC_BASE_URL: Final[str] = "https://pro.rpc.dria.co"
+RPC_BASE_URL_COMMUNITY: Final[str] = "https://community.rpc.dria.co"
 SCORING_BATCH_SIZE = 50
 COMPUTE_NODE_BATCH_SIZE = 5
 
