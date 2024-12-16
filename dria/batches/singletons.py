@@ -86,8 +86,16 @@ class ParallelSingletonExecutor:
         common_keys = set(task_inputs[0].keys()) & set(original_inputs[0].keys())
 
         def create_lookup_key(input_dict: Dict) -> str:
-            """Create a consistent lookup key by sorting keys and normalizing values."""
-            normalized = {k: str(input_dict[k]) for k in sorted(common_keys)}
+            normalized = {}
+            for k in sorted(common_keys):
+                val = input_dict[k]
+                # If val is a JSON string, parse it first
+                if isinstance(val, str):
+                    try:
+                        val = json.loads(val)
+                    except json.JSONDecodeError:
+                        pass
+                normalized[k] = val
             return json.dumps(normalized, sort_keys=True)
 
         # Create lookup for raw results with normalized keys

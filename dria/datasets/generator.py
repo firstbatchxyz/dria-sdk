@@ -1,3 +1,5 @@
+import random
+
 from .base import DriaDataset
 from typing import List, Dict, Optional, Union, Any, Type
 from dria.models import Model
@@ -53,7 +55,7 @@ class DatasetGenerator:
             raise ValueError(
                 "Schema mismatch. Schema of the Prompt doesn't match dataset schema."
             )
-        
+
     def set_dataset(self, dataset: DriaDataset) -> "DatasetGenerator":
         """Set the dataset for the generator.
 
@@ -149,10 +151,13 @@ class DatasetGenerator:
             Type[SingletonTemplate], List[Type[SingletonTemplate]], Prompt
         ],
         models: Optional[Union[Model, List[Model], List[List[Model]]]] = None,
+        sampling_ratio: float = 1.0,
     ) -> None:
 
         if self.dataset is None:
-            raise ValueError("Dataset must be defined before calling generate(). Use set_dataset() to define a dataset.")
+            raise ValueError(
+                "Dataset must be defined before calling generate(). Use set_dataset() to define a dataset."
+            )
 
         if models is None:
             models = [
@@ -163,6 +168,12 @@ class DatasetGenerator:
                 Model.QWEN2_5_7B_FP16,
                 Model.LLAMA3_1_8B_FP16,
             ]
+
+        if sampling_ratio < 1.0:
+            num_samples = int(len(instructions) * sampling_ratio)
+            if num_samples == 0:
+                num_samples = 1
+            instructions = random.sample(instructions, num_samples)
 
         # TODO: Handle streaming for large instructions
         if isinstance(instructions, DriaDataset):
@@ -282,7 +293,9 @@ class DatasetGenerator:
         :param models: Model or List of Models
         """
         if self.dataset is None:
-            raise ValueError("Dataset must be defined before calling enrich(). Use set_dataset() to define a dataset.")
+            raise ValueError(
+                "Dataset must be defined before calling enrich(). Use set_dataset() to define a dataset."
+            )
 
         instructions = self.dataset.get_entries(data_only=True)
         try:

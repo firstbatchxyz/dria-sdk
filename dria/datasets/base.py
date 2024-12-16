@@ -301,17 +301,21 @@ class DriaDataset:
         """Convert dataset to Pandas DataFrame."""
         return pd.DataFrame(self.get_entries(data_only=True))
 
-    def to_jsonl(self, filepath: Optional[str] = None):
+    def to_jsonl(self, filepath: Optional[str] = None, force_ascii: bool = False):
         """Convert dataset to JSONL."""
         if filepath is None:
             filepath = self.name + ".jsonl"
-        self.to_pandas().to_json(filepath, orient="records", lines=True)
+        self.to_pandas().to_json(
+            filepath, orient="records", lines=True, force_ascii=force_ascii
+        )
 
-    def to_json(self, filepath: Optional[str] = None):
+    def to_json(self, filepath: Optional[str] = None, force_ascii: bool = False):
         """Convert dataset to JSON."""
         if filepath is None:
             filepath = self.name + ".json"
-        self.to_pandas().to_json(filepath, orient="records", lines=False)
+        self.to_pandas().to_json(
+            filepath, orient="records", lines=False, force_ascii=force_ascii
+        )
 
     def to_hf_dataset(self) -> HFDataset:
         """Convert dataset to HuggingFace dataset."""
