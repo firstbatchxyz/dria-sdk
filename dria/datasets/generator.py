@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 class DatasetGenerator:
     def __init__(
         self,
-        dataset: DriaDataset,
+        dataset: Optional[DriaDataset] = None,
         dria_client: Optional[Dria] = None,
         log_level=logging.INFO,
     ):
@@ -53,6 +53,18 @@ class DatasetGenerator:
             raise ValueError(
                 "Schema mismatch. Schema of the Prompt doesn't match dataset schema."
             )
+        
+    def set_dataset(self, dataset: DriaDataset) -> "DatasetGenerator":
+        """Set the dataset for the generator.
+
+        Args:
+            dataset: DriaDataset to use for generation
+
+        Returns:
+            Self for chaining
+        """
+        self.dataset = dataset
+        return self
 
     def _validate_singletons(
         self,
@@ -138,6 +150,9 @@ class DatasetGenerator:
         ],
         models: Optional[Union[Model, List[Model], List[List[Model]]]] = None,
     ) -> None:
+
+        if self.dataset is None:
+            raise ValueError("Dataset must be defined before calling generate(). Use set_dataset() to define a dataset.")
 
         if models is None:
             models = [
@@ -266,6 +281,9 @@ class DatasetGenerator:
         :param prompt: Singleton or Prompt
         :param models: Model or List of Models
         """
+        if self.dataset is None:
+            raise ValueError("Dataset must be defined before calling enrich(). Use set_dataset() to define a dataset.")
+
         instructions = self.dataset.get_entries(data_only=True)
         try:
             self._validate_prompt(instructions, prompt)
