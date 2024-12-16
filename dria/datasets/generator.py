@@ -23,21 +23,24 @@ class DatasetGenerator:
         log_level=logging.INFO,
     ):
         self.dataset = dataset
-
         if dria_client is None:
-            try:
-                _id = self.dataset.db.get_dataset_id_by_name("rpc_url")
-            except Exception as e:
-                logging.debug(e)
+            if self.dataset is None:
                 token = get_community_token()
-                _id = self.dataset.db.create_dataset(
-                    "rpc_url", "Stores the community rpc url"
-                )
-                self.dataset.db.add_entries(_id, [{"token": token}])
-                logger.info("Created RPC token!")
+                self.dria_client = Dria(rpc_token=token, log_level=log_level)
+            else:
+                try:
+                    _id = self.dataset.db.get_dataset_id_by_name("rpc_url")
+                except Exception as e:
+                    logging.debug(e)
+                    token = get_community_token()
+                    _id = self.dataset.db.create_dataset(
+                        "rpc_url", "Stores the community rpc url"
+                    )
+                    self.dataset.db.add_entries(_id, [{"token": token}])
+                    logger.info("Created RPC token!")
 
-            token = self.dataset.db.get_dataset_entries(_id, data_only=True)[0]["token"]
-            self.dria_client = dria_client or Dria(rpc_token=token, log_level=log_level)
+                token = self.dataset.db.get_dataset_entries(_id, data_only=True)[0]["token"]
+                self.dria_client = Dria(rpc_token=token, log_level=log_level)
         else:
             self.dria_client = dria_client
 
