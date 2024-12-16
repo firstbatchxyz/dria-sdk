@@ -285,9 +285,10 @@ class DriaDataset:
         """Remove an entry from the dataset."""
         self.db.remove_entry(entry_id, self.dataset_id)
 
-    def reset(self) -> None:
-        """Remove an entry from the dataset."""
+    def reset(self) -> "DriaDataset":
+        """Remove all entries from the dataset."""
         self.db.remove_all_entries(self.dataset_id)
+        return self
 
     def remove_dataset(self) -> None:
         """Remove the dataset and all its entries from the database."""
