@@ -12,6 +12,7 @@ from dria_workflows import (
 from dria.factory.utilities import get_abs_path, parse_json
 from dria.factory.workflows.template import SingletonTemplate
 from dria.models import TaskResult
+from dria.utils import logger
 
 
 class BackstoryOutput(BaseModel):
@@ -83,7 +84,8 @@ class BackStory(SingletonTemplate):
         for r in result:
             try:
                 backstory = parse_json(r.result)["backstory"]
-            except:
+            except Exception as e:
+                logger.debug(e)
                 backstory = r.result
 
             outputs.append(BackstoryOutput(backstory=backstory, model=r.model))

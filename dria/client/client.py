@@ -81,8 +81,8 @@ class Dria:
         self.background_tasks: Optional[asyncio.Task] = None
         self.shutdown_event = asyncio.Event()
         self.api_mode = api_mode
-        self.stats = {}
-        self.metrics = []
+        self.stats: Dict[str, Any] = {}
+        self.metrics: List[Any] = []
 
         # Register signal handlers
         signal.signal(signal.SIGTERM, self._signal_handler)
@@ -110,7 +110,7 @@ class Dria:
         """Initialize background monitoring and polling tasks."""
         if self.background_tasks:
             if not self.background_tasks.done():
-                logger.info("Background tasks already running")
+                logger.debug("Background tasks already running")
                 return
         self.background_tasks = asyncio.create_task(self._start_background_tasks())
 
@@ -193,7 +193,7 @@ class Dria:
             nodes, filters, models = None, None, None
             attempts = 0
             while nodes is None:
-                if self.background_tasks.done():
+                if self.background_tasks and self.background_tasks.done():
                     return None
                 if attempts % 20 == 0 and attempts != 0:
                     logger.info("Waiting for nodes to be available...")
@@ -214,18 +214,19 @@ class Dria:
                     for idx, task in enumerate(tasks)
                 ]
             )
-            logger.debug(f"Task successfully published")
+            logger.debug("Task successfully published")
             return True
 
         except Exception as e:
             raise TaskPublishError(f"Failed to publish task: {e}") from e
+
     async def fetch(
-            self,
-            pipeline: Optional[Any] = None,
-            task: Union[Optional[Task], Optional[List[Task]]] = None,
-            min_outputs: Optional[int] = None,
-            timeout: int = TASK_TIMEOUT,
-            is_disabled: bool = False,
+        self,
+        pipeline: Optional[Any] = None,
+        task: Union[Optional[Task], Optional[List[Task]]] = None,
+        min_outputs: Optional[int] = None,
+        timeout: int = TASK_TIMEOUT,
+        is_disabled: bool = False,
     ) -> List[TaskResult]:
         """
         Fetch task results from storage.
@@ -235,7 +236,7 @@ class Dria:
             task (Union[Optional[Task], Optional[List[Task]]]): Task(s) to fetch results for
             min_outputs (Optional[int]): Minimum number of outputs to fetch
             timeout (int): Fetch timeout in seconds
-            is_disabled (bool): Whether to disable progress bar display
+            is_disabled (bool): TQDM Display
 
         Returns:
             List[TaskResult]: List of task results
@@ -250,76 +251,38 @@ class Dria:
         start_time = time.time()
         min_outputs = self._determine_min_outputs(task, min_outputs)
         last_update = time.time()
-
         with tqdm(
-                total=min_outputs, desc="Fetching results...", disable=is_disabled
+            total=min_outputs, desc="Fetching results...", disable=is_disabled
         ) as pbar:
-            response_times = {}  # Track response time for each task
-
             while len(results) < min_outputs and not self.shutdown_event.is_set():
-                current_time = time.time()
-                elapsed_time = current_time - start_time
-
-                # Check timeout
+                elapsed_time = time.time() - start_time
                 if elapsed_time > timeout > 0:
                     logger.debug(
                         f"Unable to fetch {min_outputs} outputs within {timeout} seconds."
                     )
                     break
 
-                # Monitor slow responses
-                if response_times:
-                    responded_tasks = set(response_times.keys())
-                    all_tasks = set(t.id for t in task)
-                    unresponsive_tasks = all_tasks - responded_tasks
-
-                    if unresponsive_tasks:
-                        unresponsive_durations = {
-                            task_id: current_time - start_time
-                            for task_id in unresponsive_tasks
-                        }
-
-                        if response_times:
-                            avg_response_time = sum(response_times.values()) / len(response_times)
-                            
-                            # Adjust multiplier based on how close we are to min_outputs
-                            response_ratio = len(response_times) / min_outputs
-                            multiplier = 4 if response_ratio < 0.95 else 2
-                            
-                            concerning_tasks = {
-                                task_id: duration
-                                for task_id, duration in unresponsive_durations.items()
-                                if duration > avg_response_time * multiplier
-                            }
-
-                            if concerning_tasks:
-                                logger.warning(avg_response_time)
-                                logger.warning(concerning_tasks)
-                                return results
-
-                # Fetch new results
-                pipeline_id = getattr(pipeline, "pipeline_id", None) if pipeline else None
+                pipeline_id = (
+                    getattr(pipeline, "pipeline_id", None) if pipeline else None
+                )
                 task_id = self._get_task_id(task)
-                new_results, new_id_map = await self._fetch_results(pipeline_id, task_id)
 
-                # Process new results
-                for task_id in new_results:
-                    response_times[task_id] = current_time - start_time
+                new_results, new_id_map = await self._fetch_results(
+                    pipeline_id, task_id
+                )
+
                 results.extend(new_results.values())
 
-                # Update progress bar
+                current_time = time.time()
                 if current_time - last_update >= 1.0:
                     pbar.n = len(results)
                     pbar.refresh()
                     last_update = current_time
-
-                # Update task tracking
                 if task is not None:
                     if isinstance(task, str):
                         task = [task]
-                    task = [t for t in task if t.id not in new_results]
+                    task = [t for t in task if t.id not in new_results.keys()]
 
-                # Update task IDs
                 for key, value in new_id_map.items():
                     if isinstance(task, str):
                         task.id = value
@@ -329,11 +292,8 @@ class Dria:
                             if t.id == key[1:]:
                                 t.id = value
 
-                # Handle immediate return case
                 if timeout == 0:
                     return results
-
-                # Sleep if no new results
                 if not new_results:
                     await asyncio.sleep(FETCH_INTERVAL)
 
@@ -526,35 +486,6 @@ class Dria:
         except Exception as e:
             raise Exception(f"Error fetching content topic: {e}")
 
-    async def _handle_error(self, tasks: Union[str, List[str]]) -> List[str]:
-        if isinstance(tasks, str):
-            tasks = [tasks]
-
-        new_task_ids = []
-        # get tasks
-        for task_id in tasks:
-            task_data = await self.storage.get_value(task_id)
-            if not task_data:
-                logger.debug(f"Task data not found for identifier: {task_id}")
-                continue
-
-            task_data = json.loads(task_data)
-
-           
-            # get workflow
-            workflow = await self.storage.get_value(f"{task_id}:workflow")
-            t = Task(
-                id=task_id,
-                workflow=workflow,
-                models=task_data["models"],
-                step_name=task_data["step_name"],
-                pipeline_id=task_data["pipeline_id"],
-            )
-            asyncio.create_task(self.push([t]))
-            new_task_ids.append(t.id)
-        
-        return new_task_ids
-        
     async def _process_results(self, topic_results: List[str]) -> None:
         """
         Process results from output content topic.
@@ -563,7 +494,6 @@ class Dria:
             topic_results: Raw results from topic
         """
         current_time = int(time.time())
-        current_ns = time.time_ns()
 
         signature = None
         for item in topic_results:
@@ -576,7 +506,7 @@ class Dria:
                     result = json.loads(metadata_json)
                 identifier, rpc_auth = result["taskId"].split("--")
                 task_data = await self.storage.get_value(identifier)
-                if not task_data:
+                if not task_data or task_data is None:
                     logger.debug(f"Task data not found for identifier: {identifier}")
                     continue
 
@@ -605,7 +535,7 @@ class Dria:
                     public_key = uncompressed_public_key(public_key)
                     address = (
                         keccak.new(digest_bits=256)
-                        .update(public_key[1:])
+                        .update(bytes(public_key[1:]))
                         .digest()[-20:]
                         .hex()
                     )
@@ -621,7 +551,8 @@ class Dria:
                             f"ID: {identifier} {result['error']}. Task retrying.."
                         )
                     if "stats" in result.keys():
-                        l = {
+                        current_ns = time.time_ns()
+                        metric_log = {
                             "node_address": address,
                             "model": result["model"],
                             "publish_latency": (
@@ -636,9 +567,9 @@ class Dria:
                             "roundtrip": (current_ns - task_data["created_ts"]) / 1e9,
                         }
                         if "error" in result:
-                            l["error"] = True
-                        logger.debug(f"Metrics: {l}")
-                        self.metrics.append(l)
+                            metric_log["error"] = True
+                        logger.debug(f"Metrics: {metric_log}")
+                        self.metrics.append(metric_log)
                     workflow = await self.storage.get_value(f"{task.id}:workflow")
                     t = Task(
                         id=task.id,
@@ -660,7 +591,8 @@ class Dria:
 
                     pipeline_id = task.pipeline_id or ""
                     if "stats" in result.keys():
-                        l = {
+                        current_ns = time.time_ns()
+                        metric_log = {
                             "node_address": address,
                             "model": result["model"],
                             "publish_latency": (
@@ -675,9 +607,9 @@ class Dria:
                             "roundtrip": (current_ns - task_data["created_ts"]) / 1e9,
                         }
                         if "error" in result:
-                            l["error"] = True
-                        logger.debug(f"Task id: {identifier}, Metrics: {l}")
-                        self.metrics.append(l)
+                            metric_log["error"] = True
+                        logger.debug(f"Task id: {identifier}, Metrics: {metric_log}")
+                        self.metrics.append(metric_log)
                     await self.kv.push(
                         f"{pipeline_id}:{identifier}",
                         {"result": processed_result, "model": result["model"]},
@@ -759,7 +691,7 @@ class Dria:
             return False
         return True
 
-    async def get_retried_tasks(self, task_ids: List[str]) -> Dict[str, Optional[str]]:
+    async def get_retried_tasks(self, task_ids: List[str]) -> Dict[str, str | None]:
         """
         Get tasks that need to be retried.
 
@@ -769,8 +701,8 @@ class Dria:
         Returns:
             Dict mapping original task IDs to new task IDs (None if no new task ID)
         """
-        task_map = {}
-        
+        task_map: Dict[str, str | None] = {}
+
         for task_id in task_ids:
             current_task_id = task_id
             while True:
@@ -788,7 +720,7 @@ class Dria:
                 except json.JSONDecodeError:
                     task_map[task_id] = None
                     break
-                    
+
         return task_map
 
     async def _get_step_name(self, task_id: str) -> str:

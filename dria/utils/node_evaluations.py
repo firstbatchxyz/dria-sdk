@@ -14,7 +14,7 @@ def detect_outliers_iqr(data):
     iqr = q3 - q1
     lower_bound = q1 - (1.5 * iqr)
     upper_bound = q3 + (1.5 * iqr)
-    outliers = np.where((data_array < lower_bound) | (data_array > upper_bound))
+    outliers = np.nonzero((data_array < lower_bound) | (data_array > upper_bound))
     return set(outliers[0]), lower_bound, upper_bound
 
 

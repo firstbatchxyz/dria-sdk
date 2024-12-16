@@ -1,5 +1,4 @@
-import json
-from typing import Any, List, Dict
+from typing import List
 from pydantic import BaseModel, Field
 from dria_workflows import (
     Workflow,
@@ -10,7 +9,7 @@ from dria_workflows import (
 )
 from dria.factory.utilities import get_abs_path, parse_json, get_tags
 from dria.factory.workflows.template import SingletonTemplate
-from dria.models import TaskResult, TaskInput
+from dria.models import TaskResult
 
 
 class ExtendedListOutput(BaseModel):
@@ -34,11 +33,6 @@ class ListExtender(SingletonTemplate):
         """
         # Initialize the workflow with variables
         builder = WorkflowBuilder(e_list=self.e_list)
-
-        # Set workflow constraints
-        builder.set_max_time(self.config.max_time)
-        builder.set_max_tokens(self.config.max_tokens)
-        builder.set_max_steps(self.config.max_steps)
 
         # Define the generation step
         builder.generative_step(

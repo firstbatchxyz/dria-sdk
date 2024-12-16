@@ -1,4 +1,4 @@
-from typing import List, Dict, Literal
+from typing import List
 from pydantic import BaseModel, Field
 from dria_workflows import (
     Workflow,

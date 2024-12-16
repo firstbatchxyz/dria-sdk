@@ -2,7 +2,8 @@ from pathlib import Path
 import duckdb
 import json
 from typing import Dict, List, Any
-from tqdm import tqdm
+from tqdm import tqdm  # type: ignore
+
 
 class DatasetDB:
     def __init__(
@@ -61,6 +62,8 @@ class DatasetDB:
             """,
                 (name, description),
             ).fetchone()
+            if result is None:
+                raise DatabaseError("Failed to create dataset")
             return result[0]
         except Exception as e:
             raise DatabaseError(f"Failed to create dataset: {str(e)}")
@@ -83,6 +86,8 @@ class DatasetDB:
                 """,
                     (dataset_id, json.dumps(entry)),
                 ).fetchone()
+                if result is None:
+                    raise DatabaseError("Failed to add entry")
                 entry_ids.append(result[0])
 
             # Update dataset's updated_at timestamp
@@ -127,6 +132,29 @@ class DatasetDB:
             )
         except Exception as e:
             raise DatabaseError(f"Failed to remove entry: {str(e)}")
+
+    def remove_all_entries(self, dataset_id: int) -> None:
+        """Remove all entries from a dataset."""
+        try:
+            result = self.conn.execute(
+                "SELECT 1 FROM datasets WHERE dataset_id = ?", (dataset_id,)
+            ).fetchone()
+
+            if not result:
+                raise DatabaseError(f"Dataset with ID {dataset_id} not found")
+
+            self.conn.execute("DELETE FROM entries WHERE dataset_id = ?", (dataset_id,))
+
+            self.conn.execute(
+                """
+                UPDATE datasets 
+                SET updated_at = CURRENT_TIMESTAMP 
+                WHERE dataset_id = ?
+                """,
+                (dataset_id,),
+            )
+        except Exception as e:
+            raise DatabaseError(f"Failed to remove all entries: {str(e)}")
 
     def remove_dataset(self, dataset_id: int) -> None:
         """Remove a dataset and all its entries from the database."""
@@ -180,7 +208,7 @@ class DatasetDB:
         except Exception as e:
             raise DatabaseError(f"Failed to fetch dataset entries: {str(e)}")
 
-    def get_datasets(self) -> List[Dict]:
+    def get_datasets(self) -> List[Dict[str, Any]]:
         """Get all datasets."""
         try:
             results = self.conn.execute(

@@ -50,11 +50,10 @@ def scrape_file(
                 )
             print(f"Attempt {attempt + 1} failed. Retrying in {retry_delay} seconds...")
             time.sleep(retry_delay)
+    return {"context": []}
 
 
-def scrape(
-    source: Any, chunk_size: int = 100, min_chunk_size: int = 28
-) -> List[Dict[str, Any]]:
+def scrape(source: Any, chunk_size: int = 100, min_chunk_size: int = 28) -> List[str]:
     """Scrape the given websites or fetch file.
 
     Args:
@@ -63,7 +62,7 @@ def scrape(
         chunk_size:
 
     Returns:
-        List[Dict[str, Any]]: The scraped data.
+        List[str]: The scraped data.
     """
     chunk_size = chunk_size * 1024
     min_chunk_size = min_chunk_size * 1024
@@ -159,8 +158,8 @@ def parse_backstory(backstory_json: str) -> str:
         List[str]: The parsed backstory as a list of strings.
     """
     try:
-        parsed = parse_json(backstory_json)
-        backstory = parsed.get("backstory", [])
+        parsed: dict = parse_json(backstory_json)
+        backstory = parsed.get("backstory", "")
         return backstory
     except json.JSONDecodeError:
         return backstory_json

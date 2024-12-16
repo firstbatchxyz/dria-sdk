@@ -23,7 +23,7 @@ asyncio.run(
     generator.generate(
         instructions=instructions,
         singletons=QA,
-        models=Model.GPT4O,
+        models=[Model.GPT4O],
     )
 )
 

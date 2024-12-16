@@ -56,7 +56,8 @@ class ParallelSingletonExecutor:
                     self.dataset.db.add_entries(self.dataset_id, ordered_entries)
                 )
                 input_ids.extend(input_index)
-            except:
+            except Exception as e:
+                logging.error(e)
                 failed_data = [
                     {
                         "workflow": b.workflow,
@@ -113,7 +114,8 @@ class ParallelSingletonExecutor:
                 # Process the result with contextualized callback
                 try:
                     outputs = singleton_instance.callback([result])
-                except:
+                except Exception as e:
+                    logging.error(e)
                     continue
 
                 for output in outputs:

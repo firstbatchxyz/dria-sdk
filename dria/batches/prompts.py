@@ -1,7 +1,7 @@
 import json
 import logging
 import traceback
-from typing import List, Dict, Any, Tuple, Type
+from typing import List, Dict, Any, Tuple
 from dria.constants import TASK_TIMEOUT
 from dria.client import Dria
 from dria.datasets.prompter import Prompt
@@ -47,6 +47,7 @@ class ParallelPromptExecutor:
             Model.GPT4O_MINI,
             Model.GPT4O,
             Model.GEMINI_15_FLASH,
+            Model.GEMINI_20_FLASH,
             Model.GEMINI_15_PRO,
             Model.LLAMA3_1_8B_FP16,
             Model.QWEN2_5_7B_FP16,
@@ -77,6 +78,7 @@ class ParallelPromptExecutor:
                 )
                 input_ids.extend(input_index)
             except Exception as e:
+                logging.debug(e)
                 failed_data = [
                     {
                         "workflow": b.workflow.model_dump(

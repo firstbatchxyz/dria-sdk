@@ -81,7 +81,10 @@ class Answer(SingletonTemplate):
             if entry is not None:
                 returns.append(
                     AnswerOutput(
-                        question=self.question, prediction=entry.strip(), context=self.context, model=r.model
+                        question=self.question,
+                        prediction=entry.strip(),
+                        context=self.context,
+                        model=r.model,
                     )
                 )
         return returns

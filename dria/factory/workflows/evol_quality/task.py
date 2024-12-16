@@ -2,7 +2,7 @@ from dria_workflows import Workflow, WorkflowBuilder, Operator, Write, Edge
 from dria.factory.utilities import get_abs_path
 from dria.models import TaskResult
 from dria.factory.workflows.template import SingletonTemplate
-from typing import Dict, List, Literal
+from typing import Dict, List
 from pydantic import BaseModel, Field
 
 MUTATION_TEMPLATES: Dict[str, str] = {

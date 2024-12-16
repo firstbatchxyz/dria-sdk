@@ -32,6 +32,7 @@ class Model(str, Enum):
     LLAMA3_1_70BQ8 = "llama3.1:70b-instruct-q8_0"
     LLAMA3_2_1B = "llama3.2:1b"
     LLAMA3_2_3B = "llama3.2:3b"
+    LLAMA3_3_70B = "llama3.3:70b"
     LLAMA3_1_8BTextQ4KM = "llama3.1:8b-text-q4_K_M"
     LLAMA3_1_8BTextQ8 = "llama3.1:8b-text-q8_0"
     LLAMA3_1_70BTextQ4KM = "llama3.1:70b-text-q4_0"
@@ -51,6 +52,7 @@ class Model(str, Enum):
     LLAMA_3_1_70B_OR = "meta-llama/llama-3.1-70b-instruct"
     LLAMA_3_1_405B_OR = "meta-llama/llama-3.1-405b-instruct"
     LLAMA_3_1_70B_OR_F = "meta-llama/llama-3.1-70b-instruct:free"
+    LLAMA_3_3_70B_OR = "meta-llama/llama-3.3-70b-instruct"
     ANTHROPIC_SONNET_3_5_OR = "anthropic/claude-3.5-sonnet:beta"
     ANTHROPIC_HAIKU_3_5_OR = "anthropic/claude-3-5-haiku-20241022:beta"
     QWEN2_5_72B_OR = "qwen/qwen-2.5-72b-instruct"
@@ -63,6 +65,7 @@ class Model(str, Enum):
     # Gemini models
     GEMINI_15_PRO = "gemini-1.5-pro"
     GEMINI_15_FLASH = "gemini-1.5-flash"
+    GEMINI_20_FLASH = "gemini-2.0-flash-exp"
     GEMINI_10_PRO = "gemini-1.0-pro"
     GEMMA_2_2B_IT = "gemma-2-2b-it"
     GEMMA_2_9B_IT = "gemma-2-9b-it"
@@ -121,9 +124,12 @@ class MidModels(Enum):
     MIXTRAL_8_7B = Model.MIXTRAL_8_7B.value
     LLAMA_3_1_70B_OR = Model.LLAMA_3_1_70B_OR.value
     LLAMA_3_1_70B_OR_F = Model.LLAMA_3_1_70B_OR_F.value
+    LLAMA_3_3_70B_OR = Model.LLAMA_3_3_70B_OR.value
+    LLAMA3_3_70B = Model.LLAMA3_3_70B.value
     QWEN2_5_72B_OR = Model.QWEN2_5_72B_OR.value
     QWEN2_5_EVA_32B_OR = Model.QWEN2_5_EVA_32B_OR.value
     GEMINI_15_FLASH = Model.GEMINI_15_FLASH.value
+    GEMINI_20_FLASH = Model.GEMINI_20_FLASH.value
     GEMINI_10_PRO = Model.GEMINI_10_PRO.value
     GPT4O_MINI = Model.GPT4O_MINI.value
 
@@ -149,6 +155,7 @@ class FunctionCallingModels(Enum):
     LLAMA3_1_8BQ8 = Model.LLAMA3_1_8BQ8.value
     LLAMA3_1_8B_FP16 = Model.LLAMA3_1_8B_FP16.value
     LLAMA3_1_70B = Model.LLAMA3_1_70B.value
+    LLAMA3_3_70B = Model.LLAMA3_3_70B.value
     LLAMA3_1_70BQ8 = Model.LLAMA3_1_70BQ8.value
     LLAMA3_2_1B = Model.LLAMA3_2_1B.value
     LLAMA3_2_3B = Model.LLAMA3_2_3B.value
@@ -161,9 +168,11 @@ class FunctionCallingModels(Enum):
     GPT4O_MINI = Model.GPT4O_MINI.value
     GEMINI_15_PRO = Model.GEMINI_15_PRO.value
     GEMINI_15_FLASH = Model.GEMINI_15_FLASH.value
+    GEMINI_20_FLASH = Model.GEMINI_20_FLASH.value
     DEEPSEEK_CHAT_OR = Model.DEEPSEEK_CHAT_OR.value
     LLAMA_3_1_8B_OR = Model.LLAMA_3_1_8B_OR.value
     LLAMA_3_1_70B_OR = Model.LLAMA_3_1_70B_OR.value
+    LLAMA_3_3_70B_OR = Model.LLAMA_3_3_70B_OR.value
     LLAMA_3_1_405B_OR = Model.LLAMA_3_1_405B_OR.value
     LLAMA_3_1_70B_OR_F = Model.LLAMA_3_1_70B_OR_F.value
     ANTHROPIC_SONNET_3_5_OR = Model.ANTHROPIC_SONNET_3_5_OR.value
@@ -184,6 +193,7 @@ class OpenAIModels(Enum):
 class GeminiModels(Enum):
     GEMINI_15_PRO = Model.GEMINI_15_PRO.value
     GEMINI_15_FLASH = Model.GEMINI_15_FLASH.value
+    GEMINI_20_FLASH = Model.GEMINI_20_FLASH.value
     GEMINI_10_PRO = Model.GEMINI_10_PRO.value
     GEMMA_2_2B_IT = Model.GEMMA_2_2B_IT.value
     GEMMA_2_9B_IT = Model.GEMMA_2_9B_IT.value
@@ -202,6 +212,7 @@ class OllamaModels(Enum):
     LLAMA3_1_8BQ8 = Model.LLAMA3_1_8BQ8.value
     LLAMA3_1_8B_FP16 = Model.LLAMA3_1_8B_FP16.value
     LLAMA3_1_70B = Model.LLAMA3_1_70B.value
+    LLAMA3_3_70B = Model.LLAMA3_3_70B.value
     LLAMA3_1_70BQ8 = Model.LLAMA3_1_70BQ8.value
     LLAMA3_2_1B = Model.LLAMA3_2_1B.value
     LLAMA3_2_3B = Model.LLAMA3_2_3B.value
@@ -224,6 +235,7 @@ class OpenRouterModels(Enum):
     DEEPSEEK_CHAT_OR = Model.DEEPSEEK_CHAT_OR.value
     LLAMA_3_1_8B_OR = Model.LLAMA_3_1_8B_OR.value
     LLAMA_3_1_70B_OR = Model.LLAMA_3_1_70B_OR.value
+    LLAMA_3_3_70B_OR = Model.LLAMA_3_3_70B_OR.value
     LLAMA_3_1_70B_OR_F = Model.LLAMA_3_1_70B_OR_F.value
     ANTHROPIC_SONNET_3_5_OR = Model.ANTHROPIC_SONNET_3_5_OR.value
     ANTHROPIC_HAIKU_3_5_OR = Model.ANTHROPIC_HAIKU_3_5_OR.value

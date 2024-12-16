@@ -1,5 +1,4 @@
-import json
-from typing import Any, List, Dict, Union
+from typing import List, Dict, Union, Any
 from pydantic import BaseModel, Field
 from dria_workflows import (
     Workflow,
@@ -8,12 +7,10 @@ from dria_workflows import (
     Read,
     Write,
     Edge,
-    ConditionBuilder,
-    Expression,
 )
 from dria.factory.utilities import get_abs_path
 from dria.factory.workflows.template import SingletonTemplate
-from dria.models import TaskResult, TaskInput
+from dria.models import TaskResult
 from dria.factory.persona.utils import sample_variable
 import json_repair
 
@@ -79,7 +76,7 @@ class RandomVars(SingletonTemplate):
         Returns:
             List[RandomVarOutput]: List of validated random variable outputs
         """
-        outputs = []
+        outputs: List[RandomVarOutput] = []
         for r in result:
             variables = []
             try:
@@ -113,7 +110,7 @@ class RandomVars(SingletonTemplate):
             Parsed JSON output.
         """
 
-        def parse_single_json(t: str) -> Dict:
+        def parse_single_json(t: str) -> Any:
             return json_repair.loads(t)
 
         if isinstance(text, list):

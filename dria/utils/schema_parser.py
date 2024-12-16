@@ -12,7 +12,7 @@ class SchemaParser:
     """Schema parser for different model providers."""
 
     @staticmethod
-    def parse(model: str, provider: str) -> str:
+    def parse(model: type[BaseModel], provider: str) -> str:
         """
         Parse schema based on provider type.
 
@@ -44,12 +44,12 @@ class SchemaParser:
 
         def convert_type(field_type: Any) -> Union[dict, str]:
             if hasattr(field_type, "__origin__"):
-                if field_type.__origin__ == list:
+                if field_type.__origin__ is list:
                     return {
                         "type": "ARRAY",
                         "items": {"type": convert_type(field_type.__args__[0])},
                     }
-                elif field_type.__origin__ == dict:
+                elif field_type.__origin__ is dict:
                     return {
                         "type": "OBJECT",
                         "properties": {
