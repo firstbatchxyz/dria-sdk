@@ -281,17 +281,21 @@ class Dria:
 
                         if response_times:
                             avg_response_time = sum(response_times.values()) / len(response_times)
+                            
+                            # Adjust multiplier based on how close we are to min_outputs
+                            response_ratio = len(response_times) / min_outputs
+                            multiplier = 4 if response_ratio < 0.95 else 2
+                            
                             concerning_tasks = {
                                 task_id: duration
                                 for task_id, duration in unresponsive_durations.items()
-                                if duration > avg_response_time * 3
+                                if duration > avg_response_time * multiplier
                             }
 
                             if concerning_tasks:
+                                logger.warning(avg_response_time)
                                 logger.warning(concerning_tasks)
-                                #new_task_ids = await self._handle_error(list(concerning_tasks.keys()))
-                                #task = [t for t in task if t.id not in concerning_tasks]
-                                #task.extend([Task(id=task_id) for task_id in new_task_ids])
+                                return results
 
                 # Fetch new results
                 pipeline_id = getattr(pipeline, "pipeline_id", None) if pipeline else None
