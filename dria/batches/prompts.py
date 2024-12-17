@@ -1,7 +1,7 @@
 import json
 import logging
 import traceback
-from typing import List, Dict, Any, Tuple
+from typing import List, Dict, Any, Tuple, Optional
 from dria.constants import TASK_TIMEOUT
 from dria.client import Dria
 from dria.datasets.prompter import Prompt
@@ -17,11 +17,12 @@ class ParallelPromptExecutor:
         dria_client: Dria,
         prompt: Prompt,
         dataset: DriaDataset,
+        batch_size: Optional[int] = None,
     ):
         self.dria = dria_client
         self.prompt = prompt
         self.dataset = dataset
-        self.batch_size = SCORING_BATCH_SIZE
+        self.batch_size = batch_size or SCORING_BATCH_SIZE
         self.instructions: Tuple[List[Task], List[Dict[str, Any]]] = ([], [])
         self.models = [Model.GPT4O_MINI]
 

@@ -21,7 +21,9 @@ class DatasetGenerator:
         dataset: Optional[DriaDataset] = None,
         dria_client: Optional[Dria] = None,
         log_level=logging.INFO,
+        batch_size: Optional[int] = None,
     ):
+        self.batch_size = batch_size
         self.dataset = dataset
         if dria_client is None:
             if self.dataset is None:
@@ -69,6 +71,10 @@ class DatasetGenerator:
             Self for chaining
         """
         self.dataset = dataset
+        return self
+
+    def set_batch_size(self, batch_size: int) -> "DatasetGenerator":
+        self.batch_size = batch_size
         return self
 
     def _validate_singletons(
@@ -135,13 +141,13 @@ class DatasetGenerator:
     ):
 
         if isinstance(singleton, Prompt):
-            executor = ParallelPromptExecutor(self.dria_client, singleton, self.dataset)
+            executor = ParallelPromptExecutor(self.dria_client, singleton, self.dataset, self.batch_size)
             executor.set_models(models)
             executor.load_instructions(instructions)
             return await executor.run()
         else:
             executor = ParallelSingletonExecutor(
-                self.dria_client, singleton, self.dataset
+                self.dria_client, singleton, self.dataset, self.batch_size
             )
             executor.set_models(models)
             executor.load_instructions(instructions)

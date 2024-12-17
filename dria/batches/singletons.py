@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import List, Dict, Any, Tuple, Type
+from typing import List, Dict, Any, Tuple, Type, Optional
 from dria.constants import TASK_TIMEOUT
 from dria.client import Dria
 from dria.factory.workflows.template import SingletonTemplate
@@ -15,11 +15,12 @@ class ParallelSingletonExecutor:
         dria_client: Dria,
         singleton: Type[SingletonTemplate],
         dataset: DriaDataset,
+        batch_size: Optional[int] = None,
     ):
         self.dria = dria_client
         self.singleton = singleton
         self.dataset = dataset
-        self.batch_size = SCORING_BATCH_SIZE
+        self.batch_size = batch_size or SCORING_BATCH_SIZE
         self.instructions: Tuple[List[Task], List[Dict[str, Any]]] = ([], [])
         self.models = [Model.OLLAMA]
 
