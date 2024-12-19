@@ -85,6 +85,7 @@ class TaskResult(BaseModel):
             Model.GPT4O_MINI: OpenAIParser(),
             Model.GPT4_TURBO: OpenAIParser(),
             Model.QWEN2_5_32B_FP16: OpenAIParser(),
+            Model.QWEN_QWQ: OpenAIParser(),
             Model.QWEN2_5_7B: OpenAIParser(),
             Model.QWEN2_5_7B_FP16: OpenAIParser(),
             Model.GEMMA2_9B: OpenAIParser(),

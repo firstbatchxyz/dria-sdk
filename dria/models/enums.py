@@ -37,6 +37,8 @@ class Model(str, Enum):
     LLAMA3_1_8BTextQ8 = "llama3.1:8b-text-q8_0"
     LLAMA3_1_70BTextQ4KM = "llama3.1:70b-text-q4_0"
     LLAMA3_2_1BTextQ4KM = "llama3.2:1b-text-q4_K_M"
+    QWEN_QWQ = "qwq"
+    QWEN_QWQ_OR = "qwen/qwq-32b-preview"
     QWEN2_5_7B = "qwen2.5:7b-instruct-q5_0"
     QWEN2_5_7B_FP16 = "qwen2.5:7b-instruct-fp16"
     QWEN2_5_32B_FP16 = "qwen2.5:32b-instruct-fp16"
@@ -135,6 +137,8 @@ class MidModels(Enum):
 
 
 class LargeModels(Enum):
+    QWEN_QWQ = Model.QWEN_QWQ.value
+    QWEN_QWQ_OR = Model.QWEN_QWQ_OR.value
     LLAMA_3_1_405B_OR = Model.LLAMA_3_1_405B_OR.value
     ANTHROPIC_SONNET_3_5_OR = Model.ANTHROPIC_SONNET_3_5_OR.value
     ANTHROPIC_HAIKU_3_5_OR = Model.ANTHROPIC_HAIKU_3_5_OR.value
@@ -162,6 +166,8 @@ class FunctionCallingModels(Enum):
     QWEN2_5_7B = Model.QWEN2_5_7B.value
     QWEN2_5_7B_FP16 = Model.QWEN2_5_7B_FP16.value
     QWEN2_5_32B_FP16 = Model.QWEN2_5_32B_FP16.value
+    QWEN_QWQ = Model.QWEN_QWQ.value
+    QWEN_QWQ_OR = Model.QWEN_QWQ_OR.value
     MIXTRAL_8_7B = Model.MIXTRAL_8_7B.value
     GPT4_TURBO = Model.GPT4_TURBO.value
     GPT4O = Model.GPT4O.value
@@ -219,6 +225,7 @@ class OllamaModels(Enum):
     QWEN2_5_7B = Model.QWEN2_5_7B.value
     QWEN2_5_7B_FP16 = Model.QWEN2_5_7B_FP16.value
     QWEN2_5_32B_FP16 = Model.QWEN2_5_32B_FP16.value
+    QWEN_QWQ = Model.QWEN_QWQ.value
     MIXTRAL_8_7B = Model.MIXTRAL_8_7B.value
 
 
@@ -243,3 +250,5 @@ class OpenRouterModels(Enum):
     QWEN2_5_7B_OR = Model.QWEN2_5_7B_OR.value
     QWEN2_5_EVA_32B_OR = Model.QWEN2_5_EVA_32B_OR.value
     DEEPSEEK_2_5_OR = Model.DEEPSEEK_2_5_OR.value
+    QWEN_QWQ_OR = Model.QWEN_QWQ_OR.value
+

@@ -221,12 +221,12 @@ class Dria:
             raise TaskPublishError(f"Failed to publish task: {e}") from e
 
     async def fetch(
-        self,
-        pipeline: Optional[Any] = None,
-        task: Union[Optional[Task], Optional[List[Task]]] = None,
-        min_outputs: Optional[int] = None,
-        timeout: int = TASK_TIMEOUT,
-        is_disabled: bool = False,
+            self,
+            pipeline: Optional[Any] = None,
+            task: Union[Optional[Task], Optional[List[Task]]] = None,
+            min_outputs: Optional[int] = None,
+            timeout: int = TASK_TIMEOUT,
+            is_disabled: bool = False,
     ) -> List[TaskResult]:
         """
         Fetch task results from storage.
@@ -236,7 +236,7 @@ class Dria:
             task (Union[Optional[Task], Optional[List[Task]]]): Task(s) to fetch results for
             min_outputs (Optional[int]): Minimum number of outputs to fetch
             timeout (int): Fetch timeout in seconds
-            is_disabled (bool): TQDM Display
+            is_disabled (bool): Whether to disable progress bar display
 
         Returns:
             List[TaskResult]: List of task results
@@ -251,38 +251,75 @@ class Dria:
         start_time = time.time()
         min_outputs = self._determine_min_outputs(task, min_outputs)
         last_update = time.time()
+
         with tqdm(
-            total=min_outputs, desc="Fetching results...", disable=is_disabled
+                total=min_outputs, desc="Fetching results...", disable=is_disabled
         ) as pbar:
+            response_times = {}  # Track response time for each task
+
             while len(results) < min_outputs and not self.shutdown_event.is_set():
-                elapsed_time = time.time() - start_time
+                current_time = time.time()
+                elapsed_time = current_time - start_time
+
+                # Check timeout
                 if elapsed_time > timeout > 0:
                     logger.debug(
                         f"Unable to fetch {min_outputs} outputs within {timeout} seconds."
                     )
                     break
 
-                pipeline_id = (
-                    getattr(pipeline, "pipeline_id", None) if pipeline else None
-                )
+                # Monitor slow responses
+                if response_times:
+                    responded_tasks = set(response_times.keys())
+                    all_tasks = set(t.id for t in task)
+                    unresponsive_tasks = all_tasks - responded_tasks
+
+                    if unresponsive_tasks:
+                        unresponsive_durations = {
+                            task_id: current_time - start_time
+                            for task_id in unresponsive_tasks
+                        }
+
+                        if response_times:
+                            avg_response_time = sum(response_times.values()) / len(response_times)
+
+                            # Adjust multiplier based on how close we are to min_outputs
+                            response_ratio = len(response_times) / min_outputs
+                            multiplier = 5 if response_ratio < 0.95 else 2
+
+                            concerning_tasks = {
+                                task_id: duration
+                                for task_id, duration in unresponsive_durations.items()
+                                if duration > avg_response_time * multiplier
+                            }
+
+                            if concerning_tasks:
+                                logger.debug(avg_response_time)
+                                return results
+
+                # Fetch new results
+                pipeline_id = getattr(pipeline, "pipeline_id", None) if pipeline else None
                 task_id = self._get_task_id(task)
+                new_results, new_id_map = await self._fetch_results(pipeline_id, task_id)
 
-                new_results, new_id_map = await self._fetch_results(
-                    pipeline_id, task_id
-                )
-
+                # Process new results
+                for task_id in new_results:
+                    response_times[task_id] = current_time - start_time
                 results.extend(new_results.values())
 
-                current_time = time.time()
+                # Update progress bar
                 if current_time - last_update >= 1.0:
                     pbar.n = len(results)
                     pbar.refresh()
                     last_update = current_time
+
+                # Update task tracking
                 if task is not None:
                     if isinstance(task, str):
                         task = [task]
-                    task = [t for t in task if t.id not in new_results.keys()]
+                    task = [t for t in task if t.id not in new_results]
 
+                # Update task IDs
                 for key, value in new_id_map.items():
                     if isinstance(task, str):
                         task.id = value
@@ -292,8 +329,11 @@ class Dria:
                             if t.id == key[1:]:
                                 t.id = value
 
+                # Handle immediate return case
                 if timeout == 0:
                     return results
+
+                # Sleep if no new results
                 if not new_results:
                     await asyncio.sleep(FETCH_INTERVAL)
 
