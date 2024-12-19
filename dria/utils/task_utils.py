@@ -176,7 +176,7 @@ class TaskManager:
 
         if await self.publish_message(task_model_str, INPUT_CONTENT_TOPIC):
             await self.storage.set_value(
-                f"{task.id}", json.dumps(task.dict(), ensure_ascii=False)
+                f"{task.id}", json.dumps(task.model_dump(), ensure_ascii=False)
             )
             if is_retried:
                 await self.kv.push(f":{old_task_id}", {"new_task_id": task.id})

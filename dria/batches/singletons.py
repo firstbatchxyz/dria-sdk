@@ -135,7 +135,9 @@ class ParallelSingletonExecutor:
                     ordered_outputs.append(json.loads(parsed_output))
                     corresponding_idx.append(idx)
             else:
-                logging.info(f"Warning: No match found for input: {original_input}")
+                logging.warning(
+                    f"Warning: No match found for input: {original_input}\nCurrent Lookup Keys: {result_lookup}"
+                )
 
         return ordered_outputs, corresponding_idx
 

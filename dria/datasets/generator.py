@@ -41,7 +41,9 @@ class DatasetGenerator:
                     self.dataset.db.add_entries(_id, [{"token": token}])
                     logger.info("Created RPC token!")
 
-                token = self.dataset.db.get_dataset_entries(_id, data_only=True)[0]["token"]
+                token = self.dataset.db.get_dataset_entries(_id, data_only=True)[0][
+                    "token"
+                ]
                 self.dria_client = Dria(rpc_token=token, log_level=log_level)
         else:
             self.dria_client = dria_client
@@ -141,7 +143,9 @@ class DatasetGenerator:
     ):
 
         if isinstance(singleton, Prompt):
-            executor = ParallelPromptExecutor(self.dria_client, singleton, self.dataset, self.batch_size)
+            executor = ParallelPromptExecutor(
+                self.dria_client, singleton, self.dataset, self.batch_size
+            )
             executor.set_models(models)
             executor.load_instructions(instructions)
             return await executor.run()

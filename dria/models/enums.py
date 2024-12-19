@@ -251,4 +251,3 @@ class OpenRouterModels(Enum):
     QWEN2_5_EVA_32B_OR = Model.QWEN2_5_EVA_32B_OR.value
     DEEPSEEK_2_5_OR = Model.DEEPSEEK_2_5_OR.value
     QWEN_QWQ_OR = Model.QWEN_QWQ_OR.value
-

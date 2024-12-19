@@ -221,12 +221,12 @@ class Dria:
             raise TaskPublishError(f"Failed to publish task: {e}") from e
 
     async def fetch(
-            self,
-            pipeline: Optional[Any] = None,
-            task: Union[Optional[Task], Optional[List[Task]]] = None,
-            min_outputs: Optional[int] = None,
-            timeout: int = TASK_TIMEOUT,
-            is_disabled: bool = False,
+        self,
+        pipeline: Optional[Any] = None,
+        task: Union[Optional[Task], Optional[List[Task]]] = None,
+        min_outputs: Optional[int] = None,
+        timeout: int = TASK_TIMEOUT,
+        is_disabled: bool = False,
     ) -> List[TaskResult]:
         """
         Fetch task results from storage.
@@ -253,7 +253,7 @@ class Dria:
         last_update = time.time()
 
         with tqdm(
-                total=min_outputs, desc="Fetching results...", disable=is_disabled
+            total=min_outputs, desc="Fetching results...", disable=is_disabled
         ) as pbar:
             response_times = {}  # Track response time for each task
 
@@ -280,8 +280,10 @@ class Dria:
                             for task_id in unresponsive_tasks
                         }
 
-                        if response_times:
-                            avg_response_time = sum(response_times.values()) / len(response_times)
+                        if response_times and len(response_times) > 0.25 * min_outputs:
+                            avg_response_time = sum(response_times.values()) / len(
+                                response_times
+                            )
 
                             # Adjust multiplier based on how close we are to min_outputs
                             response_ratio = len(response_times) / min_outputs
@@ -298,15 +300,18 @@ class Dria:
                                 return results
 
                 # Fetch new results
-                pipeline_id = getattr(pipeline, "pipeline_id", None) if pipeline else None
+                pipeline_id = (
+                    getattr(pipeline, "pipeline_id", None) if pipeline else None
+                )
                 task_id = self._get_task_id(task)
-                new_results, new_id_map = await self._fetch_results(pipeline_id, task_id)
+                new_results, new_id_map = await self._fetch_results(
+                    pipeline_id, task_id
+                )
 
                 # Process new results
                 for task_id in new_results:
                     response_times[task_id] = current_time - start_time
                 results.extend(new_results.values())
-
                 # Update progress bar
                 if current_time - last_update >= 1.0:
                     pbar.n = len(results)
@@ -605,11 +610,20 @@ class Dria:
                             )
                             / 1e9,
                             "roundtrip": (current_ns - task_data["created_ts"]) / 1e9,
+                            "error": True,
                         }
-                        if "error" in result:
-                            metric_log["error"] = True
                         logger.debug(f"Metrics: {metric_log}")
                         self.metrics.append(metric_log)
+                    if "Invalid prompt" in result["error"]:
+                        logger.debug(
+                            f"Prompt error for task {task.id}. Skipping this task."
+                        )
+                        pipeline_id = task.pipeline_id or ""
+                        await self.kv.push(
+                            f"{pipeline_id}:{identifier}",
+                            {"result": None, "model": result["model"]},
+                        )
+                        continue
                     workflow = await self.storage.get_value(f"{task.id}:workflow")
                     t = Task(
                         id=task.id,
@@ -701,10 +715,14 @@ class Dria:
                 success = await self.push(batch_tasks)
                 if success is False:
                     return None
-                results.extend(await self.fetch(task=batch_tasks, timeout=timeout))
+                outputs = await self.fetch(task=batch_tasks, timeout=timeout)
+                res = []
+                for output in outputs:
+                    if output.result is not None:
+                        res.append(output)
+                results.extend(res)
                 self.stats = evaluate_nodes(self.metrics, self.stats)
                 self.metrics = []
-
             return results
         except Exception as e:
             logger.error(f"Error during task execution: {str(e)}")
