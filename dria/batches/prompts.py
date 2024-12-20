@@ -66,6 +66,8 @@ class ParallelPromptExecutor:
         entry_ids = []
         input_ids = []
         for i in range(0, len(self.instructions[0]), self.batch_size):
+            if self.dria.shutdown_event.is_set():
+                break
             batch = self.instructions[0][i : i + self.batch_size]
             original_inputs = self.instructions[1][i : i + self.batch_size]
 
