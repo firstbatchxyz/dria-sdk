@@ -280,7 +280,7 @@ class Dria:
                             for task_id in unresponsive_tasks
                         }
 
-                        if response_times and len(response_times) > 0.25 * min_outputs:
+                        if response_times and len(response_times) > 0.8 * min_outputs:
                             avg_response_time = sum(response_times.values()) / len(
                                 response_times
                             )
