@@ -1,6 +1,8 @@
 import asyncio
+import pandas as pd
 from dria import Prompt, DatasetGenerator, DriaDataset, Model
 from pydantic import BaseModel, Field
+
 
 
 # Define output schema
@@ -24,6 +26,7 @@ asyncio.run(
         instructions=instructions, singletons=prompter, models=Model.GPT4O
     )
 )
-
-
+# Ensure that long strings in DataFrame columns are fully displayed in the terminal
+pd.set_option('display.max_colwidth', None)
 print(dataset.to_pandas())
+
