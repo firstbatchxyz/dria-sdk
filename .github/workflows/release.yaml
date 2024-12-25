@@ -25,11 +25,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install poetry
 
-      - name: Install Tox
-        run: python -m pip install tox
-
       - name: Install project dependencies
-        run: poetry install
+        run: poetry install --with dev
 
       - name: Run tests with Tox
-        run: tox
+        run: |
+          export PYTHONPATH=$(pwd)
+          tox
