@@ -60,6 +60,10 @@ jobs:
     - name: Configure Poetry for PyPI Authentication
       run: |
         poetry config pypi-token.pypi ${{ secrets.PYPI_API_TOKEN }}
+      
+    - name: Install dependencies
+      run: |
+        poetry install  # Install dependencies first to cache them
 
     - name: Build the package
       run: |
