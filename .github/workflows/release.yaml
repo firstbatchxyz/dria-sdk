@@ -25,6 +25,10 @@ jobs:
       run: |
         curl -sSL https://install.python-poetry.org | python3 -
 
+    - name: Set RPC Token as Environment Variable
+      run: |
+        echo "RPC_TOKEN=${{ secrets.RPC_TOKEN }}" >> $GITHUB_ENV    
+
     - name: Install Tox
       run: |
         pip install tox
