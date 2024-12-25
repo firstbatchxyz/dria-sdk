@@ -25,22 +25,14 @@ jobs:
       run: |
         curl -sSL https://install.python-poetry.org | python3 -
 
-    - name: Configure Poetry for PyPI Authentication
+    - name: Install Tox
       run: |
-        poetry config pypi-token.pypi ${{ secrets.PYPI_API_TOKEN }}
+        pip install tox
 
-    - name: Set RPC Token as Environment Variable
+    - name: Run tests with Tox
       run: |
-        echo "RPC_TOKEN=${{ secrets.RPC_TOKEN }}" >> $GITHUB_ENV
-
-    - name: Install dependencies
-      run: |
-        poetry install
-
-    - name: Run tests
-      run: |
-        poetry run pytest tests/ --maxfail=1 --disable-warnings -q
-
+        tox -e py${{ matrix.python-version }}
+        
   build_and_publish:
     runs-on: ubuntu-latest
     needs: test
