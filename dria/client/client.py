@@ -106,8 +106,15 @@ class Dria:
         """
         self.api_mode = api_mode
 
+    @staticmethod
+    def check_background_tasks(task_set) -> bool:
+        return any("_start_background_tasks" in str(task) for task in task_set)
+
     async def initialize(self) -> None:
         """Initialize background monitoring and polling tasks."""
+
+        if self.check_background_tasks(asyncio.all_tasks()):
+            await self.run_cleanup(forced=True)
         if self.background_tasks:
             if not self.background_tasks.done():
                 logger.debug("Background tasks already running")
