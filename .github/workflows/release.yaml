@@ -1,8 +1,9 @@
-name: Test and Publish on Release
+name: Test and Publish on Master Commit
 
 on:
-  release:
-    types: [published]
+  push:
+    branches:
+      - master
 
 jobs:
   test:
