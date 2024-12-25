@@ -4,15 +4,15 @@ import json
 from typing import Dict, List, Any
 from tqdm import tqdm  # type: ignore
 
+
 def get_default_db_path():
     default_db_path = Path.home() / ".dria" / "datasets.duckdb"
     default_db_path.parent.mkdir(parents=True, exist_ok=True)
     return default_db_path
 
+
 class DatasetDB:
-    def __init__(
-        self, db_path: str = get_default_db_path()
-    ):
+    def __init__(self, db_path: str = get_default_db_path()):
         try:
             self.conn = duckdb.connect(db_path)
             self._initialize_tables()

@@ -46,19 +46,30 @@ from dria.utils.ec import (
 from dria.utils.node_evaluations import evaluate_nodes
 from dria.utils.task_utils import TaskManager
 
-
 class Dria:
     """
     Client SDK for interacting with the Dria distributed AI system.
 
     Provides high-level methods for:
-    - Submitting AI tasks to the network
+    - Submitting AI tasks to the network 
     - Retrieving task results
     - Managing background monitoring and polling
     - Handling node retries
     """
 
     DEADLINE_MULTIPLIER: int = 10
+    _instance = None
+
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is not None:
+            # Clean up old instance
+            if hasattr(cls._instance, 'shutdown_event'):
+                cls._instance.shutdown_event.set()
+            if hasattr(cls._instance, 'background_tasks'):
+                if cls._instance.background_tasks:
+                    cls._instance.background_tasks.cancel()
+        cls._instance = super().__new__(cls)
+        return cls._instance
 
     def __init__(
         self,
@@ -73,20 +84,22 @@ class Dria:
             rpc_token (Optional[str]): Authentication token for RPC. Falls back to DRIA_RPC_TOKEN env var.
             api_mode (bool): If True, runs in API mode without cleanup of monitoring/polling.
         """
-        logging.getLogger("dria").setLevel(log_level)
-        self.rpc = RPCClient(auth_token=rpc_token or os.environ.get("DRIA_RPC_TOKEN"))
-        self.storage = Storage()
-        self.kv = KeyValueQueue()
-        self.task_manager = TaskManager(self.storage, self.rpc, self.kv)
-        self.background_tasks: Optional[asyncio.Task] = None
-        self.shutdown_event = asyncio.Event()
-        self.api_mode = api_mode
-        self.stats: Dict[str, Any] = {}
-        self.metrics: List[Any] = []
+        if not hasattr(self, '_initialized'):
+            logging.getLogger("dria").setLevel(log_level)
+            self.rpc = RPCClient(auth_token=rpc_token or os.environ.get("DRIA_RPC_TOKEN"))
+            self.storage = Storage()
+            self.kv = KeyValueQueue()
+            self.task_manager = TaskManager(self.storage, self.rpc, self.kv)
+            self.background_tasks: Optional[asyncio.Task] = None
+            self.shutdown_event = asyncio.Event()
+            self.api_mode = api_mode
+            self.stats: Dict[str, Any] = {}
+            self.metrics: List[Any] = []
 
-        # Register signal handlers
-        signal.signal(signal.SIGTERM, self._signal_handler)
-        signal.signal(signal.SIGINT, self._signal_handler)
+            # Register signal handlers
+            signal.signal(signal.SIGTERM, self._signal_handler)
+            signal.signal(signal.SIGINT, self._signal_handler)
+            self._initialized = True
 
     def _signal_handler(self, signum: int, frame: Any) -> None:
         """Handle termination signals by initiating graceful shutdown."""
@@ -106,15 +119,8 @@ class Dria:
         """
         self.api_mode = api_mode
 
-    @staticmethod
-    def check_background_tasks(task_set) -> bool:
-        return any("_start_background_tasks" in str(task) for task in task_set)
-
     async def initialize(self) -> None:
         """Initialize background monitoring and polling tasks."""
-
-        if self.check_background_tasks(asyncio.all_tasks()):
-            await self.run_cleanup(forced=True)
         if self.background_tasks:
             if not self.background_tasks.done():
                 logger.debug("Background tasks already running")
