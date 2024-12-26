@@ -50,7 +50,7 @@ jobs:
     - name: Get version from pyproject.toml
       id: get_pyproject_version
       run: |
-        VERSION=$(grep -oP '(?<=version = ")[^"]*' pyproject.toml)
+        VERSION=$(awk -F' = ' '/^version =/ {print $2}' pyproject.toml | tr -d '"')
         echo "PYPROJECT_VERSION=$VERSION" >> $GITHUB_ENV
 
     - name: Check version consistency
@@ -61,6 +61,7 @@ jobs:
         else
           echo "Version match: RELEASE_VERSION=$RELEASE_VERSION, PYPROJECT_VERSION=$PYPROJECT_VERSION"
         fi
+
 
   build_and_publish:
     runs-on: ubuntu-latest
