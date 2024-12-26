@@ -52,6 +52,9 @@ jobs:
       run: |
         curl -sSL https://install.python-poetry.org | python3 -
 
+    - name: Configure Poetry Repositories
+      run: poetry config repositories.test-pypi https://test.pypi.org/legacy/
+
     - name: Configure Poetry for Test PyPI Authentication
       run: |
         poetry config pypi-token.test-pypi ${{ secrets.PYPI_API_TOKEN }} 
