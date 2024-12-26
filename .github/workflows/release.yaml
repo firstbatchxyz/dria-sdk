@@ -24,18 +24,14 @@ jobs:
     - name: Install Poetry
       run: |
         curl -sSL https://install.python-poetry.org | python3 -
-        export PATH=$HOME/.local/bin:$PATH
 
-    - name: Install Tox
-      run: pip install tox
-
-    - name: Format Python Version for Tox
-      id: format-version
+    - name: Set RPC Token as Environment Variable
       run: |
-        echo "PYTHON_VERSION=$(echo '${{ matrix.python-version }}' | tr -d .)" >> $GITHUB_ENV
+        echo "RPC_TOKEN=${{ secrets.RPC_TOKEN }}" >> $GITHUB_ENV    
 
     - name: Run tests with Tox
-      run: tox -e py${{ env.PYTHON_VERSION }}
+      run: |
+        tox -e py${{ matrix.python-version }}
       env:
         RPC_TOKEN: ${{ secrets.RPC_TOKEN }}
 
@@ -49,19 +45,20 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.10'
+        python-version: '3.10' 
 
     - name: Install Poetry
       run: |
         curl -sSL https://install.python-poetry.org | python3 -
-        export PATH=$HOME/.local/bin:$PATH
 
     - name: Configure Poetry for Test PyPI Authentication
       run: |
-        poetry config pypi-token.test-pypi ${{ secrets.PYPI_API_TOKEN }}
+        poetry config pypi-token.test-pypi ${{ secrets.PYPI_API_TOKEN }} 
 
     - name: Build the package
-      run: poetry build -v
+      run: |
+        poetry build -v
 
     - name: Publish the package to Test PyPI
-      run: poetry publish -r testpypi -v
+      run: |
+        poetry publish -r test-pypi -v
