@@ -59,9 +59,10 @@ ruff = "^0.3.4"
 mypy = "^1.9.0"
 bandit = "^1.7.8"
 
-[tool.poetry.repositories.test-pypi]
-url = "https://test.pypi.org/legacy/"
-
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+# Repository configuration for test-pypi
+[tool.poetry.repositories]
+test-pypi = { url = "https://test.pypi.org/legacy/" }
