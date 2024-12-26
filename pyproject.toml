@@ -64,5 +64,6 @@ requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 # Repository configuration for test-pypi
-[tool.poetry.repositories]
-test-pypi = { url = "https://test.pypi.org/legacy/" }
+[[tool.poetry.source]]
+name = "test-pypi"
+url = "https://test.pypi.org/legacy/"
