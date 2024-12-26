@@ -31,7 +31,8 @@ jobs:
 
     - name: Format Python Version for Tox
       id: format-version
-      run: echo "PYTHON_VERSION=${{ matrix.python-version//./}}" >> $GITHUB_ENV
+      run: |
+        echo "PYTHON_VERSION=$(echo '${{ matrix.python-version }}' | tr -d .)" >> $GITHUB_ENV
 
     - name: Run tests with Tox
       run: tox -e py${{ env.PYTHON_VERSION }}
