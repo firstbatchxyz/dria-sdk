@@ -1,9 +1,8 @@
-name: Test and Publish on Master Commit
+name: Test and Publish on Release Tag
 
 on:
-  push:
-    branches:
-      - master  # Trigger on push to the master branch
+  release:
+    types: [published]  # Trigger when a release is published
 
 jobs:
   test:
@@ -61,6 +60,7 @@ jobs:
         else
           echo "Version match: RELEASE_VERSION=$RELEASE_VERSION, PYPROJECT_VERSION=$PYPROJECT_VERSION"
         fi
+
 
 
   build_and_publish:
