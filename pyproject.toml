@@ -36,6 +36,7 @@ duckdb = "^1.1.3"
 pandas = "^2.2.3"
 datasets = "^3.1.0"
 
+
 [tool.poetry.urls]
 "Bug Tracker" = "https://github.com/firstbatchxyz/dria-sdk/issues"
 
@@ -44,10 +45,12 @@ sentence-transformers = {version = "^3.3.1", optional = true}
 vendi-score = {version = "^0.0.3", optional = true}
 numpy = {version = "^2.1.3", optional = true}
 
+
 [tool.poetry.group.safe.dependencies]
 rank-bm25 = {version = "^0.2.2", optional = true}
 numpy = {version = "^2.1.3", optional = true}
 nltk = {version = "^3.9.1", optional = true}
+
 
 [tool.poetry.group.test.dependencies]
 pytest = "^8.3.3"
@@ -57,12 +60,9 @@ pytest-mock = "^3.12.0"
 black = "^24.3.0"
 ruff = "^0.3.4"
 mypy = "^1.9.0"
-bandit = "*"  # Updated bandit version
+bandit = "^1.7.8"
+
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
-
-[[tool.poetry.source]]
-name = "test-pypi"
-url = "https://test.pypi.org/legacy/"
