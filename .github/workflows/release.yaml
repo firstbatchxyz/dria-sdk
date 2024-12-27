@@ -1,0 +1,95 @@
+name: Test and Publish on Release Tag
+
+on:
+  release:
+    types: [published]  # Trigger when a release is published
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.10', '3.11', '3.12', '3.13']  # Running tests on multiple Python versions
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install Poetry and Tox
+      run: |
+        curl -sSL https://install.python-poetry.org | python3 -
+        pip install tox
+
+    - name: Set RPC Token as Environment Variable
+      run: |
+        echo "RPC_TOKEN=${{ secrets.RPC_TOKEN }}" >> $GITHUB_ENV    
+
+    - name: Run tests with Tox
+      run: |
+        tox -e py${{ matrix.python-version }}
+      env:
+        RPC_TOKEN: ${{ secrets.RPC_TOKEN }}
+
+  version_check:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Get version from tag
+      id: get_tag
+      run: echo "RELEASE_VERSION=$(echo ${GITHUB_REF} | sed 's/refs\/tags\///')" >> $GITHUB_ENV
+
+    - name: Get version from pyproject.toml
+      id: get_pyproject_version
+      run: |
+        VERSION=$(awk -F' = ' '/^version =/ {print $2}' pyproject.toml | tr -d '"')
+        echo "PYPROJECT_VERSION=$VERSION" >> $GITHUB_ENV
+
+    - name: Check version consistency
+      run: |
+        if [ "$RELEASE_VERSION" != "$PYPROJECT_VERSION" ]; then
+          echo "Version mismatch: RELEASE_VERSION=$RELEASE_VERSION, PYPROJECT_VERSION=$PYPROJECT_VERSION"
+          exit 1
+        else
+          echo "Version match: RELEASE_VERSION=$RELEASE_VERSION, PYPROJECT_VERSION=$PYPROJECT_VERSION"
+        fi
+
+
+
+  build_and_publish:
+    runs-on: ubuntu-latest
+    needs: [test, version_check]  # Ensure version check passes before publishing
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10' 
+
+    - name: Install Poetry
+      run: |
+        curl -sSL https://install.python-poetry.org | python3 -
+
+    - name: Configure Poetry Repositories
+      run: poetry config repositories.test-pypi https://test.pypi.org/legacy/
+
+    - name: Configure Poetry for Test PyPI Authentication
+      run: |
+        poetry config pypi-token.test-pypi ${{ secrets.PYPI_API_TOKEN }} 
+
+    - name: Build the package
+      run: |
+        poetry build -v
+
+    - name: Publish the package to Test PyPI
+      run: |
+        poetry publish -r test-pypi -v
