@@ -200,7 +200,7 @@ Dria allows you to write custom workflows and pipelines using the `Workflow` cla
 
 Dria allows you to define custom schemas for your outputs using Pydantic. This allows you to generate highly structured data that can be used for a wide range of applications.
 
-You can see an example of this [here](https://docs.dria.co/how-to/structured-outputs).
+You can see an example of this [here](https://docs.dria.co/how-to/structured_outputs/).
 
 ### Parallelization & Offloading
 
