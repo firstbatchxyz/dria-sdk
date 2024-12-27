@@ -17,27 +17,6 @@
 
 ---
 
-## Table of Contents
-1. [Why Dria?](#why-dria)
-2. [Installation](#installation)
-3. [Quick Start](#quick-start)
-4. [Usage](#usage)
-   - [1. Define Your Dataset Schema](#1-define-your-dataset-schema)
-   - [2. Create a Dataset](#2-create-a-dataset)
-   - [3. Write a Prompt](#3-write-a-prompt)
-   - [4. Generate Synthetic Data](#4-generate-synthetic-data)
-   - [5. Convert to Pandas](#5-convert-to-pandas)
-5. [Advanced Usage](#advanced-usage)
-   - [Available Models](#available-models)
-   - [Writing Workflows and Custom Pipelines](#writing-workflows-and-custom-pipelines)
-   - [Structured Outputs](#structured-outputs)
-   - [Parallelization & Offloading](#parallelization--offloading)
-6. [Contributing](#contributing)
-7. [License](#license)
-8. [Links and Resources](#links-and-resources)
-
----
-
 ## Why Dria?
 
 - **Dataset Generation**: Easily build synthetic data pipelines using Dria’s flexible APIs.
