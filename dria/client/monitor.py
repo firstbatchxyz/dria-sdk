@@ -45,7 +45,7 @@ class Monitor:
         self.task_manager = TaskManager(storage, rpc, kv)
         self.rpc = rpc
 
-    async def run(self) -> None:
+    async def fetch_nodes(self) -> None:
         """
         Run the monitor process continuously.
 
@@ -72,6 +72,9 @@ class Monitor:
             logger.warning("Required components not initialized")
             return False
 
+        if not await self.task_manager.should_monitor():
+            return False
+
         topic_responses = await self.rpc.get_content_topic(HEARTBEAT_OUTPUT_TOPIC)
         if not topic_responses:
             return False
@@ -80,7 +83,6 @@ class Monitor:
             nodes_by_model = self._decrypt_nodes(
                 [base64_to_json(response) for response in topic_responses]
             )
-
             model_counts: Dict[str, int] = {}
             for model, addresses in nodes_by_model.items():
                 unique_addresses = list(set(addresses))
@@ -88,7 +90,7 @@ class Monitor:
                     NodeModel(uuid="", nodes=unique_addresses), model
                 )
                 model_counts[model] = len(unique_addresses)
-
+            await self.task_manager.update_monitor_ts()
             return True
 
         except Exception as e:

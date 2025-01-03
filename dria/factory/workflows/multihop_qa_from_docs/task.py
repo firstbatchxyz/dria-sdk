@@ -21,6 +21,8 @@ class QuestionSet(BaseModel):
     answer: str = Field(..., description="Answer to the questions")
     model: str = Field(..., description="Model used for generation")
 
+class ContextSet(BaseModel):
+    context: str = Field(..., description="Context for the questions")
 
 class MultiHopQuestion(SingletonTemplate):
     # Input fields
@@ -29,7 +31,7 @@ class MultiHopQuestion(SingletonTemplate):
     )
 
     # Output schema
-    OutputSchema = QuestionSet
+    OutputSchema = ContextSet
 
     def workflow(self) -> Workflow:
         """
@@ -60,21 +62,31 @@ class MultiHopQuestion(SingletonTemplate):
             operator=Operator.GENERATION,
             outputs=[Push.new("questions")],
         )
+        builder.generative_step(
+            id="context_generation",
+            path=get_abs_path("prompt_2.md"),
+            operator=Operator.GENERATION,
+            outputs=[Push.new("context")],
+        )
 
-        # Define flow
+        # Define flow# Define flow
         flow = [
             Edge(
                 source="question_generation",
+                target="context_generation",
+            ),
+            Edge(
+                source="context_generation",
                 target="_end",
             )
         ]
         builder.flow(flow)
 
         # Set the return value of the workflow
-        builder.set_return_value("questions")
+        builder.set_return_value("context")
         return builder.build()
 
-    def callback(self, result: List[TaskResult]) -> List[QuestionSet]:
+    def callback(self, result: List[TaskResult]) -> List[ContextSet]:
         """
         Parse the results into validated QuestionSet objects
 
@@ -86,25 +98,10 @@ class MultiHopQuestion(SingletonTemplate):
         """
         results = []
         for r in result:
-            onehop = get_tags(r.result, "1hop")[0]
-            twohop = get_tags(r.result, "2hop")[0]
-            threehop = get_tags(r.result, "3hop")[0]
-            answer = get_tags(r.result, "answer")[0]
-
-            if None in [onehop, twohop, threehop, answer]:
-                logging.debug(
-                    "One of the questions is missing. Please check the output."
-                )
-                continue
-
             results.append(
-                QuestionSet(
+                ContextSet(
                     **{
-                        "1-hop": onehop,
-                        "2-hop": twohop,
-                        "3-hop": threehop,
-                        "answer": answer,
-                        "model": r.model,
+                        "context": r.result
                     }
                 )
             )

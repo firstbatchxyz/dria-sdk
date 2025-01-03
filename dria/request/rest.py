@@ -53,6 +53,45 @@ class RPCClient:
         except aiohttp.ClientError as e:
             raise RPCConnectionError(f"Health check failed: {str(e)}")
 
+    async def get_results(self, task_ids: List[str]) -> List[str]:
+        """
+        Get results for task IDs.
+
+        Args:
+            task_ids: List of task IDs to get results for
+
+        Returns:
+            List of result messages
+
+        Raises:
+            RPCContentTopicError: If error fetching results
+            RPCAuthenticationError: If authentication fails
+            RPCConnectionError: If connection error occurs
+        """
+        try:
+            async with aiohttp.ClientSession(headers=self.headers) as session:
+                async with session.post(
+                        f"{self.base_url}/rpc/results",
+                        json={"value": {"task_ids": task_ids}},
+                        headers={"Content-Type": "application/json"},
+
+                ) as response:
+                    if response.status == 401:
+                        raise RPCAuthenticationError()
+
+                    res_json = await response.json()
+                    return res_json["data"]["results"]
+        except aiohttp.ClientResponseError as e:
+            if e.status == 401:
+                raise RPCAuthenticationError()
+            logger.error(f"Failed to get results for task IDs {task_ids}: {e}")
+            raise RPCContentTopicError(str(e), "results")
+        except aiohttp.ClientError as e:
+            raise RPCConnectionError(f"{str(e)}")
+        except Exception as e:
+            logger.error(f"Failed to get results for task IDs {task_ids}: {e}")
+            raise
+
     async def get_content_topic(self, content_topic: str) -> List[str]:
         """
         Get content topic.
@@ -66,7 +105,7 @@ class RPCClient:
         try:
             async with aiohttp.ClientSession(headers=self.headers) as session:
                 async with session.get(
-                    f"{self.base_url}/rpc/{content_topic}"
+                        f"{self.base_url}/rpc/{content_topic}"
                 ) as response:
                     if response.status == 401:
                         raise RPCAuthenticationError()
@@ -85,7 +124,7 @@ class RPCClient:
             raise
 
     async def push_content_topic(
-        self, data: Union[str, bytes], content_topic: str
+            self, data: Union[str, bytes], content_topic: str
     ) -> bool:
         """
         Push content to a topic.
@@ -105,9 +144,9 @@ class RPCClient:
         try:
             async with aiohttp.ClientSession(headers=self.headers) as session:
                 async with session.post(
-                    f"{self.base_url}/rpc/{content_topic}",
-                    json={"value": {"payload": data}},
-                    headers={"Content-Type": "application/json"},
+                        f"{self.base_url}/rpc/{content_topic}",
+                        json={"value": {"payload": data}},
+                        headers={"Content-Type": "application/json"},
                 ) as response:
                     if response.status == 401:
                         raise RPCAuthenticationError()

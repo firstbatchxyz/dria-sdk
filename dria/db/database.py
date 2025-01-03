@@ -246,7 +246,7 @@ class DatasetDB:
         raise DatabaseError(f"Dataset {name} not found")
 
     def add_fields_to_entries(
-        self, dataset_id: int, fields_and_values: Dict[str, List[Any]]
+            self, dataset_id: int, fields_and_values: Dict[str, List[Any]]
     ) -> int:
         """
         Add multiple new fields to entries in a dataset with corresponding values.

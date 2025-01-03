@@ -20,6 +20,7 @@ from dria.constants import (
     SCORING_BATCH_SIZE,
     TASK_TIMEOUT,
 )
+from dria.datasets.utils import get_community_token
 from dria.db.mq import KeyValueQueue
 from dria.db.storage import Storage
 from dria.models import Task, TaskResult
@@ -46,6 +47,7 @@ from dria.utils.ec import (
 from dria.utils.node_evaluations import evaluate_nodes
 from dria.utils.task_utils import TaskManager
 
+
 class Dria:
     """
     Client SDK for interacting with the Dria distributed AI system.
@@ -56,26 +58,13 @@ class Dria:
     - Managing background monitoring and polling
     - Handling node retries
     """
-
+    MAX_RETRIES_FOR_AVAILABILITY: int = 5
     DEADLINE_MULTIPLIER: int = 10
-    _instance = None
-
-    def __new__(cls, *args, **kwargs):
-        if cls._instance is not None:
-            # Clean up old instance
-            if hasattr(cls._instance, 'shutdown_event'):
-                cls._instance.shutdown_event.set()
-            if hasattr(cls._instance, 'background_tasks'):
-                if cls._instance.background_tasks:
-                    cls._instance.background_tasks.cancel()
-        cls._instance = super().__new__(cls)
-        return cls._instance
 
     def __init__(
-        self,
-        rpc_token: Optional[str] = None,
-        api_mode: bool = False,
-        log_level=logging.INFO,
+            self,
+            rpc_token: Optional[str] = None,
+            log_level=logging.INFO,
     ):
         """
         Initialize the Dria client.
@@ -86,20 +75,20 @@ class Dria:
         """
         if not hasattr(self, '_initialized'):
             logging.getLogger("dria").setLevel(log_level)
+            if rpc_token is None:
+                rpc_token = get_community_token()
             self.rpc = RPCClient(auth_token=rpc_token or os.environ.get("DRIA_RPC_TOKEN"))
             self.storage = Storage()
             self.kv = KeyValueQueue()
             self.task_manager = TaskManager(self.storage, self.rpc, self.kv)
-            self.background_tasks: Optional[asyncio.Task] = None
             self.shutdown_event = asyncio.Event()
-            self.api_mode = api_mode
             self.stats: Dict[str, Any] = {}
             self.metrics: List[Any] = []
+            self.monitoring = Monitor(self.storage, self.rpc, self.kv)
 
             # Register signal handlers
             signal.signal(signal.SIGTERM, self._signal_handler)
             signal.signal(signal.SIGINT, self._signal_handler)
-            self._initialized = True
 
     def _signal_handler(self, signum: int, frame: Any) -> None:
         """Handle termination signals by initiating graceful shutdown."""
@@ -109,70 +98,6 @@ class Dria:
     async def _set_shutdown(self):
         """Set shutdown event asynchronously"""
         self.shutdown_event.set()
-
-    def set_api_mode(self, api_mode: bool) -> None:
-        """
-        Set client API mode.
-
-        Args:
-            api_mode (bool): If True, runs in API mode without cleanup
-        """
-        self.api_mode = api_mode
-
-    async def initialize(self) -> None:
-        """Initialize background monitoring and polling tasks."""
-        if self.background_tasks:
-            if not self.background_tasks.done():
-                logger.debug("Background tasks already running")
-                return
-        self.background_tasks = asyncio.create_task(self._start_background_tasks())
-
-    async def _start_background_tasks(self) -> None:
-        """Start and manage background monitoring and polling tasks."""
-        monitor = Monitor(self.storage, self.rpc, self.kv)
-
-        try:
-            while not self.shutdown_event.is_set():
-                try:
-                    await asyncio.gather(monitor.run(), self.poll())
-                    await asyncio.sleep(MONITORING_INTERVAL)
-                except Exception as e:
-                    raise Exception(f"Error in monitoring process: {e}")
-            raise Exception("Shutdown event received")
-
-        except asyncio.CancelledError:
-            logger.info("Background tasks cancelled.")
-        except Exception as e:
-            if not self.api_mode:
-                await self.run_cleanup(forced=True)
-                raise Exception(f"Error in background tasks: {e}")
-
-    async def _run_health_check(self) -> None:
-        """Run periodic RPC health checks."""
-        while not self.shutdown_event.is_set():
-            try:
-                is_healthy = await self.rpc.health_check()
-                if not is_healthy:
-                    raise Exception("RPC server is not healthy. Exiting...")
-            except Exception as e:
-                raise Exception(f"Error in health check process: {e}")
-            await asyncio.sleep(10)
-        raise Exception("Received signal for closing...")
-
-    async def run_cleanup(self, forced: bool = False) -> None:
-        """
-        Clean up background tasks.
-
-        Args:
-            forced (bool): If True, forces cleanup regardless of API mode
-        """
-        if not self.api_mode or forced:
-            if self.background_tasks and not self.background_tasks.done():
-                self.background_tasks.cancel()
-                try:
-                    await self.background_tasks
-                except asyncio.CancelledError:
-                    pass
 
     async def push(self, tasks: List[Task]) -> bool | None:
         """
@@ -206,11 +131,9 @@ class Dria:
             nodes, filters, models = None, None, None
             attempts = 0
             while nodes is None:
-                if self.background_tasks and self.background_tasks.done():
-                    return None
                 if attempts % 20 == 0 and attempts != 0:
                     logger.info("Waiting for nodes to be available...")
-                await asyncio.sleep(MONITORING_INTERVAL)
+                await self.check_heartbeat()
                 nodes, filters, models = await self.task_manager.create_filter(
                     tasks, self.stats
                 )
@@ -233,326 +156,59 @@ class Dria:
         except Exception as e:
             raise TaskPublishError(f"Failed to publish task: {e}") from e
 
-    async def fetch(
-        self,
-        pipeline: Optional[Any] = None,
-        task: Union[Optional[Task], Optional[List[Task]]] = None,
-        min_outputs: Optional[int] = None,
-        timeout: int = TASK_TIMEOUT,
-        is_disabled: bool = False,
-    ) -> List[TaskResult]:
+    async def fetch_cleaner(self, task_ids: List[str],
+                            fetch_interval: int = FETCH_INTERVAL,
+                            retries: int = 0) -> List[TaskResult]:
         """
-        Fetch task results from storage.
+        Recursively fetch and clean task results.
 
         Args:
-            pipeline (Optional[Any]): Pipeline to fetch results for
-            task (Union[Optional[Task], Optional[List[Task]]]): Task(s) to fetch results for
-            min_outputs (Optional[int]): Minimum number of outputs to fetch
-            timeout (int): Fetch timeout in seconds
-            is_disabled (bool): Whether to disable progress bar display
+            task_ids: List of task IDs to fetch results for
+            fetch_interval: Fetch interval in seconds
+            retries: Retry count
 
         Returns:
             List[TaskResult]: List of task results
-
-        Raises:
-            ValueError: If neither pipeline nor task provided
         """
-        if not pipeline and not task:
-            raise ValueError("At least one of pipeline or task must be provided.")
+        if retries > self.MAX_RETRIES_FOR_AVAILABILITY:
+            return []
+        results = await self.poll(task_ids)
+        if results is None:
+            await asyncio.sleep(fetch_interval)
+            return await self.fetch_cleaner(task_ids, fetch_interval ** 2, retries + 1)
 
-        results: List[TaskResult] = []
-        start_time = time.time()
-        min_outputs = self._determine_min_outputs(task, min_outputs)
-        last_update = time.time()
+        result_ids = {r.id for r in results}
+        remaining_task_ids = [t for t in task_ids if t not in result_ids]
 
-        with tqdm(
-            total=min_outputs, desc="Fetching results...", disable=is_disabled
-        ) as pbar:
-            response_times = {}  # Track response time for each task
-
-            while len(results) < min_outputs and not self.shutdown_event.is_set():
-                current_time = time.time()
-                elapsed_time = current_time - start_time
-
-                # Check timeout
-                if elapsed_time > timeout > 0:
-                    logger.debug(
-                        f"Unable to fetch {min_outputs} outputs within {timeout} seconds."
-                    )
-                    break
-
-                # Monitor slow responses
-                if response_times:
-                    responded_tasks = set(response_times.keys())
-                    all_tasks = set(t.id for t in task)
-                    unresponsive_tasks = all_tasks - responded_tasks
-
-                    if unresponsive_tasks:
-                        unresponsive_durations = {
-                            task_id: current_time - start_time
-                            for task_id in unresponsive_tasks
-                        }
-
-                        if response_times and len(response_times) > 0.8 * min_outputs:
-                            avg_response_time = sum(response_times.values()) / len(
-                                response_times
-                            )
-
-                            # Adjust multiplier based on how close we are to min_outputs
-                            response_ratio = len(response_times) / min_outputs
-                            multiplier = 5 if response_ratio < 0.95 else 2
-
-                            concerning_tasks = {
-                                task_id: duration
-                                for task_id, duration in unresponsive_durations.items()
-                                if duration > avg_response_time * multiplier
-                            }
-
-                            if concerning_tasks:
-                                logger.debug(avg_response_time)
-                                return results
-
-                # Fetch new results
-                pipeline_id = (
-                    getattr(pipeline, "pipeline_id", None) if pipeline else None
-                )
-                task_id = self._get_task_id(task)
-                new_results, new_id_map = await self._fetch_results(
-                    pipeline_id, task_id
-                )
-
-                # Process new results
-                for task_id in new_results:
-                    response_times[task_id] = current_time - start_time
-                results.extend(new_results.values())
-                # Update progress bar
-                if current_time - last_update >= 1.0:
-                    pbar.n = len(results)
-                    pbar.refresh()
-                    last_update = current_time
-
-                # Update task tracking
-                if task is not None:
-                    if isinstance(task, str):
-                        task = [task]
-                    task = [t for t in task if t.id not in new_results]
-
-                # Update task IDs
-                for key, value in new_id_map.items():
-                    if isinstance(task, str):
-                        task.id = value
-                        break
-                    else:
-                        for t in task:
-                            if t.id == key[1:]:
-                                t.id = value
-
-                # Handle immediate return case
-                if timeout == 0:
-                    return results
-
-                # Sleep if no new results
-                if not new_results:
-                    await asyncio.sleep(FETCH_INTERVAL)
-
+        if not remaining_task_ids:
             return results
 
-    @staticmethod
-    def _determine_min_outputs(
-        task: Union[Optional[Task], Optional[List[Task]]],
-        min_outputs: Optional[int],
-    ) -> int:
-        """
-        Determine minimum required outputs.
+        await asyncio.sleep(fetch_interval)
+        remaining_results = await self.fetch_cleaner(remaining_task_ids, FETCH_INTERVAL, retries + 1)
+        return results + remaining_results if remaining_results else results
 
-        Args:
-            task: Task(s) to determine outputs for
-            min_outputs: Requested minimum outputs
-
-        Returns:
-            int: Determined minimum outputs
-        """
-        if min_outputs is None:
-            return len(task) if isinstance(task, list) else 1
-
-        if isinstance(task, list) and min_outputs > len(task):
-            logger.warning(f"min_outputs exceeds task count. Setting to {len(task)}")
-            return len(task)
-        elif not isinstance(task, list) and min_outputs > 1:
-            logger.warning("min_outputs exceeds task count. Setting to 1")
-            return 1
-        return min_outputs
-
-    @staticmethod
-    def _get_task_id(
-        task: Union[Optional[Task], Optional[List[Task]]]
-    ) -> Union[None, str, List[str]]:
-        """
-        Get task ID(s) from task object(s).
-
-        Args:
-            task: Task object(s)
-
-        Returns:
-            Task ID(s) or None
-
-        Raises:
-            ValueError: If invalid task type
-        """
-        if task is None:
-            return None
-        elif isinstance(task, Task):
-            return task.id
-        elif isinstance(task, list):
-            return [t.id for t in task]
-        else:
-            raise ValueError("Invalid task type. Expected None, Task, or List[Task].")
-
-    async def _fetch_results(
-        self,
-        pipeline_id: Optional[str],
-        task_id: Union[Optional[str], Optional[List[str]]],
-    ) -> Tuple[Dict[str, TaskResult], Dict[str, str]]:
-        """
-        Fetch results for pipeline and/or tasks.
-
-        Args:
-            pipeline_id: Pipeline ID
-            task_id: Task ID(s)
-
-        Returns:
-            Tuple of results dict and ID mapping dict
-        """
-        new_results: Dict[str, TaskResult] = {}
-        new_id_map: Dict[str, str] = {}
-
-        if pipeline_id:
-            if task_id:
-                if isinstance(task_id, str):
-                    key = f"{pipeline_id}:{task_id}"
-                    value = await self.kv.pop(key)
-                    if value:
-                        task_result = await self._create_task_result(task_id, value)
-                        if task_result:
-                            new_results[task_id] = task_result
-                elif isinstance(task_id, list):
-                    for tid in task_id:
-                        key = f"{pipeline_id}:{tid}"
-                        value = await self.kv.pop(key)
-                        if value:
-                            task_result = await self._create_task_result(tid, value)
-                            if task_result:
-                                new_results[tid] = task_result
-            else:
-                new_results = await self._fetch_pipeline_results(pipeline_id)
-        elif task_id:
-            if isinstance(task_id, str):
-                new_results, new_ids = await self._fetch_task_results(task_id)
-            elif isinstance(task_id, list):
-                for tid in task_id:
-                    new_res, new_ids = await self._fetch_task_results(tid)
-                    new_results.update(new_res)
-                    new_id_map.update(new_ids)
-
-        return new_results, new_id_map
-
-    async def _fetch_pipeline_results(self, pipeline_id: str) -> Dict[str, TaskResult]:
-        """
-        Fetch all results for a pipeline.
-
-        Args:
-            pipeline_id: Pipeline ID
-
-        Returns:
-            Dict of task results
-        """
-        results: Dict[str, TaskResult] = {}
-        for key in await self.kv.keys():
-            if key.startswith(f"{pipeline_id}:"):
-                value = await self.kv.pop(key)
-                if value:
-                    task_id = key.split(":", 1)[1]
-                    task_result = await self._create_task_result(task_id, value)
-                    if task_result:
-                        results[task_id] = task_result
-        return results
-
-    async def _fetch_task_results(
-        self, task_id: str
-    ) -> Tuple[Dict[str, TaskResult], Dict[str, Any]]:
-        """
-        Fetch results for a specific task.
-
-        Args:
-            task_id: Task ID
-
-        Returns:
-            Tuple of results dict and new ID mapping
-        """
-        results: Dict[str, TaskResult] = {}
-        new_ids = {}
-        suffix = f":{task_id}"
-        for key in await self.kv.keys():
-            if key.endswith(suffix):
-                value = await self.kv.peek(key)
-                if value:
-                    if "new_task_id" in value.keys():
-                        new_ids[key] = value["new_task_id"]
-                    else:
-                        task_result = await self._create_task_result(task_id, value)
-                        if task_result:
-                            results[task_id] = task_result
-        return results, new_ids
-
-    async def _create_task_result(
-        self, task_id: str, value: dict
-    ) -> Optional[TaskResult]:
-        """
-        Create TaskResult object from raw data.
-
-        Args:
-            task_id: Task ID
-            value: Raw result value
-
-        Returns:
-            TaskResult object or None
-
-        Raises:
-            ValueError: If task data invalid
-        """
-        try:
-            task_data = json.loads(await self.storage.get_value(task_id))
-        except (json.JSONDecodeError, TypeError):
-            logger.debug(f"Invalid task data for task_id: {task_id}")
-            return None
-
-        step_name = await self._get_step_name(task_id)
-        return TaskResult(
-            id=task_id,
-            step_name=step_name,
-            result=value["result"],
-            task_input=task_data["workflow"]["external_memory"],
-            model=value["model"],
-        )
-
-    async def poll(self) -> None:
+    async def poll(self, task_ids: List[str]) -> list[TaskResult]:
         """Poll output content topic for results."""
         try:
-            topic_results = await self.rpc.get_content_topic(OUTPUT_CONTENT_TOPIC)
+            topic_results = await self.rpc.get_results(task_ids)
             if topic_results:
-                await self._process_results(list(set(topic_results)))
+                results = await self._process_results(list(set(topic_results)))
+                return results
         except Exception as e:
             raise Exception(f"Error fetching content topic: {e}")
 
-    async def _process_results(self, topic_results: List[str]) -> None:
+    async def _process_results(self, topic_results: List[str]) -> List[TaskResult]:
         """
         Process results from output content topic.
 
         Args:
             topic_results: Raw results from topic
+
+        Returns:
+            List[TaskResult]: List of task results
         """
         current_time = int(time.time())
-
+        results: List[TaskResult] = []
         signature = None
         for item in topic_results:
             try:
@@ -613,18 +269,12 @@ class Dria:
                         metric_log = {
                             "node_address": address,
                             "model": result["model"],
-                            "publish_latency": (
-                                current_ns - result["stats"]["publishedAt"]
-                            )
-                            / 1e9,
-                            "execution_time": (result["stats"]["executionTime"]) / 1e9,
-                            "receive_latency": -(
-                                task_data["created_ts"] - result["stats"]["receivedAt"]
-                            )
-                            / 1e9,
+                            "publish_latency": (current_ns - result["stats"]["publishedAt"]) / 1e9,
+                            "execution_time": result["stats"]["executionTime"] / 1e9,
+                            "receive_latency": -(task_data["created_ts"] - result["stats"]["receivedAt"]) / 1e9,
                             "roundtrip": (current_ns - task_data["created_ts"]) / 1e9,
                             "error": True,
-                        }
+}
                         logger.debug(f"Metrics: {metric_log}")
                         self.metrics.append(metric_log)
                     if "Invalid prompt" in result["error"]:
@@ -662,15 +312,9 @@ class Dria:
                         metric_log = {
                             "node_address": address,
                             "model": result["model"],
-                            "publish_latency": (
-                                current_ns - result["stats"]["publishedAt"]
-                            )
-                            / 1e9,
-                            "execution_time": (result["stats"]["executionTime"]) / 1e9,
-                            "receive_latency": -(
-                                task_data["created_ts"] - result["stats"]["receivedAt"]
-                            )
-                            / 1e9,
+                            "publish_latency": (current_ns - result["stats"]["publishedAt"]) / 1e9,
+                            "execution_time": result["stats"]["executionTime"] / 1e9,
+                            "receive_latency": -(task_data["created_ts"] - result["stats"]["receivedAt"]) / 1e9,
                             "roundtrip": (current_ns - task_data["created_ts"]) / 1e9,
                         }
                         if "error" in result:
@@ -681,13 +325,49 @@ class Dria:
                         f"{pipeline_id}:{identifier}",
                         {"result": processed_result, "model": result["model"]},
                     )
+                    results.append(TaskResult(
+                        id=identifier,
+                        step_name=task.step_name,
+                        result=processed_result,
+                        task_input=task.workflow["external_memory"],
+                        model=result["model"]
+                    ))
             except (json.JSONDecodeError, KeyError, TypeError, ValueError) as e:
                 logger.error(f"Error processing item: {e}", exc_info=True)
             except Exception as e:
                 logger.error(f"Unexpected error processing item: {e}", exc_info=True)
+        return results
+
+    async def check_heartbeat(self) -> None:
+        """
+        Check if heartbeat is still valid.
+        """
+        if not await self.task_manager.should_monitor():
+            return
+        await self.monitoring.fetch_nodes()
+
+    async def generate(self, instructions, singleton, models) -> List[TaskResult]:
+        """
+        Generate tasks from instructions and execute workflows.
+
+        Args:
+            instructions: List of instruction dictionaries
+            singleton: Singleton class
+            models: List of models
+
+        Returns:
+            Tuple of entry IDs and input IDs
+        """
+        tasks = []
+        for task in instructions:
+            tasks.append(Task(workflow=singleton.workflow(**task), models=models))
+        
+        return await self.execute(tasks)
+
+
 
     async def execute(
-        self, task: Union[Task, List[Task]], timeout: int = 300
+            self, task: Union[Task, List[Task]], timeout: int = 300
     ) -> list[TaskResult] | None:
         """
         Execute task(s) and get results.
@@ -706,8 +386,6 @@ class Dria:
             raise ValueError(
                 "Cannot execute empty task list. At least one Task object must be provided for execution."
             )
-        await self.initialize()
-
         if isinstance(task, Task):
             tasks = [task]
         elif isinstance(task, list):
@@ -720,7 +398,7 @@ class Dria:
         try:
             tasks_ = [t.__deepcopy__() for t in tasks]
             batched_tasks = [
-                tasks_[i : i + SCORING_BATCH_SIZE]
+                tasks_[i: i + SCORING_BATCH_SIZE]
                 for i in range(0, len(tasks_), SCORING_BATCH_SIZE)
             ]
             results = []
@@ -728,7 +406,8 @@ class Dria:
                 success = await self.push(batch_tasks)
                 if success is False:
                     return None
-                outputs = await self.fetch(task=batch_tasks, timeout=timeout)
+
+                outputs = await self.fetch_cleaner(task_ids=[t.id for t in batch_tasks])
                 res = []
                 for output in outputs:
                     if output.result is not None:

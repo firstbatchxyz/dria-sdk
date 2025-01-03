@@ -11,7 +11,7 @@ from dria_workflows import Workflow
 from fastbloom_rs import BloomFilter
 from json_repair import repair_json
 
-from dria.constants import INPUT_CONTENT_TOPIC, TASK_DEADLINE, COMPUTE_NODE_BATCH_SIZE
+from dria.constants import INPUT_CONTENT_TOPIC, TASK_DEADLINE, COMPUTE_NODE_BATCH_SIZE, MAX_API_QUEUE, MONITORING_INTERVAL
 from dria.db.mq import KeyValueQueue
 from dria.db.storage import Storage
 from dria.models import NodeModel, Task, TaskModel, TaskInputModel
@@ -243,9 +243,9 @@ class TaskManager:
             return []
 
     async def create_filter(
-        self,
-        tasks: List[Task],
-        node_stats: Dict[str, float],
+            self,
+            tasks: List[Task],
+            node_stats: Dict[str, float],
     ) -> Union[
         Tuple[None, None, None],
         Tuple[List[str], List[Dict[str, Union[int, str]]], List[List[str]]]
@@ -304,7 +304,7 @@ class TaskManager:
                 stats_for_model_nodes[node] = node_stat
 
         # If the total number of nodes * batch size is fewer than tasks, it's insufficient
-        if len(stats_for_model_nodes) * COMPUTE_NODE_BATCH_SIZE < len(tasks):
+        if len(stats_for_model_nodes) * MAX_API_QUEUE < len(tasks):
             logger.debug("Not enough nodes available to handle all tasks.")
             return None, None, None
 
@@ -359,6 +359,28 @@ class TaskManager:
 
         logger.debug(f"Selected nodes: {final_nodes}")
         return final_nodes, filters, node_models
+    
+    async def update_monitor_ts(self) -> None:
+        """
+        Update the latest monitoring timestamp in storage.
+        """
+        await self.storage.set_value("latest_monitoring_ts", int(time.time_ns()))
+
+    async def should_monitor(self) -> bool:
+        """
+        Check if monitoring should be enabled.
+
+        Returns:
+            bool: True if monitoring should be enabled, False otherwise.
+        """
+        try:
+            latest_monitoring_ts = await self.storage.get_value("latest_monitoring_ts")
+            if latest_monitoring_ts is None:
+                return True
+            return int(latest_monitoring_ts) + MONITORING_INTERVAL < int(time.time_ns())
+        except Exception as e:
+            logger.error(f"Error checking if monitoring should be enabled: {e}")
+            return False
 
     async def add_available_nodes(self, node_model: NodeModel, model_type: str) -> bool:
         """

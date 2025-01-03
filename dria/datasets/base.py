@@ -1,3 +1,4 @@
+import logging
 from typing import List, Dict, Optional, Type, Any, Literal, Union
 
 import pandas as pd
@@ -7,6 +8,7 @@ from datasets import Dataset as HFDataset
 import json
 import os
 import csv
+from dria.datasets.generator import DatasetGenerator
 from dria.utils import FieldMapping, DataFormatter, FormatType, ConversationMapping
 from dria.db.database import DatasetDB
 
@@ -15,11 +17,12 @@ OutputFormat = Literal["json", "jsonl", "huggingface"]
 
 class DriaDataset:
     def __init__(
-        self,
-        name: str,
-        description: str,
-        schema: Type[BaseModel],
-        db: DatasetDB = None,
+            self,
+            name: str,
+            description: str,
+            schema: Type[BaseModel],
+            db: DatasetDB = None,
+            log_level: int = logging.INFO,
     ):
         """
         Initialize DriaDataset.
@@ -35,6 +38,7 @@ class DriaDataset:
         self._schema = schema
         self.db = db or DatasetDB()
         self.dataset_id = self._init_dataset()
+        self.generator = DatasetGenerator(dataset=self, log_level=log_level)
 
     def _init_dataset(self) -> int:
         """Initialize or get existing dataset from DB."""
@@ -46,11 +50,11 @@ class DriaDataset:
 
     @classmethod
     def from_json(
-        cls,
-        name: str,
-        description: str,
-        schema: Type[BaseModel],
-        json_path: str,
+            cls,
+            name: str,
+            description: str,
+            schema: Type[BaseModel],
+            json_path: str,
     ) -> "DriaDataset":
         """Create dataset from JSON file."""
         db = DatasetDB()
@@ -83,13 +87,13 @@ class DriaDataset:
 
     @classmethod
     def from_csv(
-        cls,
-        name: str,
-        description: str,
-        schema: Type[BaseModel],
-        csv_path: str,
-        delimiter: str = ",",
-        has_header: bool = True,
+            cls,
+            name: str,
+            description: str,
+            schema: Type[BaseModel],
+            csv_path: str,
+            delimiter: str = ",",
+            has_header: bool = True,
     ) -> "DriaDataset":
         """
         Create dataset from CSV file.
@@ -142,16 +146,20 @@ class DriaDataset:
 
     @classmethod
     def from_huggingface(
-        cls,
-        name: str,
-        description: str,
-        dataset_id: str,
-        schema: Type[BaseModel],
-        mapping: Optional[Dict[str, str]] = None,
-        split: str = "train",
+            cls,
+            name: str,
+            description: str,
+            dataset_id: str,
+            schema: Type[BaseModel],
+            mapping: Optional[Dict[str, str]] = None,
+            subset: Optional[str] = None,
+            split: str = "train",
     ) -> "DriaDataset":
         db = DatasetDB()
-        hf_dataset = load_dataset(dataset_id)[split]
+        if subset:
+            hf_dataset = load_dataset(dataset_id, subset)[split]
+        else:
+            hf_dataset = load_dataset(dataset_id)[split]
 
         mapped_data = []
         for item in hf_dataset:
@@ -203,7 +211,7 @@ class DriaDataset:
         return self._schema(**entry).model_dump()
 
     def mutate(
-        self, field_name: str, values: Dict[str, List[Any]], field_type: Type = None
+            self, field_name: str, values: Dict[str, List[Any]], field_type: Type = None
     ):
         """
         Add new field to all entries and update schema.
@@ -223,13 +231,16 @@ class DriaDataset:
         # Update schema
         self._update_schema({field_name: (field_type, ...)})
 
+    async def generate(self, instructions, singletons, models):
+        return await self.generator.generate(instructions, singletons, models)
+
     def format_for_training(
-        self,
-        format_type: FormatType,
-        field_mapping: Union[FieldMapping, ConversationMapping],
-        output_format: OutputFormat,
-        output_path: Optional[str] = None,
-        hf_repo_id: Optional[str] = None,
+            self,
+            format_type: FormatType,
+            field_mapping: Union[FieldMapping, ConversationMapping],
+            output_format: OutputFormat,
+            output_path: Optional[str] = None,
+            hf_repo_id: Optional[str] = None,
     ) -> Union[List[Dict], HFDataset]:
         """
         Format dataset for training and save/upload in specified format.

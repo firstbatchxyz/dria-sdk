@@ -11,19 +11,19 @@ OUTPUT_CONTENT_TOPIC: Final[str] = "results"
 RETURN_DEADLINE: Final[int] = 86400  # 24 hours in seconds
 MONITORING_INTERVAL: Final[int] = 5  # 1 seconds
 TASK_DEADLINE: Final[int] = 300
-FETCH_INTERVAL: Final[int] = 1
+FETCH_INTERVAL: Final[int] = 2
 FETCH_DEADLINE: Final[int] = 300
 TASK_TIMEOUT: Final[int] = 300
 
 MAX_OLLAMA_QUEUE: Final[int] = 3
-MAX_API_QUEUE: Final[int] = 50
+MAX_API_QUEUE: Final[int] = 30
 
 MAX_RETRIES_FOR_AVAILABILITY: Final[int] = 10
 
 RPC_BASE_URL: Final[str] = "https://pro.rpc.dria.co"
 RPC_BASE_URL_COMMUNITY: Final[str] = "https://community.rpc.dria.co"
-SCORING_BATCH_SIZE = 50
-COMPUTE_NODE_BATCH_SIZE = 5
+SCORING_BATCH_SIZE = 500
+COMPUTE_NODE_BATCH_SIZE = 1
 
 HEARTBEAT_TOPIC: Final[str] = "ping"
 HEARTBEAT_OUTPUT_TOPIC: Final[str] = "pong"

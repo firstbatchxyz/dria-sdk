@@ -2,11 +2,11 @@ import json
 import logging
 import traceback
 from typing import List, Dict, Any, Tuple, Optional
+
 from dria.constants import TASK_TIMEOUT
 from dria.client import Dria
 from dria.datasets.prompter import Prompt
 from dria.models import Task, Model, TaskResult
-from dria.datasets.base import DriaDataset
 from dria.constants import SCORING_BATCH_SIZE
 from hashlib import sha256
 
@@ -16,7 +16,7 @@ class ParallelPromptExecutor:
         self,
         dria_client: Dria,
         prompt: Prompt,
-        dataset: DriaDataset,
+        dataset: 'DriaDataset',
         batch_size: Optional[int] = None,
     ):
         self.dria = dria_client

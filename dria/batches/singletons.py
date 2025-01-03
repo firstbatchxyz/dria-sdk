@@ -5,7 +5,9 @@ from dria.constants import TASK_TIMEOUT
 from dria.client import Dria
 from dria.factory.workflows.template import SingletonTemplate
 from dria.models import Task, Model, TaskResult
-from dria.datasets.base import DriaDataset
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from dria.datasets.base import DriaDataset
 from dria.constants import SCORING_BATCH_SIZE
 
 
@@ -14,7 +16,7 @@ class ParallelSingletonExecutor:
         self,
         dria_client: Dria,
         singleton: Type[SingletonTemplate],
-        dataset: DriaDataset,
+        dataset: 'DriaDataset',
         batch_size: Optional[int] = None,
     ):
         self.dria = dria_client

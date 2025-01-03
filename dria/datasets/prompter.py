@@ -16,7 +16,7 @@ class Prompt:
     def __init__(
         self,
         prompt: str,
-        schema: Type[BaseModel],
+        schema: Optional[Type[BaseModel]] = None,
         input_map: Optional[Dict[str, str]] = None,
         max_tokens=1000,
     ) -> None:

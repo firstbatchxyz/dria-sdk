@@ -1,6 +1,4 @@
 import random
-
-from .base import DriaDataset
 from typing import List, Dict, Optional, Union, Any, Type
 from dria.models import Model
 from dria.batches import ParallelSingletonExecutor, ParallelPromptExecutor
@@ -18,7 +16,7 @@ logger = logging.getLogger(__name__)
 class DatasetGenerator:
     def __init__(
         self,
-        dataset: Optional[DriaDataset] = None,
+        dataset: Optional['DriaDataset'] = None,
         dria_client: Optional[Dria] = None,
         log_level=logging.INFO,
         batch_size: Optional[int] = None,
@@ -63,7 +61,7 @@ class DatasetGenerator:
                 "Schema mismatch. Schema of the Prompt doesn't match dataset schema."
             )
 
-    def set_dataset(self, dataset: DriaDataset) -> "DatasetGenerator":
+    def set_dataset(self, dataset: 'DriaDataset') -> "DatasetGenerator":
         """Set the dataset for the generator.
 
         Args:
@@ -159,7 +157,7 @@ class DatasetGenerator:
 
     async def generate(
         self,
-        instructions: Union[List[Dict[str, Any]], DriaDataset],
+        instructions: Union[List[Dict[str, Any]], 'DriaDataset'],
         singletons: Union[
             Type[SingletonTemplate], List[Type[SingletonTemplate]], Prompt
         ],
@@ -189,7 +187,7 @@ class DatasetGenerator:
             instructions = random.sample(instructions, num_samples)
 
         # TODO: Handle streaming for large instructions
-        if isinstance(instructions, DriaDataset):
+        if type(instructions) == 'DriaDataset':
             instructions = instructions.get_entries(data_only=True)
 
         if isinstance(singletons, Prompt):
