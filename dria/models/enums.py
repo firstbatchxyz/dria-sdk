@@ -63,6 +63,12 @@ class Model(str, Enum):
     QWEN2_5_EVA_32B_OR = "eva-unit-01/eva-qwen-2.5-32b"
     DEEPSEEK_2_5_OR = "deepseek/deepseek-chat"
     NOUS_HERMES_405B_OR = "nousresearch/hermes-3-llama-3.1-405b"
+    DEEPSEEK_R1_1_5B = "deepseek-r1:1.5b"
+    DEEPSEEK_R1_7B = "deepseek-r1:7b"
+    DEEPSEEK_R1_8B = "deepseek-r1:8b"
+    DEEPSEEK_R1_14B = "deepseek-r1:14b"
+    DEEPSEEK_R1_32B = "deepseek-r1:32b"
+    DEEPSEEK_R1_70B = "deepseek-r1:70b"
 
     # Gemini models
     GEMINI_15_PRO = "gemini-1.5-pro"
@@ -137,6 +143,12 @@ class MidModels(Enum):
 
 
 class LargeModels(Enum):
+    DEEPSEEK_R1_1_5B = Model.DEEPSEEK_R1_1_5B.value
+    DEEPSEEK_R1_7B = Model.DEEPSEEK_R1_7B.value
+    DEEPSEEK_R1_8B = Model.DEEPSEEK_R1_8B.value
+    DEEPSEEK_R1_14B = Model.DEEPSEEK_R1_14B.value
+    DEEPSEEK_R1_32B = Model.DEEPSEEK_R1_32B.value
+    DEEPSEEK_R1_70B = Model.DEEPSEEK_R1_70B.value
     QWEN_QWQ = Model.QWEN_QWQ.value
     QWEN_QWQ_OR = Model.QWEN_QWQ_OR.value
     LLAMA_3_1_405B_OR = Model.LLAMA_3_1_405B_OR.value
@@ -227,6 +239,12 @@ class OllamaModels(Enum):
     QWEN2_5_32B_FP16 = Model.QWEN2_5_32B_FP16.value
     QWEN_QWQ = Model.QWEN_QWQ.value
     MIXTRAL_8_7B = Model.MIXTRAL_8_7B.value
+    DEEPSEEK_R1_1_5B = Model.DEEPSEEK_R1_1_5B.value
+    DEEPSEEK_R1_7B = Model.DEEPSEEK_R1_7B.value
+    DEEPSEEK_R1_8B = Model.DEEPSEEK_R1_8B.value
+    DEEPSEEK_R1_14B = Model.DEEPSEEK_R1_14B.value
+    DEEPSEEK_R1_32B = Model.DEEPSEEK_R1_32B.value
+    DEEPSEEK_R1_70B = Model.DEEPSEEK_R1_70B.value
 
 
 class CoderModels(Enum):
