@@ -31,6 +31,7 @@ class TaskModel(BaseModel):
     pickedNodes: List
     deadline: int
     publicKey: str
+    datasetId: str
     privateKey: str
 
 
@@ -39,6 +40,7 @@ class Task(BaseModel):
     models: List[Model]
     id: Optional[str] = None
     pipeline_id: str = ""
+    dataset_id: Optional[str] = None
     public_key: Optional[str] = None
     private_key: Optional[str] = None
     deadline: int = 0

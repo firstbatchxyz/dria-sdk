@@ -76,7 +76,7 @@ class ParallelSingletonExecutor:
         # Remove unnecessary fields from the input data
         data = {k: data[k] for k in self.singleton.model_fields.keys() if k != "params"}
         workflow_data = self.singleton.create(**data).workflow()
-        return Task(workflow=workflow_data, models=self.models)
+        return Task(workflow=workflow_data, models=self.models, dataset_id=self.dataset.name)
 
     def _align_results(
         self, results: List[TaskResult], original_inputs: List[Dict]
