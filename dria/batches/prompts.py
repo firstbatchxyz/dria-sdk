@@ -98,7 +98,9 @@ class ParallelPromptExecutor:
 
     def _create_task(self, data: Dict[str, Any]) -> Task:
         workflow_data = self.prompt.workflow(**data)
-        return Task(workflow=workflow_data, models=self.models, dataset_id=self.dataset.name)
+        return Task(
+            workflow=workflow_data, models=self.models, dataset_id=self.dataset.name
+        )
 
     def _align_results(
         self, results: List[TaskResult], original_inputs: List[Dict]

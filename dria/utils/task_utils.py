@@ -205,7 +205,9 @@ class TaskManager:
             ).model_dump(),
             pickedNodes=task.nodes,
             deadline=task.deadline,
-            datasetId=hashlib.sha256((self.rpc.headers.get("x-api-key")+task.dataset_id).encode()).hexdigest(),
+            datasetId=hashlib.sha256(
+                (self.rpc.headers.get("x-api-key") + task.dataset_id).encode()
+            ).hexdigest(),
             publicKey=task.public_key[2:],  # Typically removing '0x' prefix if present
             privateKey=task.private_key,
         ).model_dump()
