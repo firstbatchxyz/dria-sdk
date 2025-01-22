@@ -29,4 +29,5 @@ __core_exports = [
     "QAPipeline",
     "MultiHopQuestion",
     "InstructionBacktranslation",
+    "Reasoning"
 ]
