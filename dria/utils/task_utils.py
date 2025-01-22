@@ -22,6 +22,7 @@ from dria.models.enums import (
     CoderModels,
     GeminiModels,
     OpenRouterModels,
+    ReasoningModels,
 )
 from dria.models.exceptions import TaskPublishError
 from dria.request import RPCClient
@@ -80,6 +81,8 @@ class TaskManager:
                 provider = Model.OLLAMA.value
             elif selected_model in [m.value for m in CoderModels]:
                 # Coder models might not require schema parsing
+                continue
+            elif selected_model in [m.value for m in ReasoningModels]:
                 continue
             elif selected_model in [m.value for m in GeminiModels]:
                 provider = Model.GEMINI.value

@@ -32,7 +32,7 @@ from dria.models.enums import (
     OpenRouterModels,
     SmallModels,
     MidModels,
-    LargeModels,
+    LargeModels, ReasoningModels,
 )
 from dria.models.exceptions import TaskPublishError
 from dria.request import RPCClient
@@ -187,7 +187,7 @@ class Dria:
         Raises:
             TaskPublishError: If task publication fails
         """
-        await self._check_function_calling_models(tasks)
+        await _check_function_calling_models(tasks)
 
         for idx, task in enumerate(tasks):
             # Generate valid task keys
@@ -816,69 +816,71 @@ class Dria:
                 raise ValueError(f"Invalid task metadata for task id: {task_id}") from e
         raise ValueError(f"Task metadata not found for task id: {task_id}")
 
-    @staticmethod
-    async def _check_function_calling_models(tasks: List[Task]) -> None:
-        """
-        Validate models for function calling tasks.
 
-        Args:
-            tasks: Task to validate
+async def _check_function_calling_models(tasks: List[Task]) -> None:
+    """
+    Validate models for function calling tasks.
 
-        Raises:
-            ValueError: If no supported models found
-        """
-        for task in tasks:
-            if isinstance(task.workflow, Workflow):
-                has_function_calling = any(
-                    t.operator == "function_calling" for t in task.workflow.tasks
-                )
+    Args:
+        tasks: Task to validate
+
+    Raises:
+        ValueError: If no supported models found
+    """
+    for task in tasks:
+        if isinstance(task.workflow, Workflow):
+            has_function_calling = any(
+                t.operator == "function_calling" for t in task.workflow.tasks
+            )
+        else:
+            has_function_calling = any(
+                t.get("operator") == "function_calling"
+                for t in task.workflow.get("tasks", [])
+            )
+        supported_models = set(model.value for model in FunctionCallingModels)
+
+        model_list = []
+        for model in task.models:
+            if model == "openai":
+                model_list.extend(model.value for model in OpenAIModels)
+            elif model == "ollama":
+                model_list.extend(model.value for model in OllamaModels)
+            elif model == "coder":
+                model_list.extend(model.value for model in CoderModels)
+            elif model == "gemini":
+                model_list.extend(model.value for model in GeminiModels)
+            elif model == "openrouter":
+                model_list.extend(model.value for model in OpenRouterModels)
+            elif model == "small":
+                model_list.extend(model.value for model in SmallModels)
+            elif model == "mid":
+                model_list.extend(model.value for model in MidModels)
+            elif model == "large":
+                model_list.extend(model.value for model in LargeModels)
+            elif model == "reasoning":
+                model_list.extend(model.value for model in ReasoningModels)
             else:
-                has_function_calling = any(
-                    t.get("operator") == "function_calling"
-                    for t in task.workflow.get("tasks", [])
-                )
-            supported_models = set(model.value for model in FunctionCallingModels)
+                model_list.append(model)
 
-            model_list = []
-            for model in task.models:
-                if model == "openai":
-                    model_list.extend(model.value for model in OpenAIModels)
-                elif model == "ollama":
-                    model_list.extend(model.value for model in OllamaModels)
-                elif model == "coder":
-                    model_list.extend(model.value for model in CoderModels)
-                elif model == "gemini":
-                    model_list.extend(model.value for model in GeminiModels)
-                elif model == "openrouter":
-                    model_list.extend(model.value for model in OpenRouterModels)
-                elif model == "small":
-                    model_list.extend(model.value for model in SmallModels)
-                elif model == "mid":
-                    model_list.extend(model.value for model in MidModels)
-                elif model == "large":
-                    model_list.extend(model.value for model in LargeModels)
-                else:
-                    model_list.append(model)
+        filtered_models = model_list
+        if has_function_calling:
+            filtered_models = [
+                model for model in model_list if model in supported_models
+            ]
 
-            filtered_models = model_list
-            if has_function_calling:
-                filtered_models = [
-                    model for model in model_list if model in supported_models
-                ]
-
-                for model in model_list:
-                    if model not in supported_models:
-                        logger.warning(
-                            f"Model '{model}' not supported for function calling and will be removed."
-                        )
-
-                if not filtered_models:
-                    supported_model_names = [
-                        model.name for model in FunctionCallingModels
-                    ]
-                    raise ValueError(
-                        f"No supported function calling models found for task. "
-                        f"Supported models: {', '.join(supported_model_names)}"
+            for model in model_list:
+                if model not in supported_models:
+                    logger.warning(
+                        f"Model '{model}' not supported for function calling and will be removed."
                     )
 
-            task.models = filtered_models
+            if not filtered_models:
+                supported_model_names = [
+                    model.name for model in FunctionCallingModels
+                ]
+                raise ValueError(
+                    f"No supported function calling models found for task. "
+                    f"Supported models: {', '.join(supported_model_names)}"
+                )
+
+        task.models = filtered_models

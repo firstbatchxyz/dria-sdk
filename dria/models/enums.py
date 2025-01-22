@@ -95,6 +95,7 @@ class Model(str, Enum):
     SMALL = "small"
     MID = "mid"
     LARGE = "large"
+    REASONING = "reasoning"
 
     @classmethod
     def default(cls):
@@ -239,12 +240,6 @@ class OllamaModels(Enum):
     QWEN2_5_32B_FP16 = Model.QWEN2_5_32B_FP16.value
     QWEN_QWQ = Model.QWEN_QWQ.value
     MIXTRAL_8_7B = Model.MIXTRAL_8_7B.value
-    DEEPSEEK_R1_1_5B = Model.DEEPSEEK_R1_1_5B.value
-    DEEPSEEK_R1_7B = Model.DEEPSEEK_R1_7B.value
-    DEEPSEEK_R1_8B = Model.DEEPSEEK_R1_8B.value
-    DEEPSEEK_R1_14B = Model.DEEPSEEK_R1_14B.value
-    DEEPSEEK_R1_32B = Model.DEEPSEEK_R1_32B.value
-    DEEPSEEK_R1_70B = Model.DEEPSEEK_R1_70B.value
 
 
 class CoderModels(Enum):
@@ -254,6 +249,17 @@ class CoderModels(Enum):
     QWEN2_5_CODER_7B_Q8 = Model.QWEN2_5_CODER_7B_Q8.value
     QWEN2_5_CODER_7B_FP16 = Model.QWEN2_5_CODER_7B_Q8.value
     QWEN2_5_CODER_32B_OR = Model.QWEN2_5_CODER_32B_OR.value
+
+
+class ReasoningModels(Enum):
+    DEEPSEEK_R1_1_5B = Model.DEEPSEEK_R1_1_5B.value
+    DEEPSEEK_R1_7B = Model.DEEPSEEK_R1_7B.value
+    DEEPSEEK_R1_8B = Model.DEEPSEEK_R1_8B.value
+    DEEPSEEK_R1_14B = Model.DEEPSEEK_R1_14B.value
+    DEEPSEEK_R1_32B = Model.DEEPSEEK_R1_32B.value
+    DEEPSEEK_R1_70B = Model.DEEPSEEK_R1_70B.value
+    O1_MINI = Model.O1_MINI.value
+    O1_PREVIEW = Model.O1_PREVIEW.value
 
 
 class OpenRouterModels(Enum):
