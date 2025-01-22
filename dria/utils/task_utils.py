@@ -130,8 +130,7 @@ class TaskManager:
         try:
             # Convert the task data to base64 and push it to the designated content topic
             return await self.rpc.push_content_topic(
-                data=str_to_base64(task),
-                content_topic=content_topic
+                data=str_to_base64(task), content_topic=content_topic
             )
         except Exception as e:
             raise TaskPublishError(f"Failed to publish task: {e}") from e
@@ -201,8 +200,7 @@ class TaskManager:
             taskId=task.id,
             filter=task.filter,
             input=TaskInputModel(
-                workflow=task.workflow,
-                model=selected_model
+                workflow=task.workflow, model=selected_model
             ).model_dump(),
             pickedNodes=task.nodes,
             deadline=task.deadline,
@@ -217,8 +215,7 @@ class TaskManager:
         if await self.publish_message(task_model_str, INPUT_CONTENT_TOPIC):
             # Save entire task as JSON in storage
             await self.storage.set_value(
-                f"{task.id}",
-                json.dumps(task.model_dump(), ensure_ascii=False)
+                f"{task.id}", json.dumps(task.model_dump(), ensure_ascii=False)
             )
 
             # If it's a retried task, we store the mapping from old ID to new ID
@@ -251,7 +248,7 @@ class TaskManager:
         node_stats: Dict[str, float],
     ) -> Union[
         Tuple[None, None, None],
-        Tuple[List[str], List[Dict[str, Union[int, str]]], List[List[str]]]
+        Tuple[List[str], List[Dict[str, Union[int, str]]], List[List[str]]],
     ]:
         """
         Create Bloom filters and map tasks to nodes for load distribution.
@@ -386,7 +383,9 @@ class TaskManager:
             return False
 
 
-def parse_json(text: Union[str, List[str]]) -> Union[List[Dict[str, Any]], Dict[str, Any]]:
+def parse_json(
+    text: Union[str, List[str]]
+) -> Union[List[Dict[str, Any]], Dict[str, Any]]:
     """
     Parse JSON from a string or a list of strings, handling different text formats.
 

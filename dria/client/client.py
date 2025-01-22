@@ -32,7 +32,8 @@ from dria.models.enums import (
     OpenRouterModels,
     SmallModels,
     MidModels,
-    LargeModels, ReasoningModels,
+    LargeModels,
+    ReasoningModels,
 )
 from dria.models.exceptions import TaskPublishError
 from dria.request import RPCClient
@@ -46,12 +47,13 @@ from dria.utils.ec import (
 from dria.utils.node_evaluations import evaluate_nodes
 from dria.utils.task_utils import TaskManager
 
+
 class Dria:
     """
     Client SDK for interacting with the Dria distributed AI system.
 
     Provides high-level methods for:
-    - Submitting AI tasks to the network 
+    - Submitting AI tasks to the network
     - Retrieving task results
     - Managing background monitoring and polling
     - Handling node retries
@@ -63,9 +65,9 @@ class Dria:
     def __new__(cls, *args, **kwargs):
         if cls._instance is not None:
             # Clean up old instance
-            if hasattr(cls._instance, 'shutdown_event'):
+            if hasattr(cls._instance, "shutdown_event"):
                 cls._instance.shutdown_event.set()
-            if hasattr(cls._instance, 'background_tasks'):
+            if hasattr(cls._instance, "background_tasks"):
                 if cls._instance.background_tasks:
                     cls._instance.background_tasks.cancel()
         cls._instance = super().__new__(cls)
@@ -84,9 +86,11 @@ class Dria:
             rpc_token (Optional[str]): Authentication token for RPC. Falls back to DRIA_RPC_TOKEN env var.
             api_mode (bool): If True, runs in API mode without cleanup of monitoring/polling.
         """
-        if not hasattr(self, '_initialized'):
+        if not hasattr(self, "_initialized"):
             logging.getLogger("dria").setLevel(log_level)
-            self.rpc = RPCClient(auth_token=rpc_token or os.environ.get("DRIA_RPC_TOKEN"))
+            self.rpc = RPCClient(
+                auth_token=rpc_token or os.environ.get("DRIA_RPC_TOKEN")
+            )
             self.storage = Storage()
             self.kv = KeyValueQueue()
             self.task_manager = TaskManager(self.storage, self.rpc, self.kv)
@@ -875,9 +879,7 @@ async def _check_function_calling_models(tasks: List[Task]) -> None:
                     )
 
             if not filtered_models:
-                supported_model_names = [
-                    model.name for model in FunctionCallingModels
-                ]
+                supported_model_names = [model.name for model in FunctionCallingModels]
                 raise ValueError(
                     f"No supported function calling models found for task. "
                     f"Supported models: {', '.join(supported_model_names)}"

@@ -31,9 +31,7 @@ class Reasoning(SingletonTemplate):
             Workflow: The constructed workflow
         """
         # Initialize the workflow with variables
-        builder = WorkflowBuilder(
-            prompt=self.prompt
-        )
+        builder = WorkflowBuilder(prompt=self.prompt)
 
         # Set workflow constraints
         builder.set_max_time(180)
@@ -73,12 +71,5 @@ class Reasoning(SingletonTemplate):
         """
         results = []
         for r in result:
-            results.append(
-                ReasoningSchema(
-                    **{
-                        "reasoning": r.result,
-                        "model": r.model
-                    }
-                )
-            )
+            results.append(ReasoningSchema(**{"reasoning": r.result, "model": r.model}))
         return results
