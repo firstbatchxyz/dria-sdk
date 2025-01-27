@@ -62,6 +62,7 @@ class Task(BaseModel):
             "nodes": self.nodes,
             "step_name": self.step_name,
             "created_ts": self.created_ts,
+            "dataset_id": self.dataset_id
         }
 
 

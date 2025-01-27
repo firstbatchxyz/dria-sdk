@@ -648,6 +648,7 @@ class Dria:
                         models=task.models,
                         step_name=task.step_name,
                         pipeline_id=task.pipeline_id,
+                        dataset_id=task.dataset_id
                     )
                     asyncio.create_task(self.push([t]))
                     continue

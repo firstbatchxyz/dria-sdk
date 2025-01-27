@@ -1,6 +1,7 @@
 from typing import List, Union, Optional
 
 import aiohttp
+import asyncio
 
 from dria import constants
 from dria.models.exceptions import (
@@ -17,10 +18,11 @@ class RPCClient:
 
     Args:
         auth_token (str): The authentication token for the RPC client.
-        mode (str): Network name
     """
 
     NETWORK_MAX_MESSAGE_SIZE = 256
+    MAX_RETRIES = 3
+    RETRY_DELAY = 1
 
     def __init__(self, auth_token: Optional[str] = None):
         if not auth_token:
@@ -45,13 +47,16 @@ class RPCClient:
         :return: True if the node is healthy, False otherwise.
         :raises RPCConnectionError: If there is a connection error with the RPC server.
         """
-        try:
-            async with aiohttp.ClientSession(headers=self.headers) as session:
-                async with session.get(f"{self.base_url}/health") as response:
-                    status = response.status
-                    return status == 200
-        except aiohttp.ClientError as e:
-            raise RPCConnectionError(f"Health check failed: {str(e)}")
+        for attempt in range(self.MAX_RETRIES):
+            try:
+                async with aiohttp.ClientSession(headers=self.headers) as session:
+                    async with session.get(f"{self.base_url}/health") as response:
+                        status = response.status
+                        return status == 200
+            except (aiohttp.ClientError, asyncio.TimeoutError) as e:
+                if attempt == self.MAX_RETRIES - 1:
+                    raise RPCConnectionError(f"Health check failed: {str(e)}")
+                await asyncio.sleep(self.RETRY_DELAY)
 
     async def get_content_topic(self, content_topic: str) -> List[str]:
         """
@@ -63,26 +68,31 @@ class RPCClient:
         :raises RPCAuthenticationError: If there is an authentication error.
         :raises RPCConnectionError: If there is a connection error with the RPC server.
         """
-        try:
-            async with aiohttp.ClientSession(headers=self.headers) as session:
-                async with session.get(
-                    f"{self.base_url}/rpc/{content_topic}"
-                ) as response:
-                    if response.status == 401:
-                        raise RPCAuthenticationError()
+        for attempt in range(self.MAX_RETRIES):
+            try:
+                async with aiohttp.ClientSession(headers=self.headers) as session:
+                    async with session.get(
+                        f"{self.base_url}/rpc/{content_topic}"
+                    ) as response:
+                        if response.status == 401:
+                            raise RPCAuthenticationError()
 
-                    res_json = await response.json()
-                    return res_json["data"]["results"]
-        except aiohttp.ClientResponseError as e:
-            if e.status == 401:
-                raise RPCAuthenticationError()
-            logger.error(f"Failed to get content topic {content_topic}: {e}")
-            raise RPCContentTopicError(str(e), content_topic)
-        except aiohttp.ClientError as e:
-            raise RPCConnectionError(f"{str(e)}")
-        except Exception as e:
-            logger.error(f"Failed to get content topic {content_topic}: {e}")
-            raise
+                        res_json = await response.json()
+                        return res_json["data"]["results"]
+            except aiohttp.ClientResponseError as e:
+                if e.status == 401:
+                    raise RPCAuthenticationError()
+                if attempt == self.MAX_RETRIES - 1:
+                    logger.error(f"Failed to get content topic {content_topic}: {e}")
+                    raise RPCContentTopicError(str(e), content_topic)
+                await asyncio.sleep(self.RETRY_DELAY)
+            except (aiohttp.ClientError, asyncio.TimeoutError) as e:
+                if attempt == self.MAX_RETRIES - 1:
+                    raise RPCConnectionError(f"{str(e)}")
+                await asyncio.sleep(self.RETRY_DELAY)
+            except Exception as e:
+                logger.error(f"Failed to get content topic {content_topic}: {e}")
+                raise
 
     async def push_content_topic(
         self, data: Union[str, bytes], content_topic: str
@@ -102,23 +112,28 @@ class RPCClient:
             raise ValueError(
                 f"Data size ({data_size} bytes) exceeds the maximum allowed size of {self.NETWORK_MAX_MESSAGE_SIZE} bytes"
             )
-        try:
-            async with aiohttp.ClientSession(headers=self.headers) as session:
-                async with session.post(
-                    f"{self.base_url}/rpc/{content_topic}",
-                    json={"value": {"payload": data}},
-                    headers={"Content-Type": "application/json"},
-                ) as response:
-                    if response.status == 401:
-                        raise RPCAuthenticationError()
-                    return True
-        except aiohttp.ClientResponseError as e:
-            if e.status == 401:
-                raise RPCAuthenticationError()
-            logger.error(f"Failed to push content topic {content_topic}: {e}")
-            raise RPCContentTopicError("Failed to push content topic", content_topic)
-        except aiohttp.ClientError as e:
-            raise RPCConnectionError(f"Connection error: {str(e)}")
-        except Exception as e:
-            logger.error(f"Failed to push content topic {content_topic}: {e}")
-            raise e
+        for attempt in range(self.MAX_RETRIES):
+            try:
+                async with aiohttp.ClientSession(headers=self.headers) as session:
+                    async with session.post(
+                        f"{self.base_url}/rpc/{content_topic}",
+                        json={"value": {"payload": data}},
+                        headers={"Content-Type": "application/json"},
+                    ) as response:
+                        if response.status == 401:
+                            raise RPCAuthenticationError()
+                        return True
+            except aiohttp.ClientResponseError as e:
+                if e.status == 401:
+                    raise RPCAuthenticationError()
+                if attempt == self.MAX_RETRIES - 1:
+                    logger.error(f"Failed to push content topic {content_topic}: {e}")
+                    raise RPCContentTopicError("Failed to push content topic", content_topic)
+                await asyncio.sleep(self.RETRY_DELAY)
+            except (aiohttp.ClientError, asyncio.TimeoutError) as e:
+                if attempt == self.MAX_RETRIES - 1:
+                    raise RPCConnectionError(f"Connection error: {str(e)}")
+                await asyncio.sleep(self.RETRY_DELAY)
+            except Exception as e:
+                logger.error(f"Failed to push content topic {content_topic}: {e}")
+                raise e
