@@ -1,7 +1,12 @@
 from importlib.metadata import version, PackageNotFoundError
 
-from .ec import recover_public_key, uncompressed_public_key, generate_task_keys
-from .messaging import base64_to_json, str_to_base64
+from dria.utils.crypto import (
+    recover_public_key,
+    uncompressed_public_key,
+    generate_task_keys,
+    base64_to_json,
+    str_to_base64,
+)
 from .logging import logger
 from .formatter import ConversationMapping, FieldMapping, DataFormatter, FormatType
 

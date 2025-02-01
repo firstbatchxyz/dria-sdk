@@ -1,4 +1,4 @@
-from typing import Tuple, Dict, Union
+from typing import Tuple, Union
 
 import coincurve
 from Crypto.Hash import keccak
@@ -109,28 +109,29 @@ def publickey_to_address(public_key: bytes) -> str:
 
 
 def get_truthful_nodes(
-    task: Task, topic_result: Dict, rpc_auth: str
-) -> tuple[None, None] | tuple[str | None, str]:
+    task: Task, result: dict, msg: str, signature: bytes
+) -> tuple[None, str] | tuple[dict, str]:
     """
     Get truthful nodes from topic results.
 
     Args:
         task (Task): Task data
-        topic_result (Dict): Topic result
-        rpc_auth (str): User's RPC ID for network
+        result
+        msg
+        signature
 
     Returns:
         Tuple[List[Dict], List[str]]: List of truthful nodes and results
     """
-    if isinstance(topic_result["ciphertext"], str):
-        topic_result["ciphertext"] = bytes.fromhex(topic_result["ciphertext"])
-    result = decrypt_message(task.private_key[2:], topic_result["ciphertext"])
+    if isinstance(result["ciphertext"], str):
+        result["ciphertext"] = bytes.fromhex(result["ciphertext"])
+    entry = decrypt_message(task.private_key[2:], result["ciphertext"])
     public_key = recover_public_key(
-        bytes.fromhex(topic_result["signature"]),
-        (task.id + "--" + rpc_auth + result).encode(),
+        signature,
+        msg.encode(),
     )
     public_key = uncompressed_public_key(public_key)
     address = publickey_to_address(public_key)
     if address not in task.nodes:
         return None, address
-    return result, address
+    return entry, address

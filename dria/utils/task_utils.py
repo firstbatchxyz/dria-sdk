@@ -7,6 +7,7 @@ import secrets
 import string
 import time
 from typing import List, Any, Dict, Union, Tuple
+import traceback
 
 from dria_workflows import Workflow
 from fastbloom_rs import BloomFilter
@@ -196,6 +197,15 @@ class TaskManager:
             parsed_workflow = self._schema_parser(task.workflow, selected_model[0])
             task.workflow = parsed_workflow
 
+        peer_ids = [
+            await self.storage.get_value(f"{node}:peer_id") or None
+            for node in task.nodes
+        ]
+        if None in peer_ids:
+            raise ValueError(
+                "PeerID not found for some nodes"
+            ) from traceback.extract_stack()
+
         # Create TaskModel data structure
         task_model = TaskModel(
             taskId=task.id,
@@ -204,6 +214,7 @@ class TaskManager:
                 workflow=task.workflow, model=selected_model
             ).model_dump(),
             pickedNodes=task.nodes,
+            nodePeerIds=peer_ids,
             deadline=task.deadline,
             datasetId=hashlib.sha256(
                 (self.rpc.headers.get("x-api-key") + task.dataset_id).encode()
@@ -363,6 +374,22 @@ class TaskManager:
 
         logger.debug(f"Selected nodes: {final_nodes}")
         return final_nodes, filters, node_models
+
+    async def add_peer_ids(self, peer_id_map: Dict[str, str]) -> None:
+        """
+        Add public keys to the task manager.
+
+        Args:
+            peer_id_map (Dict[str, str]): A dictionary mapping node addresses to public keys.
+
+        Returns:
+            None
+        """
+        try:
+            for node, peer_id in peer_id_map.items():
+                await self.storage.set_value(f"{node}:peer_id", peer_id)
+        except Exception as e:
+            logger.error(f"Error adding public keys: {e}")
 
     async def add_available_nodes(self, node_model: NodeModel, model_type: str) -> bool:
         """

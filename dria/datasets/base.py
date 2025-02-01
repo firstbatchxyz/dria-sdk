@@ -9,6 +9,7 @@ import os
 import csv
 from dria.utils import FieldMapping, DataFormatter, FormatType, ConversationMapping
 from dria.db.database import DatasetDB
+from dria.utils.deployer import HuggingFaceDeployer
 
 OutputFormat = Literal["json", "jsonl", "huggingface"]
 
@@ -319,4 +320,8 @@ class DriaDataset:
 
     def to_hf_dataset(self) -> HFDataset:
         """Convert dataset to HuggingFace dataset."""
-        HFDataset.from_pandas(self.to_pandas())
+        return HFDataset.from_pandas(self.to_pandas())
+
+    def push_to_huggingface(self, token: str, repo_name: str, private: bool = False) -> str:
+        """Push dataset to HuggingFace Hub."""
+        return HuggingFaceDeployer(token).deploy(self.to_hf_dataset(), repo_name, private)

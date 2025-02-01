@@ -128,7 +128,9 @@ class RPCClient:
                     raise RPCAuthenticationError()
                 if attempt == self.MAX_RETRIES - 1:
                     logger.error(f"Failed to push content topic {content_topic}: {e}")
-                    raise RPCContentTopicError("Failed to push content topic", content_topic)
+                    raise RPCContentTopicError(
+                        "Failed to push content topic", content_topic
+                    )
                 await asyncio.sleep(self.RETRY_DELAY)
             except (aiohttp.ClientError, asyncio.TimeoutError) as e:
                 if attempt == self.MAX_RETRIES - 1:

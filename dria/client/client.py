@@ -1,6 +1,6 @@
-import json
 import asyncio
 import base64
+import json
 import logging
 import os
 import signal
@@ -38,13 +38,13 @@ from dria.models.enums import (
 from dria.models.exceptions import TaskPublishError
 from dria.request import RPCClient
 from dria.utils import logger
-from dria.utils.ec import (
+from dria.utils.crypto import (
     get_truthful_nodes,
     generate_task_keys,
     recover_public_key,
     uncompressed_public_key,
 )
-from dria.utils.node_evaluations import evaluate_nodes
+from dria.utils.node_selection import evaluate_nodes
 from dria.utils.task_utils import TaskManager
 
 
@@ -557,15 +557,15 @@ class Dria:
         """
         current_time = int(time.time())
 
-        signature = None
         for item in topic_results:
             try:
-                decoded_item = base64.b64decode(item).decode("utf-8")
-                try:
-                    result = json.loads(decoded_item)
-                except json.JSONDecodeError:
-                    signature, metadata_json = decoded_item[:130], decoded_item[130:]
-                    result = json.loads(metadata_json)
+                output = json.loads(item)
+                msg = output["message"]
+                signature = output["signature"]
+                byte_sig = bytes.fromhex(signature)
+                byte_sig = byte_sig + output["recovery_id"].to_bytes(1, byteorder="big")
+                decoded_item = base64.b64decode(msg).decode("utf-8")
+                result = json.loads(decoded_item)
                 identifier, rpc_auth = result["taskId"].split("--")
                 task_data = await self.storage.get_value(identifier)
                 if not task_data or task_data is None:
@@ -588,12 +588,9 @@ class Dria:
                     continue
 
                 task.processed = True
-                await self.storage.set_value(identifier, json.dumps(task.dict()))
+                await self.storage.set_value(identifier, json.dumps(task.model_dump()))
                 if "error" in result:
-
-                    public_key = recover_public_key(
-                        bytes.fromhex(signature), metadata_json.encode()
-                    )
+                    public_key = recover_public_key(byte_sig, msg.encode())
                     public_key = uncompressed_public_key(public_key)
                     address = (
                         keccak.new(digest_bits=256)
@@ -621,9 +618,12 @@ class Dria:
                                 current_ns - result["stats"]["publishedAt"]
                             )
                             / 1e9,
-                            "execution_time": (result["stats"]["executionTime"]) / 1e9,
-                            "receive_latency": -(
-                                task_data["created_ts"] - result["stats"]["receivedAt"]
+                            "execution_time": (
+                                result["stats"]["executionEndedAt"]
+                                - result["stats"]["executionStartedAt"]
+                            ),
+                            "receive_latency": (
+                                result["stats"]["receivedAt"] - task_data["created_ts"]
                             )
                             / 1e9,
                             "roundtrip": (current_ns - task_data["created_ts"]) / 1e9,
@@ -648,14 +648,14 @@ class Dria:
                         models=task.models,
                         step_name=task.step_name,
                         pipeline_id=task.pipeline_id,
-                        dataset_id=task.dataset_id
+                        dataset_id=task.dataset_id,
                     )
                     asyncio.create_task(self.push([t]))
                     continue
 
                 if self._is_task_valid(task, current_time):
                     processed_result, address = get_truthful_nodes(
-                        task, result, rpc_auth
+                        task, result, msg, byte_sig
                     )
                     if processed_result is None:
                         logger.debug(f"Address: {address}    not valid in nodes.")
@@ -671,9 +671,13 @@ class Dria:
                                 current_ns - result["stats"]["publishedAt"]
                             )
                             / 1e9,
-                            "execution_time": (result["stats"]["executionTime"]) / 1e9,
-                            "receive_latency": -(
-                                task_data["created_ts"] - result["stats"]["receivedAt"]
+                            "execution_time": (
+                                result["stats"]["executionEndedAt"]
+                                - result["stats"]["executionStartedAt"]
+                            )
+                            / 1e9,
+                            "receive_latency": (
+                                result["stats"]["receivedAt"] - task_data["created_ts"]
                             )
                             / 1e9,
                             "roundtrip": (current_ns - task_data["created_ts"]) / 1e9,
