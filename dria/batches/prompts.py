@@ -50,8 +50,6 @@ class ParallelPromptExecutor:
             Model.GEMINI_15_FLASH,
             Model.GEMINI_20_FLASH,
             Model.GEMINI_15_PRO,
-            Model.LLAMA3_1_8B_FP16,
-            Model.QWEN2_5_7B_FP16,
             Model.QWEN2_5_32B_FP16,
         ]
         intersect = set(allowed_models).intersection(set(models))
