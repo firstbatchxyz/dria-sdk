@@ -1,14 +1,16 @@
-from typing import List, Dict, Optional, Type, Any, Literal, Union
-
-import pandas as pd
-from pydantic import BaseModel, create_model, ValidationError
-from datasets import load_dataset
-from datasets import Dataset as HFDataset
+import csv
 import json
 import os
-import csv
-from dria.utils import FieldMapping, DataFormatter, FormatType, ConversationMapping
+from typing import List, Dict, Optional, Type, Any, Literal, Union
+
+import httpx
+import pandas as pd
+from datasets import Dataset as HFDataset
+from datasets import load_dataset
+from pydantic import BaseModel, create_model, ValidationError
+
 from dria.db.database import DatasetDB
+from dria.utils import FieldMapping, DataFormatter, FormatType, ConversationMapping
 from dria.utils.deployer import HuggingFaceDeployer
 
 OutputFormat = Literal["json", "jsonl", "huggingface"]
@@ -322,6 +324,55 @@ class DriaDataset:
         """Convert dataset to HuggingFace dataset."""
         return HFDataset.from_pandas(self.to_pandas())
 
-    def push_to_huggingface(self, token: str, repo_name: str, private: bool = False) -> str:
-        """Push dataset to HuggingFace Hub."""
-        return HuggingFaceDeployer(token).deploy(self.to_hf_dataset(), repo_name, private)
+    def push_to_huggingface(
+        self,
+        token: str,
+        repo_name: str,
+        private: bool = False,
+        rpc_token: Optional[str] = None,
+    ) -> str:
+        """
+        Push dataset to HuggingFace Hub.
+
+        Args:
+            token: HuggingFace token
+            repo_name: HuggingFace repository name
+            private: Whether the dataset is private
+            rpc_token: Dria RPC token
+
+        Returns:
+            URL of the dataset
+        """
+        try:
+            url = HuggingFaceDeployer(token).deploy(
+                self.to_hf_dataset(), repo_name, private
+            )
+        except Exception as e:
+            raise RuntimeError(f"Failed to deploy dataset to HuggingFace Hub: {str(e)}")
+
+        if private is False:
+            try:
+                if rpc_token is None:
+                    try:
+                        _id = self.db.get_dataset_id_by_name("rpc_url")
+                        rpc_token = self.db.get_dataset_entries(
+                            _id, data_only=True
+                        )[0]["token"]
+                    except (IndexError, KeyError) as e:
+                        raise ValueError("Could not retrieve RPC token from database") from e
+
+                response = httpx.post(
+                    "https://dkn.dria.co/dashboard/supply/v0/logs/upload-dataset",
+                    json={
+                        "dataset_name": self.name,
+                        "link": url,
+                    },
+                    headers={
+                        "x-api-key": rpc_token
+                    }
+                )
+                response.raise_for_status()
+            except httpx.HTTPError as e:
+                raise RuntimeError(f"Failed to log dataset upload: {str(e)}")
+
+        return url

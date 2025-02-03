@@ -2,6 +2,8 @@ import os
 from typing import Optional
 from huggingface_hub import HfApi, create_repo
 from datasets import Dataset
+
+
 class HuggingFaceDeployer:
     """Class for deploying datasets to the HuggingFace Hub."""
 
@@ -14,7 +16,9 @@ class HuggingFaceDeployer:
         """
         self.token = token or os.environ.get("HF_TOKEN")
         if not self.token:
-            raise ValueError("HuggingFace token must be provided or set in HF_TOKEN env var")
+            raise ValueError(
+                "HuggingFace token must be provided or set in HF_TOKEN env var"
+            )
         self.api = HfApi(token=self.token)
 
     def deploy(self, dataset: Dataset, repo_name: str, private: bool = False) -> str:
@@ -29,7 +33,7 @@ class HuggingFaceDeployer:
         Returns:
             str: The URL of the deployed dataset.
         """
-        
+
         # Create or retrieve the repository
         try:
             repo = create_repo(
@@ -37,7 +41,7 @@ class HuggingFaceDeployer:
                 token=self.token,
                 private=private,
                 repo_type="dataset",
-                exist_ok=True
+                exist_ok=True,
             )
             repo_id = repo.repo_id
         except Exception as error:
@@ -45,12 +49,8 @@ class HuggingFaceDeployer:
 
         # Upload the dataset to the Hub
         try:
-            dataset.push_to_hub(
-                repo_id=repo_id,
-                token=self.token,
-                private=private
-            )
+            dataset.push_to_hub(repo_id=repo_id, token=self.token, private=private)
         except Exception as error:
             raise RuntimeError(f"Failed to push dataset: {error}")
 
-        return f"https://huggingface.co/datasets/{repo_name}"
+        return f"https://huggingface.co/datasets/{repo_id}"

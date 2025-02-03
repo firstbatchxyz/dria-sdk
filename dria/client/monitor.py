@@ -128,7 +128,9 @@ class Monitor:
                 try:
                     recovery_bytes = int(recovery_id).to_bytes(1, byteorder="big")
                 except Exception as ex:
-                    logger.error("Invalid recovery_id format: %s", recovery_id, exc_info=True)
+                    logger.error(
+                        "Invalid recovery_id format: %s", recovery_id, exc_info=True
+                    )
                     continue
                 full_signature = byte_sig + recovery_bytes
 
@@ -149,7 +151,9 @@ class Monitor:
                     continue
 
                 for model_id, model_name in models:
-                    max_queue = MAX_OLLAMA_QUEUE if model_id == "ollama" else MAX_API_QUEUE
+                    max_queue = (
+                        MAX_OLLAMA_QUEUE if model_id == "ollama" else MAX_API_QUEUE
+                    )
                     if payload["pending_tasks"][0] > max_queue:
                         continue
                     node_addresses[model_name].append(address)
