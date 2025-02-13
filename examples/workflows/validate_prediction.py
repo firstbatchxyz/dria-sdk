@@ -1,5 +1,5 @@
 from dria import DriaDataset, DatasetGenerator, Model
-from dria.factory import ValidatePrediction
+from dria.workflow.factory import ValidatePrediction
 import asyncio
 
 my_dataset = DriaDataset(
@@ -19,7 +19,7 @@ instructions = [
 asyncio.run(
     generator.generate(
         instructions=instructions,
-        singletons=ValidatePrediction,
+        workflows=ValidatePrediction,
         models=Model.GPT4O,
     )
 )

@@ -1,7 +1,8 @@
-from dria import DriaDataset, DatasetGenerator, Model
-from dria.factory import EvolveQuality
 import asyncio
-from dria.factory.workflows.evol_quality.task import MUTATION_TEMPLATES
+
+from dria import DriaDataset, DatasetGenerator, Model
+from dria.workflow.factory import EvolveQuality
+from dria.workflow.factory.workflows.evol_quality.task import MUTATION_TEMPLATES
 
 my_dataset = DriaDataset(
     name="evolve_q_test",
@@ -22,7 +23,7 @@ instructions = [
 asyncio.run(
     generator.generate(
         instructions=instructions,
-        singletons=EvolveQuality,
+        workflows=EvolveQuality,
         models=Model.GPT4O,
     )
 )

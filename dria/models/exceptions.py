@@ -1,5 +1,5 @@
 class RPCClientError(Exception):
-    """Base class for RPC client exceptions."""
+    """Base class for RPC executor exceptions."""
 
 
 class RPCContentTopicError(RPCClientError):

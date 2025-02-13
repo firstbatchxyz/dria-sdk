@@ -1,4 +1,6 @@
 import asyncio
+import logging
+
 from dria import Prompt, DatasetGenerator, DriaDataset, Model
 from pydantic import BaseModel, Field
 
@@ -17,11 +19,11 @@ dataset = DriaDataset(
 instructions = [{"topic": "BadBadNotGood"}, {"topic": "Decentralized synthetic data"}]
 
 prompter = Prompt(prompt="Write a tweet about {{topic}}", schema=Tweet)
-generator = DatasetGenerator(dataset=dataset)
+generator = DatasetGenerator(dataset=dataset, log_level=logging.DEBUG)
 
 asyncio.run(
     generator.generate(
-        instructions=instructions, singletons=prompter, models=Model.GPT4O
+        instructions=instructions, workflows=prompter, models=Model.OPENAI
     )
 )
 

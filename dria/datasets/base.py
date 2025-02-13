@@ -10,8 +10,8 @@ from datasets import load_dataset
 from pydantic import BaseModel, create_model, ValidationError
 
 from dria.db.database import DatasetDB
-from dria.utils import FieldMapping, DataFormatter, FormatType, ConversationMapping
-from dria.utils.deployer import HuggingFaceDeployer
+from dria.utilities import FieldMapping, DataFormatter, FormatType, ConversationMapping
+from dria.utilities.deployer import HuggingFaceDeployer
 
 OutputFormat = Literal["json", "jsonl", "huggingface"]
 
@@ -355,11 +355,13 @@ class DriaDataset:
                 if rpc_token is None:
                     try:
                         _id = self.db.get_dataset_id_by_name("rpc_url")
-                        rpc_token = self.db.get_dataset_entries(
-                            _id, data_only=True
-                        )[0]["token"]
+                        rpc_token = self.db.get_dataset_entries(_id, data_only=True)[0][
+                            "token"
+                        ]
                     except (IndexError, KeyError) as e:
-                        raise ValueError("Could not retrieve RPC token from database") from e
+                        raise ValueError(
+                            "Could not retrieve RPC token from database"
+                        ) from e
 
                 response = httpx.post(
                     "https://dkn.dria.co/dashboard/supply/v0/logs/upload-dataset",
@@ -367,9 +369,7 @@ class DriaDataset:
                         "dataset_name": self.name,
                         "link": url,
                     },
-                    headers={
-                        "x-api-key": rpc_token
-                    }
+                    headers={"x-api-key": rpc_token},
                 )
                 response.raise_for_status()
             except httpx.HTTPError as e:

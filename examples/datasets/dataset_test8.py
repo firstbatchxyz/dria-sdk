@@ -1,5 +1,5 @@
 from dria import DriaDataset, DatasetGenerator, Model
-from dria.factory import Simple
+from dria.workflow.factory import Simple
 import asyncio
 
 my_dataset = DriaDataset(
@@ -15,7 +15,7 @@ instructions = [
 asyncio.run(
     generator.generate(
         instructions=instructions,
-        singletons=Simple,
+        workflows=Simple,
         models=Model.LLAMA_3_1_8B_OR,
     )
 )

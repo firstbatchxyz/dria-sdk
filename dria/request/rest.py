@@ -9,7 +9,7 @@ from dria.models.exceptions import (
     RPCConnectionError,
     RPCAuthenticationError,
 )
-from dria.utils.logging import logger
+from dria.utilities import logger
 
 
 class RPCClient:
@@ -17,7 +17,7 @@ class RPCClient:
     RPCClient for Libp2p RPC for Dria Network
 
     Args:
-        auth_token (str): The authentication token for the RPC client.
+        auth_token (str): The authentication token for the RPC executor.
     """
 
     NETWORK_MAX_MESSAGE_SIZE = 256
@@ -57,6 +57,41 @@ class RPCClient:
                 if attempt == self.MAX_RETRIES - 1:
                     raise RPCConnectionError(f"Health check failed: {str(e)}")
                 await asyncio.sleep(self.RETRY_DELAY)
+
+    async def get_results(self, task_ids: List[str]) -> List[str]:
+        """
+        Get results for task IDs.
+        Args:
+            task_ids: List of task IDs to get results for
+        Returns:
+            List of result messages
+        Raises:
+            RPCContentTopicError: If error fetching results
+            RPCAuthenticationError: If authentication fails
+            RPCConnectionError: If connection error occurs
+        """
+        try:
+            async with aiohttp.ClientSession(headers=self.headers) as session:
+                async with session.post(
+                    f"{self.base_url}/rpc/results",
+                    json={"value": {"task_ids": task_ids}},
+                    headers={"Content-Type": "application/json"},
+                ) as response:
+                    if response.status == 401:
+                        raise RPCAuthenticationError()
+
+                    res_json = await response.json()
+                    return res_json["data"]["results"]
+        except aiohttp.ClientResponseError as e:
+            if e.status == 401:
+                raise RPCAuthenticationError()
+            logger.error(f"Failed to get results for task IDs {task_ids}: {e}")
+            raise RPCContentTopicError(str(e), "results")
+        except aiohttp.ClientError as e:
+            raise RPCConnectionError(f"{str(e)}")
+        except Exception as e:
+            logger.error(f"Failed to get results for task IDs {task_ids}: {e}")
+            raise
 
     async def get_content_topic(self, content_topic: str) -> List[str]:
         """

@@ -1,6 +1,7 @@
-from dria import DriaDataset, DatasetGenerator
-from dria.factory.search import SearchWeb
 import asyncio
+
+from dria import DriaDataset, DatasetGenerator
+from dria.workflow.factory import SearchWeb
 
 my_dataset = DriaDataset(
     name="searches",
@@ -10,7 +11,6 @@ my_dataset = DriaDataset(
 
 generator = DatasetGenerator(dataset=my_dataset)
 
-
 instructions = [
     {"query": "Istanbul'daki en iyi kebapçılar", "lang": "tr", "n_results": 5},
     {"query": "Best kebap places in Istanbul", "lang": "en", "n_results": 5},
@@ -19,9 +19,8 @@ instructions = [
 asyncio.run(
     generator.generate(
         instructions=instructions,
-        singletons=SearchWeb,
+        workflows=SearchWeb,
     )
 )
-
 
 my_dataset.to_jsonl()

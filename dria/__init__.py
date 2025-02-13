@@ -2,7 +2,8 @@ from .datasets import DriaDataset, DatasetGenerator
 from .client import Dria
 from .models import Model
 from .datasets import Prompt
-from dria.factory.workflows.template import SingletonTemplate
+from dria.workflow.template import WorkflowTemplate
+from .manager import TaskManager
 
 __all__ = [
     "Dria",
@@ -10,5 +11,6 @@ __all__ = [
     "DatasetGenerator",
     "Model",
     "Prompt",
-    "SingletonTemplate",
+    "WorkflowTemplate",
+    "TaskManager"
 ]

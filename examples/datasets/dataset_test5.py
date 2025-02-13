@@ -1,7 +1,7 @@
-import json
-from dria import DriaDataset, DatasetGenerator, Model
-from dria.factory.persona import PersonaBio
 import asyncio
+
+from dria import DriaDataset, DatasetGenerator, Model
+from dria.workflow.factory import PersonaBio
 
 my_dataset = DriaDataset(
     name="pages",
@@ -10,7 +10,6 @@ my_dataset = DriaDataset(
 )
 
 generator = DatasetGenerator(dataset=my_dataset)
-
 
 instructions = [
     {
@@ -23,7 +22,7 @@ instructions = [
 asyncio.run(
     generator.generate(
         instructions=instructions,
-        singletons=PersonaBio,
+        workflows=PersonaBio,
         models=[
             [Model.ANTHROPIC_HAIKU_3_5_OR, Model.QWEN2_5_72B_OR],
             [
@@ -35,6 +34,5 @@ asyncio.run(
         ],
     )
 )
-
 
 my_dataset.to_jsonl()

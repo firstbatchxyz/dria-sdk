@@ -1,6 +1,6 @@
 import json
 from dria import DriaDataset, DatasetGenerator, Model
-from dria.factory.subtopic import GenerateSubtopics
+from dria.workflow.factory import GenerateSubtopics
 import asyncio
 
 my_dataset = DriaDataset(
@@ -20,7 +20,7 @@ instructions = [
 asyncio.run(
     generator.generate(
         instructions=instructions,
-        singletons=GenerateSubtopics,
+        workflows=GenerateSubtopics,
         models=[Model.ANTHROPIC_HAIKU_3_5_OR],
     )
 )

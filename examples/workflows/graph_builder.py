@@ -1,5 +1,5 @@
 from dria import DriaDataset, DatasetGenerator, Model
-from dria.factory import GenerateGraph
+from dria.workflow.factory import GenerateGraph
 import asyncio
 
 my_dataset = DriaDataset(
@@ -15,7 +15,7 @@ instructions = [{"context": "The advantage of using AI on the healthcare"}]
 asyncio.run(
     generator.generate(
         instructions=instructions,
-        singletons=GenerateGraph,
+        workflows=GenerateGraph,
         models=Model.GPT4O,
     )
 )

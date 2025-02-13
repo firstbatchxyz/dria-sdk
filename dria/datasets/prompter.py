@@ -2,7 +2,7 @@ from typing import Type, Optional, Dict
 from typing import List
 from pydantic import BaseModel
 from dria_workflows import WorkflowBuilder, Operator, Edge, Write
-from dria.factory.utilities import parse_json
+from dria.workflow.factory.utilities import parse_json
 from dria.models import TaskResult
 import re
 
@@ -32,7 +32,7 @@ class Prompt:
                 f"No variables found for instruction {self.prompt}. Try using double brackets."
             )
 
-    def workflow(self, **kwargs):
+    def build(self, **kwargs):
 
         builder = WorkflowBuilder(**kwargs)
         builder.set_max_tokens(self.max_tokens)

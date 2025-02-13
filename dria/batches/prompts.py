@@ -3,7 +3,6 @@ import logging
 import traceback
 from typing import List, Dict, Any, Tuple, Optional
 from dria.constants import TASK_TIMEOUT
-from dria.client import Dria
 from dria.datasets.prompter import Prompt
 from dria.models import Task, Model, TaskResult
 from dria.datasets.base import DriaDataset
@@ -14,7 +13,7 @@ from hashlib import sha256
 class ParallelPromptExecutor:
     def __init__(
         self,
-        dria_client: Dria,
+        dria_client,
         prompt: Prompt,
         dataset: DriaDataset,
         batch_size: Optional[int] = None,
@@ -95,7 +94,7 @@ class ParallelPromptExecutor:
         return entry_ids, input_ids
 
     def _create_task(self, data: Dict[str, Any]) -> Task:
-        workflow_data = self.prompt.workflow(**data)
+        workflow_data = self.prompt.build(**data)
         return Task(
             workflow=workflow_data, models=self.models, dataset_id=self.dataset.name
         )
@@ -105,7 +104,7 @@ class ParallelPromptExecutor:
     ) -> Tuple[List[Any], List[int]]:
         """
         Align results with original inputs and merge the data.
-        Handles dynamic singleton initialization for each input context.
+        Handles dynamic workflow initialization for each input context.
         """
         task_inputs = [r.task_input for r in results]
         common_keys = set(task_inputs[0].keys()) & set(original_inputs[0].keys())

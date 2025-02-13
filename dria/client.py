@@ -9,7 +9,7 @@ from dria.executor import TaskExecutor, Ping
 from dria.manager import TaskManager
 from dria.models import Task, TaskResult
 from dria.request import RPCClient
-from dria.factory import WorkflowTemplate
+from dria.workflow import WorkflowTemplate
 
 
 class Dria:
@@ -30,8 +30,8 @@ class Dria:
     """
 
     def __init__(
-        self,
-        log_level: int = logging.INFO,
+            self,
+            log_level: int = logging.INFO,
     ) -> None:
         """
         Initialize the Dria client.
@@ -44,39 +44,39 @@ class Dria:
         """
         if hasattr(self, "_initialized"):
             return
-            
+
         logging.getLogger("dria").setLevel(log_level)
-        
+
         # Set up authentication
         rpc_token = get_community_token()
-        
+
         if not rpc_token and not os.environ.get("DRIA_RPC_TOKEN"):
             raise ValueError("No RPC token provided. Set DRIA_RPC_TOKEN or pass rpc_token")
-            
+
         # Initialize core components
         self.rpc = RPCClient(auth_token=rpc_token or os.environ.get("DRIA_RPC_TOKEN"))
         self.storage = Storage()
         self.kv = KeyValueQueue()
-        
+
         # Create shared dependencies
         ping = Ping(self.storage, self.rpc, self.kv)
         task_manager = TaskManager(self.storage, self.rpc, self.kv)
-        
+
         self.executor = TaskExecutor(
             ping=ping,
-            rpc=self.rpc, 
+            rpc=self.rpc,
             storage=self.storage,
             kv=self.kv,
             task_manager=task_manager
         )
-        
+
         self._initialized = True
 
     async def generate(
-        self,
-        instructions: List[Dict[str, any]],
-        workflow: WorkflowTemplate,
-        models: List[str]
+            self,
+            instructions: List[Dict[str, any]],
+            workflow: Type[WorkflowTemplate],
+            models: str
     ) -> List[TaskResult]:
         """
         Generate tasks from instructions and execute workflows.
@@ -95,10 +95,10 @@ class Dria:
         """
         if not instructions:
             raise ValueError("Instructions list cannot be empty")
-            
+
         if not models:
             raise ValueError("Models list cannot be empty")
-            
+
         tasks = [
             Task(workflow=workflow(**instruction), models=models)
             for instruction in instructions

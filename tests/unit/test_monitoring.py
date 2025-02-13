@@ -2,7 +2,7 @@ import pytest
 import json
 from unittest.mock import Mock, patch, AsyncMock
 
-from dria.client import Monitor
+from dria.executor import Ping
 from dria.db.mq import KeyValueQueue
 from dria.db.storage import Storage
 from dria.request import RPCClient
@@ -14,7 +14,7 @@ def monitor():
     storage = Mock(spec=Storage)
     rpc = Mock(spec=RPCClient)
     kv = Mock(spec=KeyValueQueue)
-    return Monitor(storage=storage, rpc=rpc, kv=kv)
+    return Ping(storage=storage, rpc=rpc, kv=kv)
 
 
 # Test Monitor initialization
@@ -50,7 +50,7 @@ async def test_check_heartbeat_success(monitor):
     monitor.rpc.get_content_topic = AsyncMock(return_value=[mock_response])
     monitor.task_manager.add_available_nodes = AsyncMock()
 
-    with patch.object(Monitor, "_decrypt_nodes", return_value=mock_nodes):
+    with patch.object(Ping, "_decrypt_nodes", return_value=mock_nodes):
         result = await monitor._check_heartbeat()
         assert result is True
         monitor.task_manager.add_available_nodes.assert_called_once()
@@ -81,16 +81,16 @@ def test_decrypt_nodes_success():
     }
     mock_response = mock_signature + json.dumps(mock_metadata)
 
-    with patch("dria.utils.recover_public_key", return_value=b"test_key"), patch(
-        "dria.utils.uncompressed_public_key", return_value=b"uncompressed_key"
+    with patch("dria.utilities.recover_public_key", return_value=b"test_key"), patch(
+        "dria.utilities.uncompressed_public_key", return_value=b"uncompressed_key"
     ):
-        result = Monitor._decrypt_nodes([mock_response])
+        result = Ping._decrypt_nodes([mock_response])
         assert isinstance(result, dict)
         assert all(isinstance(v, list) for v in result.values())
 
 
 def test_decrypt_nodes_invalid_response():
-    result = Monitor._decrypt_nodes(["invalid_response"])
+    result = Ping._decrypt_nodes(["invalid_response"])
     assert result == {}
 
 

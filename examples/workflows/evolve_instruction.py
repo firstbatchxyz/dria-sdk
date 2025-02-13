@@ -1,5 +1,5 @@
 from dria import DriaDataset, DatasetGenerator, Model
-from dria.factory import EvolveInstruct
+from dria.workflow.factory import EvolveInstruct
 import asyncio
 
 my_dataset = DriaDataset(
@@ -20,7 +20,7 @@ instructions = [
 asyncio.run(
     generator.generate(
         instructions=instructions,
-        singletons=EvolveInstruct,
+        workflows=EvolveInstruct,
         models=Model.GPT4O,
     )
 )

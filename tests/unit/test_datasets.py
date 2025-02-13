@@ -11,7 +11,7 @@ import pandas as pd
 from dria.datasets.base import DriaDataset
 from dria.datasets.utils import schemas_match, get_community_token
 from dria.db.database import DatasetDB
-from dria.utils import FieldMapping, FormatType
+from dria.utilities import FieldMapping, FormatType
 
 
 # Test schema

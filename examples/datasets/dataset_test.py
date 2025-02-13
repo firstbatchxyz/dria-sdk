@@ -1,7 +1,10 @@
-from dria import DriaDataset, DatasetGenerator, Model
-from dria.factory import MagPie
+import logging
+
+from dria import DriaDataset, DatasetGenerator, Model, Dria
+from dria.workflow.factory import MagPie
 import asyncio
-from dria.utils import ConversationMapping, FieldMapping, FormatType
+from dria.utilities import ConversationMapping, FieldMapping, FormatType
+
 
 
 instructions = [

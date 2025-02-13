@@ -3,9 +3,9 @@ import random
 from .base import DriaDataset
 from typing import List, Dict, Optional, Union, Any, Type
 from dria.models import Model
-from dria.batches import ParallelSingletonExecutor, ParallelPromptExecutor
-from dria.factory.workflows.template import SingletonTemplate
-from dria.client import Dria
+from dria.batches import ParallelWorkflowExecutor, ParallelPromptExecutor
+from dria.workflow.template import WorkflowTemplate
+from dria import Dria
 from hashlib import sha256
 from .utils import schemas_match, get_community_token
 import json
@@ -26,25 +26,7 @@ class DatasetGenerator:
         self.batch_size = batch_size
         self.dataset = dataset
         if dria_client is None:
-            if self.dataset is None:
-                token = get_community_token()
-                self.dria_client = Dria(rpc_token=token, log_level=log_level)
-            else:
-                try:
-                    _id = self.dataset.db.get_dataset_id_by_name("rpc_url")
-                except Exception as e:
-                    logging.debug(e)
-                    token = get_community_token()
-                    _id = self.dataset.db.create_dataset(
-                        "rpc_url", "Stores the community rpc url"
-                    )
-                    self.dataset.db.add_entries(_id, [{"token": token}])
-                    logger.info("Created RPC token!")
-
-                token = self.dataset.db.get_dataset_entries(_id, data_only=True)[0][
-                    "token"
-                ]
-                self.dria_client = Dria(rpc_token=token, log_level=log_level)
+            self.dria_client = Dria(log_level=log_level)
         else:
             self.dria_client = dria_client
 
@@ -79,20 +61,20 @@ class DatasetGenerator:
         self.batch_size = batch_size
         return self
 
-    def _validate_singletons(
+    def _validate_workflows(
         self,
         instructions: List[Dict[str, Any]],
-        singletons: List[Type[SingletonTemplate]],
+        workflows: List[Type[WorkflowTemplate]],
     ):
         """
-        Validate singletons
+        Validate workflows
 
-        If a single singleton:
-            Check input schema of singleton matches instructions
-            Check output schema of singleton matches dataset schema
-        If multiple singletons:
-            Check input schema of first singletons matches instructions
-            for i in range(len(singletons) - 1):
+        If a single workflow:
+            Check input schema of workflow matches instructions
+            Check output schema of workflow matches dataset schema
+        If multiple workflows:
+            Check input schema of first workflows matches instructions
+            for i in range(len(workflows) - 1):
                 current_schema = schema_func(data[i])
                 next_element = data[i + 1]
                 is_match = current_schema == schema_func(next_element)
@@ -100,7 +82,7 @@ class DatasetGenerator:
             return results
 
         :param instructions:
-        :param singletons:
+        :param workflows:
         """
 
         def check_for_duplicates(lst):
@@ -108,50 +90,50 @@ class DatasetGenerator:
             for item in lst:
                 if item in seen:
                     raise ValueError(
-                        f"Duplicate found: {item}. Can't use same singleton twice."
+                        f"Duplicate found: {item}. Can't use same workflow twice."
                     )
                 seen.add(item)
 
         # Name check
-        check_for_duplicates([singleton.__name__ for singleton in singletons])
+        check_for_duplicates([workflow.__name__ for workflow in workflows])
 
         for i, instruction in enumerate(instructions):
-            if not schemas_match(instruction, singletons[0]):
+            if not schemas_match(instruction, workflows[0]):
                 raise ValueError(
-                    f"Schema mismatch between the first singleton {singletons[0].__name__} and {i}th instruction. \n{json.dumps(instruction, indent=2)}"
+                    f"Schema mismatch between the first workflow {workflows[0].__name__} and {i}th instruction. \n{json.dumps(instruction, indent=2)}"
                 )
 
-        for i in range(len(singletons) - 1):
-            current_schema = singletons[i].OutputSchema
-            next_element = singletons[i + 1]
+        for i in range(len(workflows) - 1):
+            current_schema = workflows[i].OutputSchema
+            next_element = workflows[i + 1]
             # check if matches
             if not schemas_match(current_schema, next_element):
                 raise ValueError(
-                    f"Schema mismatch. Outputs for {singletons[i].__name__} doesn't match inputs for {singletons[i + 1].__name__}."
+                    f"Schema mismatch. Outputs for {workflows[i].__name__} doesn't match inputs for {workflows[i + 1].__name__}."
                 )
 
-        if not schemas_match(singletons[-1].OutputSchema, self.dataset.schema):
+        if not schemas_match(workflows[-1].OutputSchema, self.dataset.schema):
             raise ValueError(
-                f"Schema mismatch. Output of the last step: {singletons[-1].__name__} doesn't match dataset schema."
+                f"Schema mismatch. Output of the last step: {workflows[-1].__name__} doesn't match dataset schema."
             )
 
     async def _executor(
         self,
         instructions: List[Dict[str, Any]],
-        singleton: Union[Type[SingletonTemplate], Prompt],
+        workflow: Union[Type[WorkflowTemplate], Prompt],
         models: List[Model],
     ):
 
-        if isinstance(singleton, Prompt):
+        if isinstance(workflow, Prompt):
             executor = ParallelPromptExecutor(
-                self.dria_client, singleton, self.dataset, self.batch_size
+                self.dria_client, workflow, self.dataset, self.batch_size
             )
             executor.set_models(models)
             executor.load_instructions(instructions)
             return await executor.run()
         else:
-            executor = ParallelSingletonExecutor(
-                self.dria_client, singleton, self.dataset, self.batch_size
+            executor = ParallelWorkflowExecutor(
+                self.dria_client, workflow, self.dataset, self.batch_size
             )
             executor.set_models(models)
             executor.load_instructions(instructions)
@@ -160,8 +142,8 @@ class DatasetGenerator:
     async def generate(
         self,
         instructions: Union[List[Dict[str, Any]], DriaDataset],
-        singletons: Union[
-            Type[SingletonTemplate], List[Type[SingletonTemplate]], Prompt
+        workflows: Union[
+            Type[WorkflowTemplate], List[Type[WorkflowTemplate]], Prompt
         ],
         models: Optional[Union[Model, List[Model], List[List[Model]]]] = None,
         sampling_ratio: float = 1.0,
@@ -192,10 +174,10 @@ class DatasetGenerator:
         if isinstance(instructions, DriaDataset):
             instructions = instructions.get_entries(data_only=True)
 
-        if isinstance(singletons, Prompt):
-            await self._with_prompt(instructions, singletons, models)
+        if isinstance(workflows, Prompt):
+            await self._with_prompt(instructions, workflows, models)
         else:
-            await self._with_singletons(instructions, singletons, models)
+            await self._with_workflows(instructions, workflows, models)
 
     async def _with_prompt(
         self,
@@ -223,36 +205,36 @@ class DatasetGenerator:
         final_db = self.dataset.db.get_dataset_id_by_name(self.dataset.name)
         self.dataset.db.add_entries(final_db, final_entries)
 
-    async def _with_singletons(
+    async def _with_workflows(
         self,
         instructions: List[Dict[str, Any]],
-        singletons: Union[Type[SingletonTemplate], List[Type[SingletonTemplate]]],
+        workflows: Union[Type[WorkflowTemplate], List[Type[WorkflowTemplate]]],
         models: Union[Model, List[Model], List[List[Model]]],
     ) -> None:
-        """Generate data using Dria singleton.
+        """Generate data using Dria workflow.
 
-        :param singletons:
+        :param workflows:
         :param models:
         :param instructions:
 
         """
-        if not isinstance(singletons, list):
-            singletons = [singletons]
+        if not isinstance(workflows, list):
+            workflows = [workflows]
 
         if not isinstance(models, list):
             models = [models]
 
         if isinstance(models[0], list):
-            if len(models) != len(singletons):
+            if len(models) != len(workflows):
                 raise ValueError(
-                    f"If you are providing a list of models for each singleton, "
-                    f"it should have the same length. Number of models: {len(models)} number of singletons: {len(singletons)}"
+                    f"If you are providing a list of models for each workflow, "
+                    f"it should have the same length. Number of models: {len(models)} number of workflows: {len(workflows)}"
                 )
         else:
-            models = [models] * len(singletons)
+            models = [models] * len(workflows)
 
         try:
-            self._validate_singletons(instructions, singletons)
+            self._validate_workflows(instructions, workflows)
         except ValueError as e:
             raise e
 
@@ -260,7 +242,7 @@ class DatasetGenerator:
 
         # Execute first step with instructions
         entry_ids, input_ids = await self._executor(
-            instructions, singletons[0], models[0]
+            instructions, workflows[0], models[0]
         )
         step_map.append(
             [
@@ -269,14 +251,14 @@ class DatasetGenerator:
             ]
         )
 
-        for i in range(1, len(singletons)):
-            name = self.dataset.name + "_" + singletons[i - 1].__name__
+        for i in range(1, len(workflows)):
+            name = self.dataset.name + "_" + workflows[i - 1].__name__
             dataset_id = self.dataset.db.get_dataset_id_by_name(name)
             instructions = self.dataset.db.get_dataset_entries(
                 dataset_id, data_only=True
             )
             entry_ids, input_ids = await self._executor(
-                instructions, singletons[i], models[i]
+                instructions, workflows[i], models[i]
             )
             step_map.append(
                 [
@@ -286,7 +268,7 @@ class DatasetGenerator:
             )
 
         # Assign last created as the main dataset
-        name = self.dataset.name + "_" + singletons[-1].__name__
+        name = self.dataset.name + "_" + workflows[-1].__name__
         dataset_id = self.dataset.db.get_dataset_id_by_name(name)
         final_entries = self.dataset.db.get_dataset_entries(dataset_id, data_only=True)
 
@@ -302,7 +284,7 @@ class DatasetGenerator:
     ) -> "DatasetGenerator":
         """
         Augments the dataset by adding a new field to the dataset or updating an existing field.
-        :param prompt: Singleton or Prompt
+        :param prompt: Workflow or Prompt
         :param models: Model or List of Models
         """
         if self.dataset is None:

@@ -1,5 +1,5 @@
 from dria import DriaDataset, DatasetGenerator, Model
-from dria.factory import MagPie
+from dria.workflow.factory import MagPie
 import asyncio
 
 my_dataset = DriaDataset(

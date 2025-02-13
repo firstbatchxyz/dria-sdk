@@ -1,5 +1,5 @@
 from dria import DriaDataset, DatasetGenerator, Model
-from dria.factory import Clair
+from dria.workflow.factory import Clair
 import asyncio
 
 # Create a dataset object with a name, description, and schema
@@ -23,7 +23,7 @@ instructions = [
 asyncio.run(
     generator.generate(
         instructions=instructions,  # The instructions for dataset generation
-        singletons=Clair,  # Use Clair as the singleton schema and utility provider
+        workflows=Clair,  # Use Clair as the singleton schema and utility provider
         models=Model.GPT4O,  # Specify the model (e.g., GPT-4O) for generating outputs
     )
 )
