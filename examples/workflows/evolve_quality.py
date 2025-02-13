@@ -5,8 +5,7 @@ from dria.workflow.factory import EvolveQuality
 from dria.workflow.factory.workflows.evol_quality.task import MUTATION_TEMPLATES
 
 my_dataset = DriaDataset(
-    name="evolve_q_test",
-    description="test",
+    collection="evolve_q_test",
     schema=EvolveQuality.OutputSchema,
 )
 

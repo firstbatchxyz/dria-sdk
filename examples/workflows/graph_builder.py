@@ -3,8 +3,7 @@ from dria.workflow.factory import GenerateGraph
 import asyncio
 
 my_dataset = DriaDataset(
-    name="graph_test",
-    description="test",
+    collection="graph_test",
     schema=GenerateGraph.OutputSchema,
 )
 

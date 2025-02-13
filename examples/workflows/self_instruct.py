@@ -3,8 +3,7 @@ from dria.workflow.factory import SelfInstruct
 import asyncio
 
 my_dataset = DriaDataset(
-    name="sinstruct_test",
-    description="test",
+    collection="sinstruct_test",
     schema=SelfInstruct.OutputSchema,
 )
 

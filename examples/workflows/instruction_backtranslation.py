@@ -3,8 +3,7 @@ from dria.workflow.factory import InstructionBacktranslation
 import asyncio
 
 my_dataset = DriaDataset(
-    name="instruction_backtranslation_test",
-    description="test",
+    collection="instruction_backtranslation_test",
     schema=InstructionBacktranslation.OutputSchema,
 )
 

@@ -4,8 +4,7 @@ import asyncio
 
 # Create a dataset object with a name, description, and schema
 my_dataset = DriaDataset(
-    name="clair_test",  # Title of the dataset
-    description="A test dataset",  # Brief description of the dataset
+    collection="clair_test",  # Title of the dataset
     schema=Clair.OutputSchema,  # Schema defining the expected structure of dataset entries
 )
 

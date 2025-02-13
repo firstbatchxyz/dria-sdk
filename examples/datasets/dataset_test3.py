@@ -4,8 +4,7 @@ from dria.workflow.factory import GenerateSubtopics
 import asyncio
 
 my_dataset = DriaDataset(
-    name="subtopics",
-    description="A dataset for subtopics",
+    collection="subtopics",
     schema=GenerateSubtopics.OutputSchema,
 )
 generator = DatasetGenerator(dataset=my_dataset)

@@ -40,8 +40,7 @@ def sample_data():
 
 
 def test_dataset_init(test_dataset):
-    assert test_dataset.name == "test_dataset"
-    assert test_dataset.description == "Test dataset"
+    assert test_dataset.collection == "test_dataset"
     assert test_dataset._schema == TestSchema
     assert test_dataset.dataset_id is not None
 
@@ -57,7 +56,7 @@ def test_from_json(tmp_path):
         json.dump(test_data, f)
 
     dataset = DriaDataset.from_json(
-        f"test_json_{uuid.uuid4()}", "Test JSON dataset", TestSchema, str(json_path)
+        f"test_json_{uuid.uuid4()}", TestSchema, str(json_path)
     )
 
     entries = dataset.get_entries(data_only=True)
@@ -150,7 +149,7 @@ def test_remove_dataset(test_dataset, sample_data):
     test_dataset.remove_dataset()
 
     assert test_dataset.dataset_id is None
-    assert test_dataset.name is None
+    assert test_dataset.collection is None
     assert test_dataset.db is None
 
 

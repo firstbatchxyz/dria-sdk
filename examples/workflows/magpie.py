@@ -3,8 +3,7 @@ from dria.workflow.factory import MagPie
 import asyncio
 
 my_dataset = DriaDataset(
-    name="magpie_test",
-    description="test",
+    collection="magpie_test",
     schema=MagPie.OutputSchema,
 )
 
@@ -22,7 +21,7 @@ instructions = [
 asyncio.run(
     generator.generate(
         instructions=instructions,
-        singletons=MagPie,
+        workflows=MagPie,
         models=Model.GPT4O,
     )
 )

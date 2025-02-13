@@ -6,7 +6,6 @@ import asyncio
 from dria.utilities import ConversationMapping, FieldMapping, FormatType
 
 
-
 instructions = [
     {
         "instructor_persona": "A math student",
@@ -35,7 +34,7 @@ instructions = [
     },
 ]
 
-my_dataset = DriaDataset("magpie_test", "a test dataset", MagPie.OutputSchema)
+my_dataset = DriaDataset("magpie_test", MagPie.OutputSchema)
 generator = DatasetGenerator(dataset=my_dataset)
 
 

@@ -3,8 +3,7 @@ from dria.workflow.factory import QA
 import asyncio
 
 my_dataset = DriaDataset(
-    name="QA",
-    description="A dataset for pages",
+    collection="QA",
     schema=QA[-1].OutputSchema,
 )
 

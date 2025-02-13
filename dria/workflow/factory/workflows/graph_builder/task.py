@@ -75,7 +75,9 @@ class GenerateGraph(WorkflowTemplate):
                 graph_data = parse_json(r.result.strip())
                 for g in graph_data:
                     graph_relation = GraphRelation(**g)
-                    outputs.append(self.OutputSchema(graph=graph_relation, model=r.model))
+                    outputs.append(
+                        self.OutputSchema(graph=graph_relation, model=r.model)
+                    )
             except json.JSONDecodeError:
                 # Handle the case where the result is not valid JSON
                 graph_data = r.result.strip()

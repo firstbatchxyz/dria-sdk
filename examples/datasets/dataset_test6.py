@@ -4,8 +4,7 @@ from dria import DriaDataset, DatasetGenerator
 from dria.workflow.factory import SearchWeb
 
 my_dataset = DriaDataset(
-    name="searches",
-    description="A dataset for pages",
+    collection="searches",
     schema=SearchWeb.OutputSchema,
 )
 

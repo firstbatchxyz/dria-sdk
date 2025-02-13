@@ -27,5 +27,5 @@ __core_exports = [
     "MultiHopQuestion",
     "InstructionBacktranslation",
     "Reasoning",
-    "WorkflowTemplate"
+    "WorkflowTemplate",
 ]

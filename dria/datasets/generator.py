@@ -142,9 +142,7 @@ class DatasetGenerator:
     async def generate(
         self,
         instructions: Union[List[Dict[str, Any]], DriaDataset],
-        workflows: Union[
-            Type[WorkflowTemplate], List[Type[WorkflowTemplate]], Prompt
-        ],
+        workflows: Union[Type[WorkflowTemplate], List[Type[WorkflowTemplate]], Prompt],
         models: Optional[Union[Model, List[Model], List[List[Model]]]] = None,
         sampling_ratio: float = 1.0,
     ) -> None:
@@ -197,12 +195,14 @@ class DatasetGenerator:
         _, _ = await self._executor(instructions, prompt, models)
 
         name = (
-            self.dataset.name + "_" + sha256(prompt.prompt.encode("utf-8")).hexdigest()
+            self.dataset.collection
+            + "_"
+            + sha256(prompt.prompt.encode("utf-8")).hexdigest()
         )
         dataset_id = self.dataset.db.get_dataset_id_by_name(name)
         final_entries = self.dataset.db.get_dataset_entries(dataset_id, data_only=True)
 
-        final_db = self.dataset.db.get_dataset_id_by_name(self.dataset.name)
+        final_db = self.dataset.db.get_dataset_id_by_name(self.dataset.collection)
         self.dataset.db.add_entries(final_db, final_entries)
 
     async def _with_workflows(
@@ -252,7 +252,7 @@ class DatasetGenerator:
         )
 
         for i in range(1, len(workflows)):
-            name = self.dataset.name + "_" + workflows[i - 1].__name__
+            name = self.dataset.collection + "_" + workflows[i - 1].__name__
             dataset_id = self.dataset.db.get_dataset_id_by_name(name)
             instructions = self.dataset.db.get_dataset_entries(
                 dataset_id, data_only=True
@@ -268,11 +268,11 @@ class DatasetGenerator:
             )
 
         # Assign last created as the main dataset
-        name = self.dataset.name + "_" + workflows[-1].__name__
+        name = self.dataset.collection + "_" + workflows[-1].__name__
         dataset_id = self.dataset.db.get_dataset_id_by_name(name)
         final_entries = self.dataset.db.get_dataset_entries(dataset_id, data_only=True)
 
-        final_db = self.dataset.db.get_dataset_id_by_name(self.dataset.name)
+        final_db = self.dataset.db.get_dataset_id_by_name(self.dataset.collection)
         self.dataset.db.add_entries(final_db, final_entries)
 
         # TODO: decide what to do with step_map, write on db, or store locally, or none
@@ -304,7 +304,9 @@ class DatasetGenerator:
         _, _ = await self._executor(instructions, prompt, models)
 
         name = (
-            self.dataset.name + "_" + sha256(prompt.prompt.encode("utf-8")).hexdigest()
+            self.dataset.collection
+            + "_"
+            + sha256(prompt.prompt.encode("utf-8")).hexdigest()
         )
         dataset_id = self.dataset.db.get_dataset_id_by_name(name)
         final_entries = self.dataset.db.get_dataset_entries(dataset_id, data_only=True)

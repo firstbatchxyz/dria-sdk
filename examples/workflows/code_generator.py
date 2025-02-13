@@ -2,9 +2,7 @@ from dria import DriaDataset, DatasetGenerator, Model
 from dria.workflow.factory import GenerateCode
 import asyncio
 
-my_dataset = DriaDataset(
-    name="code", description="A dataset for code", schema=GenerateCode.OutputSchema
-)
+my_dataset = DriaDataset(collection="code", schema=GenerateCode.OutputSchema)
 
 generator = DatasetGenerator(dataset=my_dataset)
 

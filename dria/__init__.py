@@ -12,5 +12,5 @@ __all__ = [
     "Model",
     "Prompt",
     "WorkflowTemplate",
-    "TaskManager"
+    "TaskManager",
 ]

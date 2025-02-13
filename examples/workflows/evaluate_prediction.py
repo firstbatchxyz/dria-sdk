@@ -3,8 +3,7 @@ from dria.workflow.factory import EvaluatePrediction
 import asyncio
 
 my_dataset = DriaDataset(
-    name="evalpred_test",
-    description="test",
+    collection="evalpred_test",
     schema=EvaluatePrediction.OutputSchema,
 )
 

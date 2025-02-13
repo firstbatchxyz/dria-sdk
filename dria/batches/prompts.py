@@ -1,13 +1,14 @@
 import json
 import logging
 import traceback
+from hashlib import sha256
 from typing import List, Dict, Any, Tuple, Optional
+
+from dria.constants import SCORING_BATCH_SIZE
 from dria.constants import TASK_TIMEOUT
+from dria.datasets.base import DriaDataset
 from dria.datasets.prompter import Prompt
 from dria.models import Task, Model, TaskResult
-from dria.datasets.base import DriaDataset
-from dria.constants import SCORING_BATCH_SIZE
-from hashlib import sha256
 
 
 class ParallelPromptExecutor:
@@ -26,15 +27,11 @@ class ParallelPromptExecutor:
         self.models = [Model.GPT4O_MINI]
 
         self.hash = sha256(self.prompt.prompt.encode("utf-8")).hexdigest()
-        name = self.dataset.name + "_" + self.hash
+        name = self.dataset.collection + "_" + self.hash
 
-        failed = self.dataset.name + "_" + self.hash + "_failed"
-        self.dataset_id = self.dataset.db.create_dataset(
-            name, description=self.prompt.description
-        )
-        self.failed_dataset_id = self.dataset.db.create_dataset(
-            failed, description=self.prompt.description
-        )
+        failed = self.dataset.collection + "_" + self.hash + "_failed"
+        self.dataset_id = self.dataset.db.create_dataset(name)
+        self.failed_dataset_id = self.dataset.db.create_dataset(failed)
 
     def load_instructions(self, inputs: List[Dict[str, Any]]):
         for inp in inputs:
@@ -96,7 +93,9 @@ class ParallelPromptExecutor:
     def _create_task(self, data: Dict[str, Any]) -> Task:
         workflow_data = self.prompt.build(**data)
         return Task(
-            workflow=workflow_data, models=self.models, dataset_id=self.dataset.name
+            workflow=workflow_data,
+            models=self.models,
+            dataset_id=self.dataset.collection,
         )
 
     def _align_results(

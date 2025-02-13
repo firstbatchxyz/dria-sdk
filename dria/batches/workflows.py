@@ -23,8 +23,8 @@ class ParallelWorkflowExecutor:
         self.instructions: Tuple[List[Task], List[Dict[str, Any]]] = ([], [])
         self.models = [Model.OLLAMA]
 
-        name = self.dataset.name + "_" + self.workflow.__name__
-        failed = self.dataset.name + "_" + self.workflow.__name__ + "_failed"
+        name = self.dataset.collection + "_" + self.workflow.__name__
+        failed = self.dataset.collection + "_" + self.workflow.__name__ + "_failed"
         self.dataset_id = self.dataset.db.create_dataset(
             name, description=self.workflow.__name__
         )
@@ -76,7 +76,9 @@ class ParallelWorkflowExecutor:
         data = {k: data[k] for k in self.workflow.model_fields.keys() if k != "params"}
         workflow_data = self.workflow(**data).build()
         return Task(
-            workflow=workflow_data, models=self.models, dataset_id=self.dataset.name
+            workflow=workflow_data,
+            models=self.models,
+            dataset_id=self.dataset.collection,
         )
 
     def _align_results(

@@ -3,8 +3,7 @@ from dria.workflow.factory import Simple
 import asyncio
 
 my_dataset = DriaDataset(
-    name="simple",
-    description="A simple dataset",
+    collection="simple",
     schema=Simple.OutputSchema,
 )
 generator = DatasetGenerator(dataset=my_dataset)

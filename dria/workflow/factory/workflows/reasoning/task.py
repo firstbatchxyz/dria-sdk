@@ -71,5 +71,7 @@ class Reasoning(WorkflowTemplate):
         """
         results = []
         for r in result:
-            results.append(self.OutputSchema(**{"reasoning": r.result, "model": r.model}))
+            results.append(
+                self.OutputSchema(**{"reasoning": r.result, "model": r.model})
+            )
         return results

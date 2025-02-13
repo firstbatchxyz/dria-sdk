@@ -17,7 +17,7 @@ from dria.utilities import (
     recover_public_key,
     base64_to_json,
     uncompressed_public_key,
-    logger
+    logger,
 )
 from dria.manager import TaskManager
 

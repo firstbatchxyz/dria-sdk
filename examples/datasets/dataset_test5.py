@@ -4,8 +4,7 @@ from dria import DriaDataset, DatasetGenerator, Model
 from dria.workflow.factory import PersonaBio
 
 my_dataset = DriaDataset(
-    name="pages",
-    description="A dataset for pages",
+    collection="pages",
     schema=PersonaBio[-1].OutputSchema,
 )
 

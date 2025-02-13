@@ -34,12 +34,12 @@ class TaskExecutor:
     DEADLINE_MULTIPLIER: int = 10
 
     def __init__(
-            self,
-            ping: Ping,
-            rpc: RPCClient,
-            storage: Storage,
-            kv: KeyValueQueue,
-            task_manager: TaskManager,
+        self,
+        ping: Ping,
+        rpc: RPCClient,
+        storage: Storage,
+        kv: KeyValueQueue,
+        task_manager: TaskManager,
     ):
         """ """
         self.ping = ping
@@ -123,10 +123,10 @@ class TaskExecutor:
             raise TaskPublishError(f"Failed to publish task: {e}") from e
 
     async def fetch(
-            self,
-            task_ids: List[str],
-            fetch_interval: int = FETCH_INTERVAL,
-            retries: int = 0,
+        self,
+        task_ids: List[str],
+        fetch_interval: int = FETCH_INTERVAL,
+        retries: int = 0,
     ) -> List[TaskResult]:
         """
         Recursively fetch and clean task results.
@@ -144,7 +144,7 @@ class TaskExecutor:
         results = await self.poll(task_ids)
         if results is None:
             await asyncio.sleep(fetch_interval)
-            return await self.fetch(task_ids, fetch_interval ** 2, retries + 1)
+            return await self.fetch(task_ids, fetch_interval**2, retries + 1)
 
         result_ids = {r.id for r in results}
         remaining_task_ids = [t for t in task_ids if t not in result_ids]
@@ -235,17 +235,17 @@ class TaskExecutor:
                             "node_address": address,
                             "model": result["model"],
                             "publish_latency": (
-                                                       current_ns - result["stats"]["publishedAt"]
-                                               )
-                                               / 1e9,
+                                current_ns - result["stats"]["publishedAt"]
+                            )
+                            / 1e9,
                             "execution_time": (
-                                    result["stats"]["executionEndedAt"]
-                                    - result["stats"]["executionStartedAt"]
+                                result["stats"]["executionEndedAt"]
+                                - result["stats"]["executionStartedAt"]
                             ),
                             "receive_latency": (
-                                                       result["stats"]["receivedAt"] - task_data["created_ts"]
-                                               )
-                                               / 1e9,
+                                result["stats"]["receivedAt"] - task_data["created_ts"]
+                            )
+                            / 1e9,
                             "roundtrip": (current_ns - task_data["created_ts"]) / 1e9,
                             "error": True,
                         }
@@ -288,17 +288,17 @@ class TaskExecutor:
                             "node_address": address,
                             "model": result["model"],
                             "publish_latency": (
-                                                       current_ns - result["stats"]["publishedAt"]
-                                               )
-                                               / 1e9,
+                                current_ns - result["stats"]["publishedAt"]
+                            )
+                            / 1e9,
                             "execution_time": (
-                                    result["stats"]["executionEndedAt"]
-                                    - result["stats"]["executionStartedAt"]
+                                result["stats"]["executionEndedAt"]
+                                - result["stats"]["executionStartedAt"]
                             ),
                             "receive_latency": (
-                                                       result["stats"]["receivedAt"] - task_data["created_ts"]
-                                               )
-                                               / 1e9,
+                                result["stats"]["receivedAt"] - task_data["created_ts"]
+                            )
+                            / 1e9,
                             "roundtrip": (current_ns - task_data["created_ts"]) / 1e9,
                         }
                         if "error" in result:
@@ -361,7 +361,7 @@ class TaskExecutor:
         try:
             tasks_ = [t.__deepcopy__() for t in tasks]
             batched_tasks = [
-                tasks_[i: i + SCORING_BATCH_SIZE]
+                tasks_[i : i + SCORING_BATCH_SIZE]
                 for i in range(0, len(tasks_), SCORING_BATCH_SIZE)
             ]
             results = []

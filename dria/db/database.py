@@ -28,7 +28,6 @@ class DatasetDB:
                 CREATE TABLE IF NOT EXISTS datasets (
                     dataset_id INTEGER PRIMARY KEY,
                     name VARCHAR,
-                    description TEXT,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
@@ -50,7 +49,7 @@ class DatasetDB:
         except Exception as e:
             raise DatabaseError(f"Failed to initialize tables: {str(e)}")
 
-    def create_dataset(self, name: str, description: str = "") -> int:
+    def create_dataset(self, name: str) -> int:
         """Create a new dataset."""
         try:
             result = self.conn.execute(
@@ -59,12 +58,12 @@ class DatasetDB:
                     SELECT COALESCE(MAX(dataset_id) + 1, 1) as next_id 
                     FROM datasets
                 )
-                INSERT INTO datasets (dataset_id, name, description)
+                INSERT INTO datasets (dataset_id, name)
                 SELECT next_id, ?, ?
                 FROM new_id
                 RETURNING dataset_id
             """,
-                (name, description),
+                name,
             ).fetchone()
             if result is None:
                 raise DatabaseError("Failed to create dataset")
@@ -217,7 +216,7 @@ class DatasetDB:
         try:
             results = self.conn.execute(
                 """
-                SELECT dataset_id, name, description, created_at, updated_at
+                SELECT dataset_id, name, created_at, updated_at
                 FROM datasets
                 ORDER BY created_at DESC
             """
@@ -227,9 +226,8 @@ class DatasetDB:
                 {
                     "dataset_id": row[0],
                     "name": row[1],
-                    "description": row[2],
-                    "created_at": str(row[3]),
-                    "updated_at": str(row[4]),
+                    "created_at": str(row[2]),
+                    "updated_at": str(row[3]),
                 }
                 for row in results
             ]
@@ -324,7 +322,6 @@ if __name__ == "__main__":
         # Create a new dataset
         dataset_id = db.create_dataset(
             name=f"Test Run {random.randint(1, 100)}",
-            description="First test generation run",
         )
 
         # Add some entries

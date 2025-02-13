@@ -3,8 +3,7 @@ from dria.workflow.factory import EvolveInstruct
 import asyncio
 
 my_dataset = DriaDataset(
-    name="evolve_i_test",
-    description="test",
+    collection="evolve_i_test",
     schema=EvolveInstruct.OutputSchema,
 )
 

@@ -19,8 +19,7 @@ OutputFormat = Literal["json", "jsonl", "huggingface"]
 class DriaDataset:
     def __init__(
         self,
-        name: str,
-        description: str,
+        collection: str,
         schema: Type[BaseModel],
         db: DatasetDB = None,
     ):
@@ -28,13 +27,11 @@ class DriaDataset:
         Initialize DriaDataset.
 
         Args:
-            name: Name of the dataset
-            description: Description of the dataset
+            collection: The collection name of dataset
             schema: Pydantic model defining the structure of entries
             db: Database connection
         """
-        self.name = name
-        self.description = description
+        self.collection = collection
         self._schema = schema
         self.db = db or DatasetDB()
         self.dataset_id = self._init_dataset()
@@ -43,21 +40,20 @@ class DriaDataset:
         """Initialize or get existing dataset from DB."""
         datasets = self.db.get_datasets()
         for dataset in datasets:
-            if dataset["name"] == self.name:
+            if dataset["name"] == self.collection:
                 return dataset["dataset_id"]
-        return self.db.create_dataset(self.name, self.description)
+        return self.db.create_dataset(self.collection)
 
     @classmethod
     def from_json(
         cls,
         name: str,
-        description: str,
         schema: Type[BaseModel],
         json_path: str,
     ) -> "DriaDataset":
         """Create dataset from JSON file."""
         db = DatasetDB()
-        dataset = cls(name, description, schema, db)
+        dataset = cls(name, schema, db)
         try:
             with open(json_path, "r") as f:
                 data = json.load(f)
@@ -88,7 +84,6 @@ class DriaDataset:
     def from_csv(
         cls,
         name: str,
-        description: str,
         schema: Type[BaseModel],
         csv_path: str,
         delimiter: str = ",",
@@ -99,7 +94,6 @@ class DriaDataset:
 
         Args:
             name: Name of the dataset
-            description: Description of the dataset
             schema: Pydantic model defining the structure
             csv_path: Path to CSV file
             delimiter: CSV delimiter (default: ',')
@@ -109,7 +103,7 @@ class DriaDataset:
             DriaDataset instance
         """
         db = DatasetDB()
-        dataset = cls(name, description, schema, db)
+        dataset = cls(name, schema, db)
 
         try:
             with open(csv_path, "r", encoding="utf-8") as f:
@@ -147,7 +141,6 @@ class DriaDataset:
     def from_huggingface(
         cls,
         name: str,
-        description: str,
         dataset_id: str,
         schema: Type[BaseModel],
         mapping: Optional[Dict[str, str]] = None,
@@ -167,7 +160,7 @@ class DriaDataset:
             except ValidationError:
                 raise ValueError(f"Failed to map entry to schema: {entry}")
 
-        dataset = cls(name, description, schema, db)
+        dataset = cls(name, schema, db)
         dataset.db.add_entries(dataset.dataset_id, mapped_data)
         return dataset
 
@@ -192,7 +185,7 @@ class DriaDataset:
         all_fields = {**current_fields, **new_fields}
 
         # Create new schema
-        self._schema = create_model(f"{self.name}Schema", **all_fields)
+        self._schema = create_model(f"{self.collection}Schema", **all_fields)
 
     @property
     def schema(self) -> Type[BaseModel]:
@@ -252,7 +245,7 @@ class DriaDataset:
         formatted_data = formatter.format(entries, format_type, field_mapping)
 
         if not output_path:
-            output_path = os.getcwd() + self.name + "_" + format_type.name.lower()
+            output_path = os.getcwd() + self.collection + "_" + format_type.name.lower()
 
         if output_format == "json":
             output_path += ".json"
@@ -274,7 +267,9 @@ class DriaDataset:
 
             # Push to hub if repo_id is provided
             hf_dataset.push_to_hub(
-                hf_repo_id, private=True, commit_message=f"Update dataset: {self.name}"
+                hf_repo_id,
+                private=True,
+                commit_message=f"Update dataset: {self.collection}",
             )
             return hf_dataset
 
@@ -297,7 +292,7 @@ class DriaDataset:
         """Remove the dataset and all its entries from the database."""
         self.db.remove_dataset(self.dataset_id)
         self.dataset_id = None
-        self.name = None
+        self.collection = None
         self.db = None
 
     def to_pandas(self) -> pd.DataFrame:
@@ -307,7 +302,7 @@ class DriaDataset:
     def to_jsonl(self, filepath: Optional[str] = None, force_ascii: bool = False):
         """Convert dataset to JSONL."""
         if filepath is None:
-            filepath = self.name + ".jsonl"
+            filepath = self.collection + ".jsonl"
         self.to_pandas().to_json(
             filepath, orient="records", lines=True, force_ascii=force_ascii
         )
@@ -315,7 +310,7 @@ class DriaDataset:
     def to_json(self, filepath: Optional[str] = None, force_ascii: bool = False):
         """Convert dataset to JSON."""
         if filepath is None:
-            filepath = self.name + ".json"
+            filepath = self.collection + ".json"
         self.to_pandas().to_json(
             filepath, orient="records", lines=False, force_ascii=force_ascii
         )
@@ -366,7 +361,7 @@ class DriaDataset:
                 response = httpx.post(
                     "https://dkn.dria.co/dashboard/supply/v0/logs/upload-dataset",
                     json={
-                        "dataset_name": self.name,
+                        "dataset_name": self.collection,
                         "link": url,
                     },
                     headers={"x-api-key": rpc_token},

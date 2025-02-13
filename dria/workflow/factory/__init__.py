@@ -18,7 +18,7 @@ __core_exports = [
     "TextClassification",
     "SemanticTriplet",
     "MagPie",
-    "SearchWeb"
+    "SearchWeb",
     "Simple",
     "EvaluatePrediction",
     "ValidatePrediction",

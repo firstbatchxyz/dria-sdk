@@ -12,9 +12,7 @@ class Tweet(BaseModel):
 
 
 # Create dataset
-dataset = DriaDataset(
-    name="tweet_test", description="A dataset of tweets!", schema=Tweet
-)
+dataset = DriaDataset(collection="tweet_test", schema=Tweet)
 
 instructions = [{"topic": "BadBadNotGood"}, {"topic": "Decentralized synthetic data"}]
 

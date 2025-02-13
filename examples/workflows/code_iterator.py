@@ -3,8 +3,7 @@ from dria.workflow.factory import IterateCode
 import asyncio
 
 my_dataset = DriaDataset(
-    name="code_it_test",
-    description="A dataset for code",
+    collection="code_it_test",
     schema=IterateCode.OutputSchema,
 )
 

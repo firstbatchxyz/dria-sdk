@@ -1,6 +1,6 @@
 import logging
 import os
-from typing import Dict, List, Optional
+from typing import Dict, List, Type
 
 from dria.datasets.utils import get_community_token
 from dria.db.mq import KeyValueQueue
@@ -15,13 +15,13 @@ from dria.workflow import WorkflowTemplate
 class Dria:
     """
     Client SDK for interacting with the Dria distributed AI system.
-    
+
     The Dria client provides a high-level interface for submitting AI tasks to the network,
     managing task execution, and retrieving results. It handles authentication, retries,
     and distributed task coordination.
 
     Example:
-        >>> client = Dria(rpc_token="your_token") 
+        >>> client = Dria(rpc_token="your_token")
         >>> results = await client.generate(
         ...     instructions=[{"prompt": "Write a story"}],
         ...     workflow=Workflow,
@@ -30,8 +30,8 @@ class Dria:
     """
 
     def __init__(
-            self,
-            log_level: int = logging.INFO,
+        self,
+        log_level: int = logging.INFO,
     ) -> None:
         """
         Initialize the Dria client.
@@ -51,7 +51,9 @@ class Dria:
         rpc_token = get_community_token()
 
         if not rpc_token and not os.environ.get("DRIA_RPC_TOKEN"):
-            raise ValueError("No RPC token provided. Set DRIA_RPC_TOKEN or pass rpc_token")
+            raise ValueError(
+                "No RPC token provided. Set DRIA_RPC_TOKEN or pass rpc_token"
+            )
 
         # Initialize core components
         self.rpc = RPCClient(auth_token=rpc_token or os.environ.get("DRIA_RPC_TOKEN"))
@@ -67,16 +69,16 @@ class Dria:
             rpc=self.rpc,
             storage=self.storage,
             kv=self.kv,
-            task_manager=task_manager
+            task_manager=task_manager,
         )
 
         self._initialized = True
 
     async def generate(
-            self,
-            instructions: List[Dict[str, any]],
-            workflow: Type[WorkflowTemplate],
-            models: str
+        self,
+        instructions: List[Dict[str, any]],
+        workflow: Type[WorkflowTemplate],
+        models: str,
     ) -> List[TaskResult]:
         """
         Generate tasks from instructions and execute workflows.

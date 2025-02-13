@@ -8,7 +8,11 @@ from dria_workflows import (
     Write,
     Edge,
 )
-from dria.workflow.factory.utilities import get_abs_path, get_tags, remove_text_between_tags
+from dria.workflow.factory.utilities import (
+    get_abs_path,
+    get_tags,
+    remove_text_between_tags,
+)
 from dria.workflow.template import WorkflowTemplate
 from dria.models import TaskResult
 
