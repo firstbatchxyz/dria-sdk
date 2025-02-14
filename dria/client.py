@@ -1,7 +1,8 @@
 import logging
 import os
-from typing import Dict, List, Type
+from typing import Dict, List, Type, Optional, Union, Any
 
+from dria import Model
 from dria.datasets.utils import get_community_token
 from dria.db.mq import KeyValueQueue
 from dria.db.storage import Storage
@@ -10,6 +11,7 @@ from dria.manager import TaskManager
 from dria.models import Task, TaskResult
 from dria.request import RPCClient
 from dria.workflow import WorkflowTemplate
+from dria.workflow.factory import Simple
 
 
 class Dria:
@@ -23,9 +25,9 @@ class Dria:
     Example:
         >>> client = Dria(rpc_token="your_token")
         >>> results = await client.generate(
-        ...     instructions=[{"prompt": "Write a story"}],
+        ...     variables=[{"prompt": "Write a story"}],
         ...     workflow=Workflow,
-        ...     models=[Model.GPT4O]
+        ...     models=Model.GPT4O
         ... )
     """
 
@@ -73,37 +75,57 @@ class Dria:
         )
 
         self._initialized = True
-
     async def generate(
         self,
-        instructions: List[Dict[str, any]],
-        workflow: Type[WorkflowTemplate],
-        models: str,
+        inputs: Union[List[Dict[str, Any]], Dict[str, Any], str],
+        workflow: Optional[Type[WorkflowTemplate]] = None,
+        models: Optional[Union[str, List[str]]] = None,
     ) -> List[TaskResult]:
         """
         Generate tasks from instructions and execute workflows.
 
         Args:
-            instructions: List of instruction dictionaries containing task parameters
-            workflow: Workflow template class that builds the task workflow
-            models: List of model identifiers to use for task execution
+            inputs: List of instruction dictionaries, single dictionary, or string containing task parameters.
+                      Must not be empty.
+            workflow: Optional workflow template class that builds the task workflow.
+                     Defaults to Simple workflow if not provided.
+            models: Optional model identifier(s) to use for task execution.
+                   Can be a single model string or list of models.
+                   Defaults to GPT-4 if not provided.
 
         Returns:
-            List of TaskResult objects containing the generation results
+            List[TaskResult]: List of TaskResult objects containing the generation results.
 
         Raises:
-            ValueError: If instructions or models are invalid
-            RuntimeError: If task execution fails
+            ValueError: If variables is empty or invalid.
+            RuntimeError: If task execution fails.
         """
-        if not instructions:
-            raise ValueError("Instructions list cannot be empty")
+        if not inputs:
+            raise ValueError("Inputs cannot be empty")
 
-        if not models:
-            raise ValueError("Models list cannot be empty")
+        # Normalize models to list
+        if models is None:
+            models = [Model.GPT4O]
+        elif isinstance(models, str):
+            models = [models]
 
-        tasks = [
-            Task(workflow=workflow(**instruction), models=models)
-            for instruction in instructions
-        ]
+        # Set default workflow
+        workflow = workflow or Simple
+
+        # Normalize variables to dict
+        if isinstance(inputs, str):
+            inputs = {"prompt": inputs}
+
+        # Create tasks based on variables type
+        try:
+            if isinstance(inputs, list):
+                tasks = [
+                    Task(workflow=workflow(**i), models=models)
+                    for i in inputs
+                ]
+            else:
+                tasks = [Task(workflow=workflow(**inputs), models=models)]
+        except Exception as e:
+            raise ValueError(f"Failed to create tasks: {str(e)}")
 
         return await self.executor.execute(tasks)

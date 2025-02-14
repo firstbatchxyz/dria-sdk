@@ -7,7 +7,7 @@ from dria.batches import ParallelWorkflowExecutor, ParallelPromptExecutor
 from dria.workflow.template import WorkflowTemplate
 from dria import Dria
 from hashlib import sha256
-from .utils import schemas_match, get_community_token
+from .utils import schemas_match
 import json
 import logging
 from .prompter import Prompt
