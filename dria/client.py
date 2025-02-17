@@ -80,6 +80,9 @@ class Dria:
         inputs: Union[List[Dict[str, Any]], Dict[str, Any], str],
         workflow: Optional[Type[WorkflowTemplate]] = None,
         models: Optional[Union[str, List[str]]] = None,
+        max_tokens: Optional[int] = None,
+        max_steps: Optional[int] = None,
+        max_time: Optional[int] = None,
     ) -> List[TaskResult]:
         """
         Generate tasks from instructions and execute workflows.
@@ -91,7 +94,10 @@ class Dria:
                      Defaults to Simple workflow if not provided.
             models: Optional model identifier(s) to use for task execution.
                    Can be a single model string or list of models.
-                   Defaults to GPT-4 if not provided.
+                   Defaults to GPT-4O if not provided.
+            max_tokens: Optional maximum number of tokens to generate.
+            max_steps: Optional maximum number of steps to execute.
+            max_time: Optional maximum execution time in seconds.
 
         Returns:
             List[TaskResult]: List of TaskResult objects containing the generation results.
@@ -116,6 +122,14 @@ class Dria:
         if isinstance(inputs, str):
             inputs = {"prompt": inputs}
 
+        # Apply configuration if set in class variables
+        if max_tokens is not None:
+            workflow.max_tokens = max_tokens
+        if max_steps is not None:
+            workflow.max_steps = max_steps
+        if max_time is not None:
+            workflow.max_time = max_time
+            
         # Create tasks based on variables type
         try:
             if isinstance(inputs, list):

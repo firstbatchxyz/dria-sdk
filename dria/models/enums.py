@@ -48,6 +48,9 @@ class Model(str, Enum):
     QWEN2_5_CODER_7B_FP16 = "qwen2.5-coder:7b-instruct-fp16"
     DEEPSEEK_CODER_6_7B = "deepseek-coder:6.7b"
     MIXTRAL_8_7B = "mixtral:8x7b"
+    TINY_AGENT_0_5B = "driaforall/tiny-agent-a:0.5b"
+    TINY_AGENT_1_5B = "driaforall/tiny-agent-a:1.5b"
+    TINY_AGENT_3B = "driaforall/tiny-agent-a:3b"
 
     DEEPSEEK_CHAT_OR = "deepseek/deepseek-chat"
     LLAMA_3_1_8B_OR = "meta-llama/llama-3.1-8b-instruct"
@@ -195,6 +198,9 @@ class FunctionCallingModels(Enum):
     ANTHROPIC_SONNET_3_5_OR = Model.ANTHROPIC_SONNET_3_5_OR.value
     ANTHROPIC_HAIKU_3_5_OR = Model.ANTHROPIC_HAIKU_3_5_OR.value
     QWEN2_5_72B_OR = Model.QWEN2_5_72B_OR.value
+    TINY_AGENT_0_5B = Model.TINY_AGENT_0_5B.value
+    TINY_AGENT_1_5B = Model.TINY_AGENT_1_5B.value
+    TINY_AGENT_3B = Model.TINY_AGENT_3B.value
 
 
 class OpenAIModels(Enum):

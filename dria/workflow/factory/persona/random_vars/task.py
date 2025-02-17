@@ -29,42 +29,19 @@ class RandomVariables(BaseModel):
 
 
 class RandomVars(WorkflowTemplate):
-    # Input fields
-    simulation_description: str = Field(
-        ..., description="Description of the simulation"
-    )
-    num_of_samples: int = Field(default=1, description="Number of samples to generate")
 
     # Output schema
     OutputSchema = RandomVarOutput
 
-    def build(self) -> Workflow:
+    def define_workflow(self):
         """
         Creates a workflow for generating random variables.
-
-        Returns:
-            Workflow: The constructed workflow
         """
-        builder = WorkflowBuilder(simulation_description=self.simulation_description)
-        builder.set_max_time(65)
-        builder.set_max_tokens(800)
-        # Step A: RandomVarGen
-        builder.generative_step(
-            path=get_abs_path("prompt.md"),
-            operator=Operator.GENERATION,
-            inputs=[
-                Read.new(key="simulation_description", required=True),
-                Read.new(key="is_valid", required=False),
-            ],
-            outputs=[Write.new("random_vars")],
-        )
+        self.add_step(prompt=get_abs_path("prompt.md"),
+                      inputs=["simulation_description", "is_valid"],
+                      outputs=["random_vars"])
 
-        flow = [
-            Edge(source="0", target="_end"),
-        ]
-        builder.flow(flow)
-        builder.set_return_value("random_vars")
-        return builder.build()
+        self.set_output("random_vars")
 
     def callback(self, result: List[TaskResult]) -> List[OutputSchema]:
         """
@@ -81,7 +58,7 @@ class RandomVars(WorkflowTemplate):
             variables = []
             try:
                 parsed_vars = self.parse_json(r.result)
-                for _ in range(self.num_of_samples):
+                for _ in range(r.task_input["num_of_samples"]):
                     persona_traits = [
                         f"{var['description']}: {sample_variable(var)}".replace("'", "")
                         for var in parsed_vars
@@ -89,7 +66,7 @@ class RandomVars(WorkflowTemplate):
                     variables.append(
                         self.OutputSchema(
                             persona_traits=persona_traits,
-                            simulation_description=self.simulation_description,
+                            simulation_description=r.task_input["simulation_description"],
                             model=r.model,
                         )
                     )
