@@ -7,7 +7,7 @@ from .crypto import (
     base64_to_json,
     str_to_base64,
 )
-from logging.logging import logger
+from .logging.logging import logger
 from .formatter import ConversationMapping, FieldMapping, DataFormatter, FormatType
 from .helper import Helper
 from .parsers.schema_parser import SchemaParser

@@ -6,7 +6,7 @@ from ecies import decrypt
 from ecies.utils import generate_eth_key
 
 from dria.models import Task
-from dria.utilities import logger
+from dria.utilities.logging.logging import logger
 
 
 def uncompressed_public_key(public_key: str) -> bytes:

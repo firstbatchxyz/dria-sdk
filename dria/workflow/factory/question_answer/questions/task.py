@@ -1,18 +1,6 @@
 import json
 from typing import List
 from pydantic import BaseModel, Field
-from dria_workflows import (
-    Workflow,
-    WorkflowBuilder,
-    Operator,
-    GetAll,
-    Push,
-    Edge,
-    ConditionBuilder,
-    Expression,
-    Size,
-    Read,
-)
 from dria.workflow.factory.utilities import get_abs_path
 from dria.workflow.template import WorkflowTemplate
 from dria.models import TaskResult
@@ -27,57 +15,18 @@ class QuestionOutput(BaseModel):
 
 
 class Question(WorkflowTemplate):
-    # Input fields
-    context: str = Field(..., description="Context for question generation")
-    persona: str = Field(
-        "A curious person.", description="Persona for question generation"
-    )
-    num_questions: int = Field(default=1, lt=50, description="Number of questions")
-
-    # Output schema
     OutputSchema = QuestionOutput
 
-    def build(self) -> Workflow:
+    def define_workflow(self):
         """
         Creates a workflow for generating questions based on context and backstory.
-
-        Returns:
-            Workflow: The constructed workflow
         """
-        builder = WorkflowBuilder(persona=self.persona, context=self.context)
-
-        builder.set_max_time(65)
-        builder.set_max_steps(self.num_questions * 2 + 1)
-        builder.set_max_tokens(500)
-
-        builder.generative_step(
-            id="question_generation",
-            path=get_abs_path("prompt.md"),
-            operator=Operator.GENERATION,
-            inputs=[
-                Read.new(key="context", required=True),
-                GetAll.new(key="history", required=False),
-                Read.new(key="persona", required=True),
-            ],
-            outputs=[Push.new("history")],
+        self.add_step(
+            prompt=get_abs_path("prompt.md"),
+            outputs=["question"]
         )
 
-        flow = [
-            Edge(
-                source="question_generation",
-                target="_end",
-                condition=ConditionBuilder.build(
-                    input=Size.new("history", required=True),
-                    expression=Expression.GREATER_THAN,
-                    expected=str(self.num_questions),
-                    target_if_not="question_generation",
-                ),
-            )
-        ]
-
-        builder.flow(flow)
-        builder.set_return_value("history")
-        return builder.build()
+        self.set_output("question")
 
     def callback(self, result: List[TaskResult]) -> List[OutputSchema]:
         """
@@ -103,8 +52,8 @@ class Question(WorkflowTemplate):
                     processed_outputs.append(
                         self.OutputSchema(
                             question=question[0].strip(),
-                            persona=self.persona,
-                            context=self.context,
+                            persona=r.task_input["persona"],
+                            context=r.task_input["context"],
                             model=r.model,
                         )
                     )

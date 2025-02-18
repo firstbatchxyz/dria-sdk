@@ -32,7 +32,7 @@ from dria.models.enums import (
 from dria.models.exceptions import TaskPublishError
 from dria.request import RPCClient
 from dria.utilities import logger, str_to_base64, SchemaParser, select_nodes
-
+import uuid
 
 class TaskManager:
     """
@@ -206,6 +206,8 @@ class TaskManager:
                 "PeerID not found for some nodes"
             ) from traceback.extract_stack()
 
+        if task.dataset_id is None:
+            task.dataset_id = uuid.uuid4().hex
         # Create TaskModel data structure
         task_model = TaskModel(
             taskId=task.id,

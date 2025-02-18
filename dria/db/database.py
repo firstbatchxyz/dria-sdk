@@ -1,7 +1,8 @@
-from pathlib import Path
-import duckdb
 import json
+from pathlib import Path
 from typing import Dict, List, Any
+
+import duckdb
 from tqdm import tqdm  # type: ignore
 
 
@@ -28,6 +29,7 @@ class DatasetDB:
                 CREATE TABLE IF NOT EXISTS datasets (
                     dataset_id INTEGER PRIMARY KEY,
                     name VARCHAR,
+                    description TEXT,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
@@ -49,7 +51,7 @@ class DatasetDB:
         except Exception as e:
             raise DatabaseError(f"Failed to initialize tables: {str(e)}")
 
-    def create_dataset(self, name: str) -> int:
+    def create_dataset(self, name: str, description: str = "") -> int:
         """Create a new dataset."""
         try:
             result = self.conn.execute(
@@ -58,12 +60,12 @@ class DatasetDB:
                     SELECT COALESCE(MAX(dataset_id) + 1, 1) as next_id 
                     FROM datasets
                 )
-                INSERT INTO datasets (dataset_id, name)
+                INSERT INTO datasets (dataset_id, name, description)
                 SELECT next_id, ?, ?
                 FROM new_id
                 RETURNING dataset_id
             """,
-                name,
+                (name, description),
             ).fetchone()
             if result is None:
                 raise DatabaseError("Failed to create dataset")
@@ -216,7 +218,7 @@ class DatasetDB:
         try:
             results = self.conn.execute(
                 """
-                SELECT dataset_id, name, created_at, updated_at
+                SELECT dataset_id, name, description, created_at, updated_at
                 FROM datasets
                 ORDER BY created_at DESC
             """
@@ -226,8 +228,9 @@ class DatasetDB:
                 {
                     "dataset_id": row[0],
                     "name": row[1],
-                    "created_at": str(row[2]),
-                    "updated_at": str(row[3]),
+                    "description": row[2],
+                    "created_at": str(row[3]),
+                    "updated_at": str(row[4]),
                 }
                 for row in results
             ]
@@ -244,7 +247,7 @@ class DatasetDB:
         raise DatabaseError(f"Dataset {name} not found")
 
     def add_fields_to_entries(
-        self, dataset_id: int, fields_and_values: Dict[str, List[Any]]
+            self, dataset_id: int, fields_and_values: Dict[str, List[Any]]
     ) -> int:
         """
         Add multiple new fields to entries in a dataset with corresponding values.
@@ -322,6 +325,7 @@ if __name__ == "__main__":
         # Create a new dataset
         dataset_id = db.create_dataset(
             name=f"Test Run {random.randint(1, 100)}",
+            description="First test generation run",
         )
 
         # Add some entries

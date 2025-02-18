@@ -1,32 +1,53 @@
 from abc import ABC, abstractmethod
-from typing import List, Optional, Any, Type, ClassVar, get_args
-from pydantic import BaseModel
+from typing import List, Optional, Any, Type, ClassVar, Literal
 
 from dria_workflows import (
     WorkflowBuilder,
     Operator,
     Edge,
-    Input,
-    Output,
     Read,
     Write,
     Push,
     GetAll,
-    Workflow,
-    Tools
+    Workflow
 )
+from pydantic import BaseModel, Field
+
 from dria.models import TaskResult
 
 
 class WorkflowTemplate(ABC):
     """A simplified abstract base class for building workflows.
-    Supports class attributes for prompts and output schema.
+
+    Each workflow template provides a structured way to define workflows with steps, connections, and configuration options.
+    The template supports class attributes for prompts, output schema and various execution limits.
+
+    Attributes:
+        OutputSchema: The schema class for workflow output validation.
+        max_tokens: Maximum number of tokens allowed for the workflow.
+        max_steps: Maximum number of steps allowed in the workflow.
+        max_time: Maximum execution time in seconds for the workflow.
+        _memory: Dictionary storing workflow memory/state.
+        _builder: Instance of WorkflowBuilder for constructing the workflow.
+        _step_count: Counter tracking number of steps added.
+        _edges: List of Edge objects defining workflow connections.
     """
-    OutputSchema: ClassVar[Type[BaseModel]] = None
-    max_tokens: ClassVar[Optional[int]] = None
-    max_steps: ClassVar[Optional[int]] = None
-    max_time: ClassVar[Optional[int]] = None
-    tools: ClassVar[Optional[List[Tools]]] = None
+    OutputSchema: ClassVar[Type[BaseModel]] = Field(
+        default=None,
+        description="The schema class used for validating workflow outputs"
+    )
+    max_tokens: ClassVar[Optional[int]] = Field(
+        default=None,
+        description="Maximum number of tokens allowed for the workflow"
+    )
+    max_steps: ClassVar[Optional[int]] = Field(
+        default=None,
+        description="Maximum number of steps allowed in the workflow execution"
+    )
+    max_time: ClassVar[Optional[int]] = Field(
+        default=None,
+        description="Maximum execution time in seconds for the workflow"
+    )
 
     def __init__(self, **kwargs):
         self._memory = kwargs
@@ -41,8 +62,7 @@ class WorkflowTemplate(ABC):
             self._builder.set_max_steps(self.max_steps)
         if self.max_time is not None:
             self._builder.set_max_time(self.max_time)
-        if self.tools is not None:
-            self._builder.set_tools(self.tools)
+
     def build(self) -> Workflow:
         """Build and return the complete workflow."""
         self.define_workflow()
@@ -92,26 +112,6 @@ class WorkflowTemplate(ABC):
         self._builder.set_max_time(max_time)
         return self
 
-    def set_tools(self, tools: List[Tools]) -> 'WorkflowTemplate':
-        """Set the tools for the workflow.
-
-        Args:
-            tools: List of tools to enable
-
-        Returns:
-            self for method chaining
-
-        Raises:
-            ValueError: If an invalid tool is specified
-        """
-        for tool in tools:
-            if str(tool) not in set(get_args(Tools)):
-                raise ValueError(
-                    f"Tool '{tool}' is not a valid tool. Choose from: {', '.join(set(get_args(Tools)))}"
-                )
-        self._builder.set_tools(tools)
-        return self
-
     @abstractmethod
     def define_workflow(self) -> None:
         """Define the workflow steps and connections.
@@ -148,20 +148,29 @@ class WorkflowTemplate(ABC):
             Processed output in the desired format
         """
         pass
+
     def add_step(
             self,
             prompt: str,
+            operation: Operator = Operator.GENERATION,
             inputs: Optional[List[str]] = None,
             outputs: Optional[List[str]] = None,
             is_list: bool = False,
+            search_type: Literal["search", "news", "scholar"] = "search",
+            search_lang: Optional[str] = None,
+            search_n_results: Optional[int] = None,
     ) -> str:
         """Add a step to the workflow with simplified parameters.
 
         Args:
+            operation: Operation type of compute
             prompt: The prompt template or file path
             inputs: List of input variable names
             outputs: List of output variable names
             is_list: Whether the output should be treated as a list
+            search_type: Type of search to perform (only used with search operation)
+            search_lang: Language for search results (only used with search operation)
+            search_n_results: Number of search results to return (only used with search operation)
 
         Returns:
             str: The ID of the created step
@@ -188,19 +197,28 @@ class WorkflowTemplate(ABC):
             except FileNotFoundError:
                 pass
 
-        self._builder.generative_step(
-            operator=Operator.GENERATION,
-            prompt=prompt,
-            inputs=step_inputs,
-            outputs=step_outputs
-        )
+        if operation == Operator.SEARCH:
+            self._builder.search_step(
+                search_query=prompt,
+                search_type=search_type,
+                lang=search_lang,
+                n_results=search_n_results,
+                outputs=step_outputs
+            )
+        else:
+            self._builder.generative_step(
+                operator=operation,
+                prompt=prompt,
+                inputs=step_inputs,
+                outputs=step_outputs
+            )
 
         step_id = str(self._step_count)
         self._step_count += 1
         return step_id
 
     @staticmethod
-    def get_list(key: str) -> Input:
+    def get_list(key: str):
         """Helper method to read all items from a list."""
         return GetAll.new(key=key, required=True)
 

@@ -5,32 +5,29 @@ from .enums import (
     OpenAIModels,
     OllamaModels,
 )
-from .exceptions import RPCClientError, RPCContentTopicError
-from .models import (
-    NodeModel,
-    TaskInputModel,
-    TaskModel,
-    Task,
-    P2PMessage,
-    TaskResult,
-    TaskInput,
-    InputParam,
+
+# Import exceptions
+from .exceptions import (
+    RPCClientError,
+    RPCContentTopicError,
+    TaskPublishError,
 )
 
+# Import core models
+from .task import Task, TaskModel, TaskResult, NodeModel, TaskInputModel
+
 __all__ = [
-    "NodeModel",
-    "TaskInputModel",
-    "TaskModel",
-    "Task",
     "Model",
-    "RPCClientError",
-    "RPCContentTopicError",
-    "P2PMessage",
-    "TaskResult",
-    "TaskInput",
     "CallbackType",
     "FunctionCallingModels",
     "OpenAIModels",
     "OllamaModels",
-    "InputParam",
+    "RPCClientError",
+    "RPCContentTopicError",
+    "TaskPublishError",
+    "Task",
+    "TaskResult",
+    "NodeModel",
+    "TaskModel",
+    "TaskInputModel"
 ]

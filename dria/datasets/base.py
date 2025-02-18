@@ -5,8 +5,7 @@ from typing import List, Dict, Optional, Type, Any, Literal, Union
 
 import httpx
 import pandas as pd
-from datasets import Dataset as HFDataset
-from datasets import load_dataset
+import datasets as hf_datasets
 from pydantic import BaseModel, create_model, ValidationError
 
 from dria.db.database import DatasetDB
@@ -147,7 +146,7 @@ class DriaDataset:
         split: str = "train",
     ) -> "DriaDataset":
         db = DatasetDB()
-        hf_dataset = load_dataset(dataset_id)[split]
+        hf_dataset = hf_datasets.load_dataset(dataset_id)[split]
 
         mapped_data = []
         for item in hf_dataset:
@@ -226,7 +225,7 @@ class DriaDataset:
         output_format: OutputFormat,
         output_path: Optional[str] = None,
         hf_repo_id: Optional[str] = None,
-    ) -> Union[List[Dict], HFDataset]:
+    ) -> Union[List[Dict], hf_datasets.Dataset]:
         """
         Format dataset for training and save/upload in specified format.
 
@@ -263,7 +262,7 @@ class DriaDataset:
                 raise ValueError("hf_repo_id is required for HuggingFace format")
 
             # Convert to HuggingFace dataset
-            hf_dataset = HFDataset.from_list(formatted_data)
+            hf_dataset = hf_datasets.Dataset.from_list(formatted_data)
 
             # Push to hub if repo_id is provided
             hf_dataset.push_to_hub(
@@ -315,9 +314,9 @@ class DriaDataset:
             filepath, orient="records", lines=False, force_ascii=force_ascii
         )
 
-    def to_hf_dataset(self) -> HFDataset:
+    def to_hf_dataset(self) -> hf_datasets.Dataset:
         """Convert dataset to HuggingFace dataset."""
-        return HFDataset.from_pandas(self.to_pandas())
+        return hf_datasets.Dataset.from_pandas(self.to_pandas())
 
     def push_to_huggingface(
         self,

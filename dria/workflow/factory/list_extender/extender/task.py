@@ -23,7 +23,6 @@ class ListExtender(WorkflowTemplate):
         # Single generation step that extends the list
         self.add_step(
             prompt=get_abs_path("prompt.md"),
-            inputs=["e_list"],
             outputs=["extended_list"]
         )
 
@@ -47,7 +46,7 @@ class ListExtender(WorkflowTemplate):
                 .replace("'", '"')
             )
             # Combine the new list with the original list
-            combined_list = list(set(new_list + self.e_list))
+            combined_list = list(set(new_list + r.task_input["e_list"]))
             outputs.append(
                 self.OutputSchema(extended_list=combined_list, model=r.model)
             )

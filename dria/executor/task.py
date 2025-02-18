@@ -7,24 +7,32 @@ from typing import Any, List, Dict, Union
 
 from Crypto.Hash import keccak
 
-from dria import TaskManager
+# Internal imports from other modules
 from dria.constants import (
     FETCH_INTERVAL,
     SCORING_BATCH_SIZE,
 )
 from dria.db.mq import KeyValueQueue
 from dria.db.storage import Storage
-from dria.executor import Ping
-from dria.models import Task, TaskResult
+from dria.models.task import Task
+from dria.models.task import TaskResult
 from dria.models.exceptions import TaskPublishError
 from dria.request import RPCClient
-from dria.utilities import Helper, evaluate_nodes, logger
+from dria.utilities.helper import Helper
+from dria.utilities.logging.logging import logger
+from dria.utilities import evaluate_nodes
 from dria.utilities.crypto import (
     get_truthful_nodes,
     generate_task_keys,
     recover_public_key,
     uncompressed_public_key,
 )
+
+# Local imports
+from .ping import Ping
+
+# Import TaskManager directly to avoid circular dependency
+from dria.manager import TaskManager
 
 
 class TaskExecutor:

@@ -1,12 +1,5 @@
 from typing import List
 from pydantic import BaseModel, Field
-from dria_workflows import (
-    Workflow,
-    WorkflowBuilder,
-    Operator,
-    Write,
-    Edge,
-)
 from dria.workflow.factory.utilities import get_abs_path, parse_json
 from dria.workflow.template import WorkflowTemplate
 from dria.models import TaskResult
@@ -19,36 +12,20 @@ class SubtopicsOutput(BaseModel):
 
 
 class GenerateSubtopics(WorkflowTemplate):
-    # Input fields
-    topic: str = Field(..., description="Main topic to generate subtopics for")
-
     # Output schema
     OutputSchema = SubtopicsOutput
 
-    def build(self) -> Workflow:
+    def define_workflow(self):
         """
         Creates a workflow for generating subtopics for a given topic.
-
-        Returns:
-            Workflow: The constructed workflow
         """
-        # Initialize the workflow with variables
-        builder = WorkflowBuilder(topic=self.topic)
 
-        # Generate subtopics
-        builder.generative_step(
-            path=get_abs_path("prompt.md"),
-            operator=Operator.GENERATION,
-            outputs=[Write.new("subtopics")],
+        self.add_step(
+            prompt=get_abs_path("prompt.md"),
+            outputs=["subtopics"]
         )
 
-        # Define the flow
-        flow = [Edge(source="0", target="_end")]
-        builder.flow(flow)
-
-        # Set the return value of the workflow
-        builder.set_return_value("subtopics")
-        return builder.build()
+        self.set_output("subtopics")
 
     def callback(self, result: List[TaskResult]) -> List[OutputSchema]:
         """
@@ -61,7 +38,7 @@ class GenerateSubtopics(WorkflowTemplate):
             List[OutputSchema]: List of validated subtopics outputs
         """
         return [
-            self.OutputSchema(topic=self.topic, subtopic=subtopic, model=r.model)
+            self.OutputSchema(topic=r.task_input["topic"], subtopic=subtopic, model=r.model)
             for r in result
             for subtopic in parse_json(r.result)
         ]

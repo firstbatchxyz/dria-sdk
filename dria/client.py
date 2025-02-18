@@ -2,7 +2,7 @@ import logging
 import os
 from typing import Dict, List, Type, Optional, Union, Any
 
-from dria import Model
+from dria.models import Model
 from dria.datasets.utils import get_community_token
 from dria.db.mq import KeyValueQueue
 from dria.db.storage import Storage
@@ -134,11 +134,11 @@ class Dria:
         try:
             if isinstance(inputs, list):
                 tasks = [
-                    Task(workflow=workflow(**i), models=models)
+                    Task(workflow=workflow(**i).build(), models=models)
                     for i in inputs
                 ]
             else:
-                tasks = [Task(workflow=workflow(**inputs), models=models)]
+                tasks = [Task(workflow=workflow(**inputs).build(), models=models)]
         except Exception as e:
             raise ValueError(f"Failed to create tasks: {str(e)}")
 

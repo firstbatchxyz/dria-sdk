@@ -2,10 +2,7 @@ import logging
 from typing import List
 from pydantic import BaseModel, Field
 from dria_workflows import (
-    Workflow,
-    WorkflowBuilder,
-    Write,
-    Edge,
+    Operator,
 )
 from dria.workflow.factory.utilities import parse_json
 from dria.workflow.template import WorkflowTemplate
@@ -20,39 +17,23 @@ class WebSearchResult(BaseModel):
 
 
 class SearchWeb(WorkflowTemplate):
-    # Input fields
-    query: str = Field(..., description="Query to search for")
-    lang: str = Field("en", description="Language to search in")
-    n_results: int = Field(5, gt=0, lte=25, description="Number of results to return")
-
-    # Output schema
     OutputSchema = WebSearchResult
 
-    def build(self) -> Workflow:
+    def define_workflow(self):
         """
         Creates a workflow for generating subtopics for a given topic.
-
-        Returns:
-            Workflow: The constructed workflow
         """
+
         # Initialize the workflow with variables
-        builder = WorkflowBuilder(query=self.query)
-
-        # Generate subtopics
-        builder.search_step(
-            search_query="{{query}}",
-            lang=self.lang,
-            n_results=self.n_results,
-            outputs=[Write.new("results")],
+        self.add_step(
+            operation=Operator.SEARCH,
+            prompt="{{query}}",
+            search_lang="en",
+            search_n_results=5,
+            outputs=["results"]
         )
+        self.set_output("results")
 
-        # Define the flow
-        flow = [Edge(source="0", target="_end")]
-        builder.flow(flow)
-
-        # Set the return value of the workflow
-        builder.set_return_value("results")
-        return builder.build()
 
     def callback(self, result: List[TaskResult]) -> List[OutputSchema]:
         """
@@ -74,6 +55,6 @@ class SearchWeb(WorkflowTemplate):
 
             for d in parsed_:
                 data = {key: d[key] for key in ["link", "snippet", "title"] if key in d}
-                data["query"] = self.query
+                data["query"] = r.task_input["query"]
                 results.append(self.OutputSchema(**data))
         return results

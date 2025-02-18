@@ -1,13 +1,6 @@
 from typing import List
+
 from pydantic import BaseModel, Field
-from dria_workflows import (
-    Workflow,
-    WorkflowBuilder,
-    Operator,
-    Read,
-    Write,
-    Edge,
-)
 from dria.workflow.factory.utilities import (
     get_abs_path,
     get_tags,
@@ -25,47 +18,19 @@ class AnswerOutput(BaseModel):
 
 
 class Answer(WorkflowTemplate):
-    # Input fields
-    context: str = Field(..., description="Context for answering the question")
-    question: str = Field(..., description="Question to be answered")
-    persona: str = Field(..., description="Persona to adopt while answering")
-
     # Output schema
     OutputSchema = AnswerOutput
 
-    def build(self) -> Workflow:
+    def define_workflow(self):
         """
         Creates a workflow for generating answers to questions.
-
-        Returns:
-            Workflow: The constructed workflow
         """
-        # Initialize the workflow with variables
-        builder = WorkflowBuilder(
-            context=self.context,
-            question=self.question,
-            persona=self.persona,
+        self.add_step(
+            prompt=get_abs_path("prompt.md"),
+            inputs=["context", "question", "persona"],
+            outputs=["answer"]
         )
-
-        # Answer Generation Step
-        builder.generative_step(
-            path=get_abs_path("prompt.md"),
-            operator=Operator.GENERATION,
-            inputs=[
-                Read.new(key="context", required=True),
-                Read.new(key="question", required=True),
-                Read.new(key="persona", required=True),
-            ],
-            outputs=[Write.new("answer")],
-        )
-
-        # Define the flow
-        flow = [Edge(source="0", target="_end")]
-        builder.flow(flow)
-
-        # Set the return value of the workflow
-        builder.set_return_value("answer")
-        return builder.build()
+        self.set_output("answer")
 
     def callback(self, result: List[TaskResult]) -> List[OutputSchema]:
         """
@@ -85,9 +50,9 @@ class Answer(WorkflowTemplate):
             if entry is not None:
                 returns.append(
                     self.OutputSchema(
-                        question=self.question,
+                        question=r.task_input["question"],
                         prediction=entry.strip(),
-                        context=self.context,
+                        context=r.task_input["context"],
                         model=r.model,
                     )
                 )

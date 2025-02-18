@@ -1,15 +1,14 @@
 import random
+from typing import List, Dict, Optional, Union, Any, Type
+import logging
+from hashlib import sha256
+import json
 
 from .base import DriaDataset
-from typing import List, Dict, Optional, Union, Any, Type
 from dria.models import Model
 from dria.batches import ParallelWorkflowExecutor, ParallelPromptExecutor
 from dria.workflow.template import WorkflowTemplate
-from dria import Dria
-from hashlib import sha256
 from .utils import schemas_match
-import json
-import logging
 from .prompter import Prompt
 
 logger = logging.getLogger(__name__)
@@ -19,7 +18,7 @@ class DatasetGenerator:
     def __init__(
         self,
         dataset: Optional[DriaDataset] = None,
-        dria_client: Optional[Dria] = None,
+        dria_client: Optional["Dria"] = None,  # Use string type annotation for forward reference
         log_level=logging.INFO,
         batch_size: Optional[int] = None,
     ):
