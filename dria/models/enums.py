@@ -63,12 +63,15 @@ class Model(str, Enum):
     QWEN2_5_EVA_32B_OR = "eva-unit-01/eva-qwen-2.5-32b"
     DEEPSEEK_2_5_OR = "deepseek/deepseek-chat"
     NOUS_HERMES_405B_OR = "nousresearch/hermes-3-llama-3.1-405b"
+    DEEPSEEK_R1_70B_OR = "deepseek/deepseek-r1-distill-llama-70b"
+    DEEPSEEK_R1_OR = "deepseek/deepseek-r1"
     DEEPSEEK_R1_1_5B = "deepseek-r1:1.5b"
     DEEPSEEK_R1_7B = "deepseek-r1:7b"
     DEEPSEEK_R1_8B = "deepseek-r1:8b"
     DEEPSEEK_R1_14B = "deepseek-r1:14b"
     DEEPSEEK_R1_32B = "deepseek-r1:32b"
     DEEPSEEK_R1_70B = "deepseek-r1:70b"
+    DEEPSEEK_R1 = "deepseek-r1"
 
     # Gemini models
     GEMINI_15_PRO = "gemini-1.5-pro"
