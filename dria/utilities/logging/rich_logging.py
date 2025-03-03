@@ -8,20 +8,23 @@ from rich import traceback
 traceback.install()
 
 # Create custom theme for different log levels
-custom_theme = Theme({
-    "info": "cyan",
-    "warning": "yellow",
-    "error": "red",
-    "debug": "green",
-})
+custom_theme = Theme(
+    {
+        "info": "cyan",
+        "warning": "yellow",
+        "error": "red",
+        "debug": "green",
+    }
+)
 
 # Create console with custom theme
 console = Console(theme=custom_theme)
 
+
 def configure_rich_logging(log_level=logging.INFO):
     """
     Configure logging with Rich formatting for beautiful terminal output.
-    
+
     Args:
         log_level: The logging level to use. Defaults to INFO.
     """
@@ -49,11 +52,12 @@ def configure_rich_logging(log_level=logging.INFO):
 
     # Suppress logs from specific libraries
     logging.getLogger("httpx").setLevel(logging.WARNING)
-    
+
     # Prevent propagation to avoid duplicate logs
     root_logger.propagate = False
+
 
 # Create a logger instance
 logger = logging.getLogger("dria")
 
-__all__ = ["logger", "configure_rich_logging", "console"] 
+__all__ = ["logger", "configure_rich_logging", "console"]

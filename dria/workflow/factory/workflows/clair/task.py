@@ -1,12 +1,5 @@
 from typing import List
 from pydantic import BaseModel, Field
-from dria_workflows import (
-    Workflow,
-    WorkflowBuilder,
-    Operator,
-    Write,
-    Edge,
-)
 from dria.workflow.factory.utilities import get_abs_path
 from dria.workflow.template import WorkflowTemplate
 from dria.models import TaskResult
@@ -28,16 +21,10 @@ class Clair(WorkflowTemplate):
     Clair is a task that takes a student solution and reasoning and corrects the student solution.
     """
 
-    # Input fields
-    task: str = Field(..., description="The original task")
-    student_solution: str = Field(
-        ..., description="The student's solution to be corrected"
-    )
-
     # Output schema
     OutputSchema = ClairOutput
 
-    def build(self) -> Workflow:
+    def define_workflow(self):
         """
         Creates a workflow for correcting student solutions.
 
@@ -45,20 +32,9 @@ class Clair(WorkflowTemplate):
             Workflow: The constructed workflow
         """
         # Initialize the workflow with variables
-        builder = WorkflowBuilder(
-            task=self.task, student_solution=self.student_solution
-        )
 
-        builder.generative_step(
-            path=get_abs_path("prompt.md"),
-            operator=Operator.GENERATION,
-            outputs=[Write.new("response")],
-        )
-
-        flow = [Edge(source="0", target="_end")]
-        builder.flow(flow)
-        builder.set_return_value("response")
-        return builder.build()
+        self.add_step(prompt=get_abs_path("prompt.md"), outputs=["response"])
+        self.set_output("response")
 
     def callback(self, result: List[TaskResult]) -> List[OutputSchema]:
         """
@@ -84,8 +60,8 @@ class Clair(WorkflowTemplate):
             output = self.OutputSchema(
                 reasoning=teacher_reasoning,
                 corrected_student_solution=corrected_student_solution,
-                task=self.task,
-                student_solution=self.student_solution,
+                task=r.task_input["task"],
+                student_solution=r.task_input["student_solution"],
                 model=r.model,
             )
             outputs.append(output)

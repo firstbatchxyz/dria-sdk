@@ -1,22 +1,22 @@
 import json
 import logging
 from typing import List, Dict, Any, Tuple, Type, Optional
-from dria.constants import TASK_TIMEOUT
+from dria.executor import TaskExecutor
 from dria.workflow.template import WorkflowTemplate
 from dria.models import Task, Model, TaskResult
 from dria.datasets.base import DriaDataset
 from dria.constants import SCORING_BATCH_SIZE
 
 
-class ParallelWorkflowExecutor:
+class Batch:
     def __init__(
         self,
-        dria_client,
+        executor: TaskExecutor,
         workflow: Type[WorkflowTemplate],
         dataset: DriaDataset,
         batch_size: Optional[int] = None,
     ):
-        self.dria = dria_client
+        self.executor = executor
         self.workflow = workflow
         self.dataset = dataset
         self.batch_size = batch_size or SCORING_BATCH_SIZE
@@ -44,12 +44,12 @@ class ParallelWorkflowExecutor:
         entry_ids = []
         input_ids = []
         for i in range(0, len(self.instructions[0]), self.batch_size):
-            if self.dria.shutdown_event.is_set():
+            if self.executor.shutdown_event.is_set():
                 break
             batch = self.instructions[0][i : i + self.batch_size]
             original_inputs = self.instructions[1][i : i + self.batch_size]
 
-            results = await self.dria.execute(batch, timeout=len(batch) * TASK_TIMEOUT)
+            results = await self.executor.execute(batch)
             try:
                 ordered_entries, input_index = self._align_results(
                     results, original_inputs
@@ -73,7 +73,6 @@ class ParallelWorkflowExecutor:
 
     def _create_task(self, data: Dict[str, Any]) -> Task:
         # Remove unnecessary fields from the input data
-        data = {k: data[k] for k in self.workflow.model_fields.keys() if k != "params"}
         workflow_data = self.workflow(**data).build()
         return Task(
             workflow=workflow_data,

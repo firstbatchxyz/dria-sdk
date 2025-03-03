@@ -1,21 +1,15 @@
-from dria import DriaDataset, DatasetGenerator, Model
-from dria.workflow.factory import Simple
 import asyncio
 
-my_dataset = DriaDataset(
-    collection="simple",
-    schema=Simple.OutputSchema,
-)
-generator = DatasetGenerator(dataset=my_dataset)
+from dria import DriaDataset, Model, Dria
 
-instructions = [
-    {"prompt": "Write a haiku about open source AI."},
-]
+dria = Dria()
+my_dataset = DriaDataset(collection="simple")
+
 asyncio.run(
-    generator.generate(
-        instructions=instructions,
-        workflows=Simple,
+    dria.generate(
+        inputs="Write a haiku about open source AI.",
         models=Model.LLAMA_3_1_8B_OR,
+        dataset=my_dataset,
     )
 )
 my_dataset.to_json()

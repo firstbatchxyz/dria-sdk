@@ -49,7 +49,7 @@ class GenerateCode(WorkflowTemplate):
     # Output schema
     OutputSchema = CodeOutput
 
-    def build(self) -> Workflow:
+    def build(self):
         builder = WorkflowBuilder(instruction=self.instruction, language=self.language)
         builder.set_max_tokens(750)
 

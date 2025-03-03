@@ -29,9 +29,11 @@ class RandomVars(WorkflowTemplate):
         """
         Creates a workflow for generating random variables.
         """
-        self.add_step(prompt=get_abs_path("prompt.md"),
-                      inputs=["simulation_description", "is_valid"],
-                      outputs=["random_vars"])
+        self.add_step(
+            prompt=get_abs_path("prompt.md"),
+            inputs=["simulation_description", "is_valid"],
+            outputs=["random_vars"],
+        )
 
         self.set_output("random_vars")
 
@@ -58,7 +60,9 @@ class RandomVars(WorkflowTemplate):
                     variables.append(
                         self.OutputSchema(
                             persona_traits=persona_traits,
-                            simulation_description=r.task_input["simulation_description"],
+                            simulation_description=r.task_input[
+                                "simulation_description"
+                            ],
                             model=r.model,
                         )
                     )

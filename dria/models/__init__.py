@@ -29,5 +29,5 @@ __all__ = [
     "TaskResult",
     "NodeModel",
     "TaskModel",
-    "TaskInputModel"
+    "TaskInputModel",
 ]

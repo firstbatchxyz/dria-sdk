@@ -1,14 +1,10 @@
 import asyncio
 
-from dria import DriaDataset, DatasetGenerator, Model
+from dria import DriaDataset, Model, Dria
 from dria.workflow.factory import PersonaBio
 
-my_dataset = DriaDataset(
-    collection="pages",
-    schema=PersonaBio[-1].OutputSchema,
-)
-
-generator = DatasetGenerator(dataset=my_dataset)
+dria = Dria()
+my_dataset = DriaDataset(collection="pages")
 
 instructions = [
     {
@@ -19,9 +15,9 @@ instructions = [
 ]
 
 asyncio.run(
-    generator.generate(
-        instructions=instructions,
-        workflows=PersonaBio,
+    dria.generate(
+        inputs=instructions,
+        workflow=PersonaBio,
         models=[
             [Model.ANTHROPIC_HAIKU_3_5_OR, Model.QWEN2_5_72B_OR],
             [
@@ -31,6 +27,7 @@ asyncio.run(
                 Model.QWEN2_5_7B_OR,
             ],
         ],
+        dataset=my_dataset,
     )
 )
 

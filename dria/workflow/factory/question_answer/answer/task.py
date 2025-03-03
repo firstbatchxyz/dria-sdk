@@ -28,7 +28,7 @@ class Answer(WorkflowTemplate):
         self.add_step(
             prompt=get_abs_path("prompt.md"),
             inputs=["context", "question", "persona"],
-            outputs=["answer"]
+            outputs=["answer"],
         )
         self.set_output("answer")
 

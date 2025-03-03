@@ -63,7 +63,7 @@ class Storage:
             await self.set_value(key, json.dumps({field: [value]}))
 
     async def remove_from_list(
-            self, key: str, field: Optional[str], values: list
+        self, key: str, field: Optional[str], values: list
     ) -> None:
         """
         Remove values from a list in the local dictionary.

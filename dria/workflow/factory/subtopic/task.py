@@ -1,4 +1,6 @@
 from typing import List
+
+from dria_workflows import Operator
 from pydantic import BaseModel, Field
 from dria.workflow.factory.utilities import get_abs_path, parse_json
 from dria.workflow.template import WorkflowTemplate
@@ -22,7 +24,9 @@ class GenerateSubtopics(WorkflowTemplate):
 
         self.add_step(
             prompt=get_abs_path("prompt.md"),
-            outputs=["subtopics"]
+            operation=Operator.SEARCH,
+            search_lang="en",
+            outputs=["subtopics"],
         )
 
         self.set_output("subtopics")
@@ -38,7 +42,9 @@ class GenerateSubtopics(WorkflowTemplate):
             List[OutputSchema]: List of validated subtopics outputs
         """
         return [
-            self.OutputSchema(topic=r.task_input["topic"], subtopic=subtopic, model=r.model)
+            self.OutputSchema(
+                topic=r.task_input["topic"], subtopic=subtopic, model=r.model
+            )
             for r in result
             for subtopic in parse_json(r.result)
         ]

@@ -1,9 +1,9 @@
-
-from dria import DriaDataset, DatasetGenerator, Model
+from dria import DriaDataset, Dria, Model
 from dria.workflow.factory import MagPie
 import asyncio
 from dria.utilities import ConversationMapping, FieldMapping, FormatType
 
+dria = Dria()
 
 instructions = [
     {
@@ -33,20 +33,20 @@ instructions = [
     },
 ]
 
-my_dataset = DriaDataset("magpie_test", MagPie.OutputSchema)
-generator = DatasetGenerator(dataset=my_dataset)
+my_dataset = DriaDataset("magpie_test")
 
 
 asyncio.run(
-    generator.generate(
-        instructions,
-        MagPie,
-        [
+    dria.generate(
+        inputs=instructions,
+        workflow=MagPie,
+        models=[
             Model.ANTHROPIC_HAIKU_3_5_OR,
             Model.QWEN2_5_72B_OR,
             Model.LLAMA_3_1_8B_OR,
             Model.LLAMA3_1_8B_FP16,
         ],
+        dataset=my_dataset,
     )
 )
 

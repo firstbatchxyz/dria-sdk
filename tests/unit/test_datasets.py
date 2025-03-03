@@ -9,7 +9,7 @@ from pydantic import BaseModel
 import pandas as pd
 
 from dria.datasets.base import DriaDataset
-from dria.datasets.utils import schemas_match, get_community_token
+from dria.executor.utils import schemas_match, get_community_token
 from dria.db.database import DatasetDB
 from dria.utilities import FieldMapping, FormatType
 
@@ -56,7 +56,7 @@ def test_from_json(tmp_path):
         json.dump(test_data, f)
 
     dataset = DriaDataset.from_json(
-        f"test_json_{uuid.uuid4()}", TestSchema, str(json_path)
+        f"test_json_{uuid.uuid4()}", str(json_path)
     )
 
     entries = dataset.get_entries(data_only=True)

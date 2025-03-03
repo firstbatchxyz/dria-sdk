@@ -1,12 +1,12 @@
 import csv
 import json
 import os
-from typing import List, Dict, Optional, Type, Any, Literal, Union
+from typing import List, Dict, Optional, Any, Literal, Union
 
+import datasets as hf_datasets
 import httpx
 import pandas as pd
-import datasets as hf_datasets
-from pydantic import BaseModel, create_model, ValidationError
+from pydantic import ValidationError
 
 from dria.db.database import DatasetDB
 from dria.utilities import FieldMapping, DataFormatter, FormatType, ConversationMapping
@@ -19,7 +19,6 @@ class DriaDataset:
     def __init__(
         self,
         collection: str,
-        schema: Type[BaseModel],
         db: DatasetDB = None,
     ):
         """
@@ -27,11 +26,9 @@ class DriaDataset:
 
         Args:
             collection: The collection name of dataset
-            schema: Pydantic model defining the structure of entries
             db: Database connection
         """
         self.collection = collection
-        self._schema = schema
         self.db = db or DatasetDB()
         self.dataset_id = self._init_dataset()
 
@@ -47,12 +44,11 @@ class DriaDataset:
     def from_json(
         cls,
         name: str,
-        schema: Type[BaseModel],
         json_path: str,
     ) -> "DriaDataset":
         """Create dataset from JSON file."""
         db = DatasetDB()
-        dataset = cls(name, schema, db)
+        dataset = cls(name, db)
         try:
             with open(json_path, "r") as f:
                 data = json.load(f)
@@ -60,17 +56,8 @@ class DriaDataset:
             # Handle both single dict and list of dicts
             entries = [data] if isinstance(data, dict) else data
 
-            # Validate all entries against schema
-            validated_data = []
-            for entry in entries:
-                try:
-                    validated_data.append(schema(**entry).model_dump())
-                except ValidationError as e:
-                    print(f"Skipping invalid entry: {entry}. Error: {str(e)}")
-                    continue
-
-            if validated_data:
-                dataset.db.add_entries(dataset.dataset_id, validated_data)
+            if entries:
+                dataset.db.add_entries(dataset.dataset_id, entries)
 
             return dataset
 
@@ -83,9 +70,9 @@ class DriaDataset:
     def from_csv(
         cls,
         name: str,
-        schema: Type[BaseModel],
         csv_path: str,
         delimiter: str = ",",
+        headers: Optional[List[str]] = None,
         has_header: bool = True,
     ) -> "DriaDataset":
         """
@@ -93,16 +80,16 @@ class DriaDataset:
 
         Args:
             name: Name of the dataset
-            schema: Pydantic model defining the structure
             csv_path: Path to CSV file
             delimiter: CSV delimiter (default: ',')
+            headers: List of column headers if CSV has no header row
             has_header: Whether CSV has header row (default: True)
 
         Returns:
             DriaDataset instance
         """
         db = DatasetDB()
-        dataset = cls(name, schema, db)
+        dataset = cls(name, db)
 
         try:
             with open(csv_path, "r", encoding="utf-8") as f:
@@ -112,22 +99,23 @@ class DriaDataset:
                     else csv.reader(f, delimiter=delimiter)
                 )
 
-                # If no header, use schema fields as keys
+                # If no header, use provided headers as keys
                 if not has_header:
-                    headers = list(schema.model_fields.keys())
+                    if headers is None:
+                        raise ValueError(
+                            "Headers must be provided when has_header=False"
+                        )
                     reader = (dict(zip(headers, row)) for row in reader)
 
                 entries = []
                 for row in reader:
                     try:
-                        # Validate against schema
-                        validated_entry = schema(**row).model_dump()
-                        entries.append(validated_entry)
+                        entries.append(row)
                     except Exception as e:
                         print(f"Skipping invalid entry: {row}. Error: {str(e)}")
                         continue
 
-                # Add validated entries to database
+                # Add entries to database
                 if entries:
                     dataset.db.add_entries(dataset.dataset_id, entries)
 
@@ -141,7 +129,6 @@ class DriaDataset:
         cls,
         name: str,
         dataset_id: str,
-        schema: Type[BaseModel],
         mapping: Optional[Dict[str, str]] = None,
         split: str = "train",
     ) -> "DriaDataset":
@@ -155,68 +142,23 @@ class DriaDataset:
             else:
                 entry = item
             try:
-                mapped_data.append(schema(**entry).model_dump())
+                mapped_data.append(entry)
             except ValidationError:
                 raise ValueError(f"Failed to map entry to schema: {entry}")
 
-        dataset = cls(name, schema, db)
+        dataset = cls(name, db)
         dataset.db.add_entries(dataset.dataset_id, mapped_data)
         return dataset
 
-    def _update_schema(self, new_fields: Dict[str, Type]):
+    def mutate(self, values: Dict[str, List[Any]]):
         """
-        Update schema with new fields.
+        Add new field to all entries.
 
         Args:
-            new_fields: Dictionary of field names and their types
-        """
-        # TODO: work with nested pydantic classes
-        current_fields = (
-            {
-                name: (field.annotation, field.default)
-                for name, field in self._schema.model_fields.items()
-            }
-            if self._schema
-            else {}
-        )
-
-        # Merge current fields with new fields
-        all_fields = {**current_fields, **new_fields}
-
-        # Create new schema
-        self._schema = create_model(f"{self.collection}Schema", **all_fields)
-
-    @property
-    def schema(self) -> Type[BaseModel]:
-        """Get current schema."""
-        return self._schema
-
-    def validate_entry(self, entry: Dict) -> Dict:
-        """Validate entry against current schema."""
-        if self._schema is None:
-            return entry
-        return self._schema(**entry).model_dump()
-
-    def mutate(
-        self, field_name: str, values: Dict[str, List[Any]], field_type: Type = None
-    ):
-        """
-        Add new field to all entries and update schema.
-
-        Args:
-            field_name: Name of the new field
             values: Values to add
-            field_type: Type of the field (optional, will be inferred if not provided)
         """
         # Add field to database entries
         self.db.add_fields_to_entries(self.dataset_id, values)
-
-        # Infer type if not provided
-        if field_type is None:
-            field_type = type(values[0]) if values else Any
-
-        # Update schema
-        self._update_schema({field_name: (field_type, ...)})
 
     def format_for_training(
         self,

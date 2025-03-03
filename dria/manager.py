@@ -34,6 +34,7 @@ from dria.request import RPCClient
 from dria.utilities import logger, str_to_base64, SchemaParser, select_nodes
 import uuid
 
+
 class TaskManager:
     """
     Manages task lifecycle including creation, publishing, and node selection.

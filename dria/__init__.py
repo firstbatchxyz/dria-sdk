@@ -8,8 +8,6 @@ from .client import Dria
 
 # Import dataset related components
 from .datasets.base import DriaDataset
-from .datasets.generator import DatasetGenerator
-from .datasets.prompter import Prompt
 
 # Import workflow components
 from .workflow.template import WorkflowTemplate
@@ -21,7 +19,5 @@ __all__ = [
     "TaskManager",
     "Dria",
     "DriaDataset",
-    "DatasetGenerator",
-    "Prompt",
     "WorkflowTemplate",
 ]
