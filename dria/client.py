@@ -6,7 +6,7 @@ from dria.db.mq import KeyValueQueue
 from dria.db.storage import Storage
 from dria.datasets.base import DriaDataset
 from dria.executor import TaskExecutor, Ping, Batch
-from dria.executor.utils import get_community_token, schemas_match
+from dria.executor.utils import get_community_token
 from dria.manager import TaskManager
 from dria.models import Model, TaskResult, Task
 from dria.request import RPCClient
@@ -114,9 +114,17 @@ class Dria:
 
     @staticmethod
     def _normalize_inputs(
-        inputs: Union[List[Dict[str, Any]], Dict[str, Any], str]
+        inputs: Union[List[Dict[str, Any]], Dict[str, Any], str, List[str]]
     ) -> Union[List[Dict[str, Any]], Dict[str, Any]]:
-        """Normalize input data to dictionary format."""
+        """
+        Normalize input data to dictionary format.
+        
+        Args:
+            inputs: Input data in various formats
+            
+        Returns:
+            Normalized input data as dictionary or list of dictionaries
+        """
         if isinstance(inputs, str):
             return {"prompt": inputs}
         elif isinstance(inputs, list) and all(isinstance(i, str) for i in inputs):
@@ -127,7 +135,15 @@ class Dria:
     def _normalize_models(
         models: Optional[Union[Model, List[Model], List[List[Model]]]]
     ) -> List[Model]:
-        """Normalize models to list format."""
+        """
+        Normalize models to list format.
+        
+        Args:
+            models: Model(s) in various formats
+            
+        Returns:
+            Normalized list of models
+        """
         if models is None:
             return [Model.GPT4O]
         if isinstance(models, (str, Model)):
@@ -155,6 +171,7 @@ class Dria:
                    - List of instruction dictionaries
                    - Single dictionary
                    - Prompt string
+                   - List of prompt strings
             workflow: Optional workflow template class that builds the task workflow.
                      Defaults to Simple workflow if not provided.
             models: Optional model(s) to use for task execution.
@@ -209,13 +226,52 @@ class Dria:
         except Exception as e:
             raise ValueError(f"Failed to create tasks: {str(e)}")
 
+    async def check_model_availability(self, models: Optional[Union[Model, List[Model]]] = None) -> Dict[Model, int]:
+        """
+        Check if models are available on the network.
+        
+        Args:
+            models: A single model or list of models to check availability for.
+                   If None, checks availability for all models.
+            
+        Returns:
+            Dictionary mapping model enum to number of available nodes.
+        """
+        all_model_nodes = {}
+        await self.executor.ping.run()
+        
+        if models is None:
+            # Check all models if none specified
+            models = list(Model)
+        
+        if not isinstance(models, list):
+            models = [models]
+        
+        for model in models:
+            nodes = await self.executor.task_manager.get_available_nodes(model.value)
+            if nodes:
+                all_model_nodes[model] = len(nodes)
+                
+        # Sort model nodes by count (high to low)
+        return dict(sorted(all_model_nodes.items(), key=lambda item: item[1], reverse=True))
+
     @staticmethod
     def _create_tasks(
         inputs: List[Dict[str, Any]],
         workflow: Type[WorkflowTemplate],
         models: List[Model],
     ) -> List[Task]:
-        """Create task instances from inputs."""
+        """
+        Create task instances from inputs.
+        
+        Args:
+            inputs: List of input dictionaries
+            workflow: Workflow template class
+            models: List of models to use
+            
+        Returns:
+            List of Task objects
+        """
         return [Task(workflow=workflow(**i).build(), models=models) for i in inputs]
 
     async def _with_workflows(
@@ -226,7 +282,8 @@ class Dria:
         models: Union[Model, List[Model], List[List[Model]]],
         batch_size: Optional[int] = 50,
     ) -> None:
-        """Generate data using Dria workflow.
+        """
+        Generate data using Dria workflow.
 
         Args:
             dataset: Target dataset to store results
@@ -234,6 +291,9 @@ class Dria:
             workflows: Single workflow or list of workflows to execute
             models: Model(s) to use for generation
             batch_size: Optional batch size for parallel execution.
+            
+        Raises:
+            ValueError: If model and workflow configurations are incompatible
         """
         workflows = [workflows] if not isinstance(workflows, list) else workflows
         models = [models] if not isinstance(models, list) else models
@@ -247,7 +307,7 @@ class Dria:
         else:
             models = [models] * len(workflows)
 
-        self._validate_workflows(inputs, workflows)
+        self._validate_workflows(workflows)
         _ = await self._execute_workflow_chain(
             dataset, inputs, workflows, models, batch_size
         )
@@ -263,7 +323,19 @@ class Dria:
         models: List[List[Model]],
         batch_size: int,
     ) -> List[List[Dict[str, Any]]]:
-        """Execute chain of workflows sequentially."""
+        """
+        Execute chain of workflows sequentially.
+        
+        Args:
+            dataset: Target dataset to store results
+            initial_inputs: Initial inputs for the first workflow
+            workflows: List of workflow templates to execute
+            models: List of model lists for each workflow
+            batch_size: Batch size for parallel execution
+            
+        Returns:
+            List of step mappings between entry IDs and input IDs
+        """
         step_map = []
         current_inputs = initial_inputs
 
@@ -293,7 +365,13 @@ class Dria:
     def _finalize_dataset(
         dataset: "DriaDataset", workflows: List[Type[WorkflowTemplate]]
     ) -> None:
-        """Finalize dataset by copying final results to main collection."""
+        """
+        Finalize dataset by copying final results to main collection.
+        
+        Args:
+            dataset: Target dataset to finalize
+            workflows: List of workflow templates that were executed
+        """
         name = f"{dataset.collection}_{workflows[-1].__name__}"
         dataset_id = dataset.db.get_dataset_id_by_name(name)
         final_entries = dataset.db.get_dataset_entries(dataset_id, data_only=True)
@@ -303,14 +381,12 @@ class Dria:
 
     @staticmethod
     def _validate_workflows(
-        inputs: List[Dict[str, Any]],
         workflows: List[Type[WorkflowTemplate]],
     ) -> None:
         """
         Validate workflow chain compatibility.
 
         Args:
-            inputs: List of inputs to validate
             workflows: List of workflow templates to validate
 
         Raises:
