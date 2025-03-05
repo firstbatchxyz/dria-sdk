@@ -1,20 +1,17 @@
-import json
-from dria import DriaDataset, Model, Dria
-from dria.workflow.factory import GenerateSubtopics
 import asyncio
 
+from dria import Model, Dria, DriaDataset
+from dria.workflow.factory import GenerateSubtopics
 
 dria = Dria()
-my_dataset = DriaDataset(collection="subtopics")
 
-asyncio.run(
+dataset = DriaDataset(collection="test_subtopics")
+result = asyncio.run(
     dria.generate(
-        inputs={"topic": "Artificial Intelligence"},
+        inputs=[{"topic": "Artificial Intelligence"}],
         workflow=GenerateSubtopics,
-        models=Model.GPT4O,
-        dataset=my_dataset,
+        models=Model.GEMINI,
+        dataset=dataset,
     )
 )
-entries = my_dataset.get_entries(True)
-
-print(json.dumps(entries, indent=2))
+print(dataset.get_entries(data_only=True))

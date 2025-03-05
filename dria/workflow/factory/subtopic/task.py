@@ -24,8 +24,6 @@ class GenerateSubtopics(WorkflowTemplate):
 
         self.add_step(
             prompt=get_abs_path("prompt.md"),
-            operation=Operator.SEARCH,
-            search_lang="en",
             outputs=["subtopics"],
         )
 
@@ -42,9 +40,7 @@ class GenerateSubtopics(WorkflowTemplate):
             List[OutputSchema]: List of validated subtopics outputs
         """
         return [
-            self.OutputSchema(
-                topic=r.task_input["topic"], subtopic=subtopic, model=r.model
-            )
+            self.OutputSchema(topic=r.inputs["topic"], subtopic=subtopic, model=r.model)
             for r in result
             for subtopic in parse_json(r.result)
         ]

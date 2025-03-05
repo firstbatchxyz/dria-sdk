@@ -1,1 +1,3 @@
-from .task import SearchWeb
+from .task import SearchWeb as SearchWeb
+
+__all__ = ["SearchWeb"]

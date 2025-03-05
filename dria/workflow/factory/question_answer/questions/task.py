@@ -49,8 +49,8 @@ class Question(WorkflowTemplate):
                     processed_outputs.append(
                         self.OutputSchema(
                             question=question[0].strip(),
-                            persona=r.task_input["persona"],
-                            context=r.task_input["context"],
+                            persona=r.inputs["persona"],
+                            context=r.inputs["context"],
                             model=r.model,
                         )
                     )

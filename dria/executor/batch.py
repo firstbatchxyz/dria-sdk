@@ -1,6 +1,9 @@
 import json
 import logging
 from typing import List, Dict, Any, Tuple, Type, Optional
+
+from pydantic import BaseModel
+
 from dria.executor import TaskExecutor
 from dria.workflow.template import WorkflowTemplate
 from dria.models import Task, Model, TaskResult
@@ -9,6 +12,13 @@ from dria.constants import SCORING_BATCH_SIZE
 
 
 class Batch:
+    """
+    Batch processing class for executing workflow tasks on datasets.
+
+    This class handles batched execution of workflow templates against datasets,
+    managing task creation, execution, result alignment, and storage.
+    """
+
     def __init__(
         self,
         executor: TaskExecutor,
@@ -16,11 +26,20 @@ class Batch:
         dataset: DriaDataset,
         batch_size: Optional[int] = None,
     ):
+        """
+        Initialize a Batch processor.
+
+        Args:
+            executor: TaskExecutor instance to run the tasks
+            workflow: WorkflowTemplate class to process inputs
+            dataset: DriaDataset containing the data to process
+            batch_size: Optional size for processing batches, defaults to SCORING_BATCH_SIZE
+        """
         self.executor = executor
         self.workflow = workflow
         self.dataset = dataset
         self.batch_size = batch_size or SCORING_BATCH_SIZE
-        self.instructions: Tuple[List[Task], List[Dict[str, Any]]] = ([], [])
+        self.tasks: List[Task] = []
         self.models = [Model.OLLAMA]
 
         name = self.dataset.collection + "_" + self.workflow.__name__
@@ -33,27 +52,46 @@ class Batch:
         )
 
     def load_instructions(self, inputs: List[Dict[str, Any]]):
+        """
+        Load input data and create corresponding tasks.
+
+        Args:
+            inputs: List of input dictionaries to process
+        """
         for inp in inputs:
-            self.instructions[0].append(self._create_task(inp))
-            self.instructions[1].append(inp)
+            task = self._create_task(inp)
+            self.tasks.append(task)
 
     def set_models(self, models: List[Model]):
+        """
+        Set the models to use for task execution.
+
+        Args:
+            models: List of Model enums to use
+        """
         self.models = models
 
     async def execute_workflows(self) -> Tuple[List[int], List[int]]:
+        """
+        Execute all loaded tasks in batches.
+
+        Returns:
+            Tuple containing (list of entry IDs, list of corresponding input indices)
+        """
         entry_ids = []
         input_ids = []
-        for i in range(0, len(self.instructions[0]), self.batch_size):
+        for i in range(0, len(self.tasks), self.batch_size):
             if self.executor.shutdown_event.is_set():
                 break
-            batch = self.instructions[0][i : i + self.batch_size]
-            original_inputs = self.instructions[1][i : i + self.batch_size]
+            batch = self.tasks[i : i + self.batch_size]
 
-            results = await self.executor.execute(batch)
+            results, tasks = await self.executor.execute(batch)
+
+            if tasks and isinstance(tasks, list) and isinstance(tasks[0], list):
+                tasks = [task for batch in tasks for task in batch]
+
             try:
-                ordered_entries, input_index = self._align_results(
-                    results, original_inputs
-                )
+                ordered_entries, input_index = await self._align_results(results, tasks)
                 entry_ids.extend(
                     self.dataset.db.add_entries(self.dataset_id, ordered_entries)
                 )
@@ -72,6 +110,15 @@ class Batch:
         return entry_ids, input_ids
 
     def _create_task(self, data: Dict[str, Any]) -> Task:
+        """
+        Create a Task instance from input data.
+
+        Args:
+            data: Dictionary containing input data
+
+        Returns:
+            Task instance configured with workflow data
+        """
         # Remove unnecessary fields from the input data
         workflow_data = self.workflow(**data).build()
         return Task(
@@ -80,70 +127,62 @@ class Batch:
             dataset_id=self.dataset.collection,
         )
 
-    def _align_results(
-        self, results: List[TaskResult], original_inputs: List[Dict]
+    async def _align_results(
+        self, results: List[TaskResult], tasks: List[Task]
     ) -> Tuple[List[Any], List[int]]:
         """
         Align results with original inputs and merge the data.
-        Handles dynamic workflow initialization for each input context.
+
+        Args:
+            results: List of TaskResult objects from execution
+            tasks: List of Task objects from execution
+
+        Returns:
+            Tuple containing (processed outputs, corresponding input indices)
+
+        Raises:
+            Exception: If result processing fails
         """
-        task_inputs = [r.task_input for r in results]
-        common_keys = set(task_inputs[0].keys()) & set(original_inputs[0].keys())
+        # Handle empty results case
+        if not results or not tasks:
+            return [], []
 
-        def create_lookup_key(input_dict: Dict) -> str:
-            normalized = {}
-            for k in sorted(common_keys):
-                val = input_dict[k]
-                # If val is a JSON string, parse it first
-                if isinstance(val, str):
-                    try:
-                        val = json.loads(val)
-                    except json.JSONDecodeError:
-                        pass
-                normalized[k] = val
-            return json.dumps(normalized, sort_keys=True)
-
-        # Create lookup for raw results with normalized keys
-        result_lookup = {}
-        for result, task_input in zip(results, task_inputs):
-            key = create_lookup_key(task_input)
-            result_lookup[key] = (result, task_input)
+        # Create mappings for task IDs to their original indices and results
+        task_id_to_idx = {task.id: idx for idx, task in enumerate(tasks)}
 
         ordered_outputs = []
         corresponding_idx = []
-        for idx, original_input in enumerate(original_inputs):
-            lookup_key = create_lookup_key(original_input)
-            if lookup_key in result_lookup:
-                result, task_input = result_lookup[lookup_key]
 
-                # Initialize workflow with original input context
-                data = {
-                    k: original_input[k]
-                    for k in self.workflow.model_fields.keys()
-                    if k != "params"
-                }
-                workflow_instance = self.workflow(**data)
+        # Process each result by matching task IDs
+        for result in results:
+            if result.id in task_id_to_idx:
+                idx = task_id_to_idx[result.id]
 
                 # Process the result with contextualized callback
                 try:
-                    outputs = workflow_instance.callback([result])
-                except Exception as e:
-                    logging.error(e)
-                    continue
+                    outputs = self.workflow().callback([result])
 
-                for output in outputs:
-                    # Convert to JSON format
-                    parsed_output = output.model_dump_json(
-                        indent=2, exclude_none=True, exclude_unset=True
-                    )
-                    ordered_outputs.append(json.loads(parsed_output))
-                    corresponding_idx.append(idx)
-            else:
-                logging.debug(
-                    f"Warning: No match found for input: {original_input}\nCurrent Lookup Keys: {result_lookup}"
-                )
+                    for output in outputs:
+                        # Convert to JSON format
+                        if isinstance(output, BaseModel):
+                            parsed_output = output.model_dump_json(
+                                indent=2, exclude_none=True, exclude_unset=True
+                            )
+                        else:
+                            parsed_output = json.dumps(output, indent=2)
+                        ordered_outputs.append(json.loads(parsed_output))
+                        corresponding_idx.append(idx)
+                except Exception as e:
+                    logging.error(f"Callback error for task {result.id}: {e}")
+                    continue
 
         return ordered_outputs, corresponding_idx
 
     async def run(self):
+        """
+        Execute all workflows and return results.
+
+        Returns:
+            Result of execute_workflows: (entry_ids, input_ids)
+        """
         return await self.execute_workflows()

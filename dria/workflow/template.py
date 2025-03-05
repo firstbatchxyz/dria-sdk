@@ -1,3 +1,4 @@
+import json
 from abc import ABC, abstractmethod
 from typing import List, Optional, Any, Type, ClassVar, Literal
 
@@ -11,41 +12,86 @@ from dria_workflows import (
     GetAll,
     Workflow,
 )
+from dria_workflows.workflows.interface import Input
 from pydantic import BaseModel, Field
 
 from dria.models import TaskResult
 
 
 # Default output schema for WorkflowTemplate
-class DefaultOutput(BaseModel):
+class TaskOutput(BaseModel):
     """Default output schema for WorkflowTemplate."""
-
+    inputs: str = Field(..., description="The inputs used to generate the output")
     output: str = Field(..., description="The generated output")
+    model: str = Field(..., description="The model used to generate the output")
 
 
 class WorkflowTemplate(ABC):
-    """A simplified abstract base class for building workflows.
+    """
+    Abstract base class for building AI workflows using the Factory Pattern.
 
-    Each workflow template provides a structured way to define workflows with steps, connections, and configuration options.
-    The template supports class attributes for prompts, output schema and various execution limits.
+    This class serves as the abstract product in the Factory Pattern implementation,
+    defining a common interface that all concrete workflow implementations must follow.
+    The Factory Pattern allows for creating different workflow objects without exposing
+    the instantiation logic to the client code.
+
+    The WorkflowTemplate provides a structured way to define workflows with steps,
+    connections, and configuration options. It abstracts away the complexity of
+    workflow construction, allowing developers to focus on defining the specific
+    workflow logic rather than the underlying implementation details.
+
+    Factory Pattern Implementation:
+    - This abstract class defines the interface for all workflow products
+    - Concrete subclasses implement the 'define_workflow' method to create specific workflows
+    - Client code can use any concrete workflow implementation interchangeably
+    - New workflow types can be added without modifying client code
 
     Attributes:
         OutputSchema: The schema class for workflow output validation.
         max_tokens: Maximum number of tokens allowed for the workflow.
         max_steps: Maximum number of steps allowed in the workflow.
         max_time: Maximum execution time in seconds for the workflow.
+
+    Internal variables:
         _memory: Dictionary storing workflow memory/state.
         _builder: Instance of WorkflowBuilder for constructing the workflow.
         _step_count: Counter tracking number of steps added.
         _edges: List of Edge objects defining workflow connections.
+
+    Usage Example:
+        ```python
+        class MyWorkflow(WorkflowTemplate):
+            def define_workflow(self):
+                step1 = self.add_step(
+                    "Generate a response to: {{prompt}}",
+                    inputs=["prompt"],
+                    outputs=["response"]
+                )
+                self.set_output("response")
+
+        # Client code
+        workflow = MyWorkflow(prompt="Tell me a story")
+        result = client.execute(workflow)
+        ```
     """
 
-    OutputSchema: ClassVar[Type[BaseModel]] = None
+    OutputSchema: ClassVar[Type[BaseModel]] = TaskOutput
     max_tokens: ClassVar[Optional[int]] = None
     max_steps: ClassVar[Optional[int]] = None
     max_time: ClassVar[Optional[int]] = None
 
     def __init__(self, **kwargs):
+        """
+        Initialize a new workflow template instance.
+
+        This constructor sets up the internal state needed for workflow construction.
+        It accepts arbitrary keyword arguments that will be stored in the workflow's
+        memory and made available to steps during execution.
+
+        Args:
+            **kwargs: Arbitrary keyword arguments to initialize the workflow's memory.
+                     These values can be referenced in prompts using {{key}} syntax.
+        """
         self._memory = kwargs
         self._builder = WorkflowBuilder(self._memory)
         self._step_count = 0
@@ -60,7 +106,17 @@ class WorkflowTemplate(ABC):
             self._builder.set_max_time(self.max_time)
 
     def build(self) -> Workflow:
-        """Build and return the complete workflow."""
+        """
+        Build and return the complete workflow.
+
+        This method orchestrates the workflow construction process:
+        1. Calls the abstract define_workflow method that subclasses must implement
+        2. Automatically adds appropriate edge connections if needed
+        3. Finalizes the workflow configuration
+
+        Returns:
+            Workflow: The fully constructed workflow ready for execution
+        """
         self.define_workflow()
 
         if len(self._edges) == 0 and self._step_count == 1:
@@ -73,44 +129,64 @@ class WorkflowTemplate(ABC):
         return self._builder.build()
 
     def set_max_tokens(self, max_tokens: int) -> "WorkflowTemplate":
-        """Set the maximum number of tokens for the workflow.
+        """
+        Set the maximum number of tokens for the workflow.
+
+        This setting limits the total token consumption across all steps
+        in the workflow, providing a safeguard against excessive resource usage.
 
         Args:
             max_tokens: Maximum number of tokens allowed
 
         Returns:
-            self for method chaining
+            self: Returns self for method chaining
         """
         self._builder.set_max_tokens(max_tokens)
         return self
 
     def set_max_steps(self, max_steps: int) -> "WorkflowTemplate":
-        """Set the maximum number of steps for the workflow.
+        """
+        Set the maximum number of steps for the workflow.
+
+        This setting limits the total number of execution steps in the workflow,
+        providing a safeguard against infinite loops or excessive complexity.
 
         Args:
             max_steps: Maximum number of steps allowed
 
         Returns:
-            self for method chaining
+            self: Returns self for method chaining
         """
         self._builder.set_max_steps(max_steps)
         return self
 
     def set_max_time(self, max_time: int) -> "WorkflowTemplate":
-        """Set the maximum execution time for the workflow.
+        """
+        Set the maximum execution time for the workflow.
+
+        This setting limits the total execution time of the workflow in seconds,
+        providing a safeguard against long-running workflows.
 
         Args:
             max_time: Maximum execution time in seconds
 
         Returns:
-            self for method chaining
+            self: Returns self for method chaining
         """
         self._builder.set_max_time(max_time)
         return self
 
     @abstractmethod
     def define_workflow(self) -> None:
-        """Define the workflow steps and connections.
+        """
+        Define the workflow steps and connections.
+
+        This is the core abstract method that all concrete workflow implementations
+        must override. It defines the specific steps, their inputs/outputs, and
+        the connections between them that make up the workflow.
+
+        In the Factory Pattern, this method represents the product-specific
+        implementation that each concrete factory provides.
 
         Example:
             def define_workflow(self):
@@ -134,16 +210,21 @@ class WorkflowTemplate(ABC):
         pass
 
     def callback(self, result: List[TaskResult]) -> Any:
-        """Process the workflow results.
+        """
+        Process the workflow results.
+
+        This method transforms the raw workflow results into the desired output format
+        as defined by the OutputSchema. Subclasses can override this method to
+        provide custom result processing logic.
 
         Args:
             result: List of raw workflow results
 
         Returns:
-            Processed output in the desired format
+            Processed output in the format defined by OutputSchema
         """
         # Default implementation that returns a list of DefaultOutput objects
-        return [self.OutputSchema(output=r.result) for r in result]
+        return [self.OutputSchema(inputs=json.dumps(r.inputs), output=r.result, model=r.model) for r in result]
 
     def add_step(
         self,
@@ -157,25 +238,33 @@ class WorkflowTemplate(ABC):
         search_lang: Optional[str] = None,
         search_n_results: Optional[int] = None,
     ) -> str:
-        """Add a step to the workflow with simplified parameters.
+        """
+        Add a step to the workflow with simplified parameters.
+
+        This method is a key part of the Factory Pattern implementation, providing
+        a simplified interface for adding steps to the workflow. It abstracts away
+        the complexity of the underlying workflow construction, allowing concrete
+        implementations to focus on the high-level workflow definition.
 
         Args:
-            operation: Operation type of compute
             prompt: The prompt template or file path
-            inputs: List of input variable names
-            outputs: List of output variable names
-            schema: Base class for structured outputs
+            operation: Operation type of compute (generation, classification, etc.)
+            inputs: List of input variable names to read from memory
+            outputs: List of output variable names to write to memory
+            schema: Base class for structured outputs (Pydantic model)
             is_list: Whether the output should be treated as a list
             search_type: Type of search to perform (only used with search operation)
             search_lang: Language for search results (only used with search operation)
             search_n_results: Number of search results to return (only used with search operation)
 
         Returns:
-            str: The ID of the created step
+            str: The ID of the created step, used for connecting steps
         """
         step_inputs = []
         if inputs:
             for inp in inputs:
+                if isinstance(inp, Input):
+                    continue
                 step_inputs.append(Read.new(key=inp, required=True))
 
         step_outputs = []
@@ -218,13 +307,38 @@ class WorkflowTemplate(ABC):
 
     @staticmethod
     def get_list(key: str):
-        """Helper method to read all items from a list."""
+        """
+        Helper method to read all items from a list in workflow memory.
+
+        Args:
+            key: The key of the list in workflow memory
+
+        Returns:
+            GetAll: A GetAll operation that will retrieve all items from the list
+        """
         return GetAll.new(key=key, required=True)
 
     def connect(self, source: str, target: str) -> None:
-        """Connect two steps in the workflow."""
+        """
+        Connect two steps in the workflow.
+
+        This method creates a directed edge between two steps, defining the
+        execution flow of the workflow.
+
+        Args:
+            source: The ID of the source step
+            target: The ID of the target step
+        """
         self._edges.append(Edge(source=source, target=target))
 
     def set_output(self, key: str) -> None:
-        """Set the final output key for the workflow."""
+        """
+        Set the final output key for the workflow.
+
+        This method defines which memory key will be returned as the final
+        result of the workflow execution.
+
+        Args:
+            key: The memory key to return as the workflow result
+        """
         self._builder.set_return_value(key)

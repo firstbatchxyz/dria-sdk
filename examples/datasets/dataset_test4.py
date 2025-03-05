@@ -1,29 +1,19 @@
 import asyncio
-import logging
 
-from dria import Prompt, DatasetGenerator, DriaDataset, Model
-from pydantic import BaseModel, Field
+from dria import DriaDataset, Model, Dria
 
+dria = Dria()
+dataset = DriaDataset(collection="tweet_test")
 
-# Define output schema
-class Tweet(BaseModel):
-    topic: str = Field(..., title="Topic")
-    tweet: str = Field(..., title="tweet")
+instructions = [
+    "Write a tweet about BadBadNotGood",
+    "Write a tweet about Decentralized synthetic data",
+]
 
-
-# Create dataset
-dataset = DriaDataset(collection="tweet_test", schema=Tweet)
-
-instructions = [{"topic": "BadBadNotGood"}, {"topic": "Decentralized synthetic data"}]
-
-prompter = Prompt(prompt="Write a tweet about {{topic}}", schema=Tweet)
-generator = DatasetGenerator(dataset=dataset, log_level=logging.DEBUG)
-
-asyncio.run(
-    generator.generate(
-        instructions=instructions, workflows=prompter, models=Model.OPENAI
-    )
+asyncio.run(dria.generate(
+    inputs="Write a tweet about {{topic}}",
+    models=Model.OPENAI,
+    dataset=dataset)
 )
-
 
 print(dataset.to_pandas())

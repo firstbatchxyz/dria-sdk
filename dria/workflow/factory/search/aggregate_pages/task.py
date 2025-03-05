@@ -54,6 +54,6 @@ class SearchWeb(WorkflowTemplate):
 
             for d in parsed_:
                 data = {key: d[key] for key in ["link", "snippet", "title"] if key in d}
-                data["query"] = r.task_input["query"]
+                data["query"] = r.inputs["query"]
                 results.append(self.OutputSchema(**data))
         return results

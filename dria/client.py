@@ -4,6 +4,7 @@ from typing import Dict, List, Type, Optional, Union, Any
 
 from dria.db.mq import KeyValueQueue
 from dria.db.storage import Storage
+from dria.datasets.base import DriaDataset
 from dria.executor import TaskExecutor, Ping, Batch
 from dria.executor.utils import get_community_token, schemas_match
 from dria.manager import TaskManager
@@ -84,7 +85,23 @@ class Dria:
         max_steps: Optional[int] = None,
         max_time: Optional[int] = None,
     ) -> None:
-        """Apply configuration parameters to workflow(s)."""
+        """
+        Apply configuration parameters to workflow template(s).
+
+        This method demonstrates how the Factory Pattern allows for configuration
+        of workflow templates before instantiation. By setting class variables on
+        the workflow template classes, all instances created from those classes
+        will inherit the configuration.
+
+        This is a key benefit of the Factory Pattern - the ability to configure
+        the factory (workflow template class) before creating products (workflow instances).
+
+        Args:
+            workflow: Workflow template class(es) to configure
+            max_tokens: Maximum number of tokens for the workflow
+            max_steps: Maximum number of steps for the workflow
+            max_time: Maximum execution time in seconds
+        """
         workflows = [workflow] if not isinstance(workflow, list) else workflow
 
         for w in workflows:
@@ -102,6 +119,8 @@ class Dria:
         """Normalize input data to dictionary format."""
         if isinstance(inputs, str):
             return {"prompt": inputs}
+        elif isinstance(inputs, list) and all(isinstance(i, str) for i in inputs):
+            return [{"prompt": i} for i in inputs]
         return inputs
 
     @staticmethod
@@ -117,7 +136,7 @@ class Dria:
 
     async def generate(
         self,
-        inputs: Union[List[Dict[str, Any]], Dict[str, Any], str],
+        inputs: Union[List[Dict[str, Any]], Dict[str, Any], List[str], str],
         workflow: Optional[
             Union[Type[WorkflowTemplate], List[Type[WorkflowTemplate]]]
         ] = None,
@@ -161,6 +180,9 @@ class Dria:
         models = self._normalize_models(models)
         inputs = self._normalize_inputs(inputs)
 
+        if not isinstance(inputs, List):
+            inputs = [inputs]
+
         self._apply_workflow_config(workflow, max_tokens, max_steps, max_time)
 
         # If multiple workflows, dataset is required
@@ -170,9 +192,6 @@ class Dria:
         if dataset:
             if workflow is None:
                 raise ValueError("Workflow must be provided for dataset generation")
-
-            if not isinstance(inputs, List):
-                inputs = [inputs]
 
             await self._with_workflows(
                 dataset=dataset,
@@ -185,20 +204,19 @@ class Dria:
 
         try:
             tasks = self._create_tasks(inputs, workflow, models)
-            return await self.executor.execute(tasks)
+            results, tasks = await self.executor.execute(tasks)
+            return workflow().callback(results)
         except Exception as e:
             raise ValueError(f"Failed to create tasks: {str(e)}")
 
     @staticmethod
     def _create_tasks(
-        inputs: Union[List[Dict[str, Any]], Dict[str, Any]],
+        inputs: List[Dict[str, Any]],
         workflow: Type[WorkflowTemplate],
         models: List[Model],
     ) -> List[Task]:
         """Create task instances from inputs."""
-        if isinstance(inputs, list):
-            return [Task(workflow=workflow(**i).build(), models=models) for i in inputs]
-        return [Task(workflow=workflow(**inputs).build(), models=models)]
+        return [Task(workflow=workflow(**i).build(), models=models) for i in inputs]
 
     async def _with_workflows(
         self,
@@ -310,12 +328,3 @@ class Dria:
 
         # Validate workflow names
         check_for_duplicates([workflow.__name__ for workflow in workflows])
-
-        # Validate workflow chain compatibility
-        for i in range(len(workflows) - 1):
-            current_schema = workflows[i].OutputSchema
-            next_element = workflows[i + 1]
-            if not schemas_match(current_schema, next_element):
-                raise ValueError(
-                    f"Schema mismatch. Outputs for {workflows[i].__name__} doesn't match inputs for {workflows[i + 1].__name__}."
-                )

@@ -2,8 +2,8 @@ import warnings
 
 warnings.filterwarnings("ignore", module="pydantic")
 from typing import List, Dict, Any, Optional
-from dria_workflows import OpenAIParser, NousParser, LlamaParser
 from pydantic import BaseModel, Field
+from dria_workflows import OpenAIParser, NousParser, LlamaParser
 from dria.models import Model
 
 
@@ -69,16 +69,14 @@ class Task(BaseModel):
 
 class TaskResult(BaseModel):
     id: str
-    task_input: Any
-    step_name: str
+    inputs: Any
     result: Any
     model: str
 
     def model_dump(self, **kwargs) -> Dict[str, Any]:
         return {
             "id": self.id,
-            "task_input": self.task_input,
-            "step_name": self.step_name,
+            "inputs": self.inputs,
             "result": self.result,
             "model": self.model,
         }

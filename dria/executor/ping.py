@@ -13,12 +13,12 @@ from dria.db.mq import KeyValueQueue
 from dria.db.storage import Storage
 from dria.models import NodeModel
 from dria.request import RPCClient
-from dria.utilities import (
+from dria.utilities.crypto import (
     recover_public_key,
     base64_to_json,
     uncompressed_public_key,
-    logger,
 )
+from dria.utilities.logging.logging import logger
 from dria.manager import TaskManager
 
 

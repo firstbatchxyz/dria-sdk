@@ -76,7 +76,7 @@ class Model(str, Enum):
     # Gemini models
     GEMINI_15_PRO = "gemini-1.5-pro"
     GEMINI_15_FLASH = "gemini-1.5-flash"
-    GEMINI_20_FLASH = "gemini-2.0-flash-exp"
+    GEMINI_20_FLASH = "gemini-2.0-flash"
     GEMINI_10_PRO = "gemini-1.0-pro"
     GEMMA_2_2B_IT = "gemma-2-2b-it"
     GEMMA_2_9B_IT = "gemma-2-9b-it"

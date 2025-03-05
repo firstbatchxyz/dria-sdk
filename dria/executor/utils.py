@@ -58,24 +58,3 @@ def schemas_match(
             return False  # Type mismatch
 
     return True  # All required keys and types are valid
-
-
-if __name__ == "__main__":
-
-    class TestModel(BaseModel):
-        name: str
-        description: str
-        value: float
-
-    class ValidModel(BaseModel):
-        name: str
-        description: str
-        value: float
-
-    class ErrorModel(BaseModel):
-        name: str
-        description: str
-        range: int
-
-    assert schemas_match(TestModel, ValidModel)
-    assert not schemas_match(TestModel, ErrorModel)

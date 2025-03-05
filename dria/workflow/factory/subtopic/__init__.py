@@ -1,1 +1,3 @@
-from .task import GenerateSubtopics
+from .task import GenerateSubtopics as GenerateSubtopics
+
+__all__ = ["GenerateSubtopics"]

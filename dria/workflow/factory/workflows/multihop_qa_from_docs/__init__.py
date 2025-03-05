@@ -1,1 +1,3 @@
-from .task import MultiHopQuestion
+from .task import MultiHopQuestion as MultiHopQuestion
+
+__all__ = ["MultiHopQuestion"]

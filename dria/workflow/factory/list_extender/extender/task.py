@@ -43,7 +43,7 @@ class ListExtender(WorkflowTemplate):
                 .replace("'", '"')
             )
             # Combine the new list with the original list
-            combined_list = list(set(new_list + r.task_input["e_list"]))
+            combined_list = list(set(new_list + r.inputs["e_list"]))
             outputs.append(
                 self.OutputSchema(extended_list=combined_list, model=r.model)
             )

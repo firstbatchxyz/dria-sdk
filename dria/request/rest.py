@@ -9,7 +9,7 @@ from dria.models.exceptions import (
     RPCConnectionError,
     RPCAuthenticationError,
 )
-from dria.utilities import logger
+from dria.utilities.logging.logging import logger
 
 
 class RPCClient:

@@ -60,8 +60,8 @@ class Clair(WorkflowTemplate):
             output = self.OutputSchema(
                 reasoning=teacher_reasoning,
                 corrected_student_solution=corrected_student_solution,
-                task=r.task_input["task"],
-                student_solution=r.task_input["student_solution"],
+                task=r.inputs["task"],
+                student_solution=r.inputs["student_solution"],
                 model=r.model,
             )
             outputs.append(output)

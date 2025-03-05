@@ -31,7 +31,6 @@ class RandomVars(WorkflowTemplate):
         """
         self.add_step(
             prompt=get_abs_path("prompt.md"),
-            inputs=["simulation_description", "is_valid"],
             outputs=["random_vars"],
         )
 
@@ -52,7 +51,7 @@ class RandomVars(WorkflowTemplate):
             variables = []
             try:
                 parsed_vars = self.parse_json(r.result)
-                for _ in range(r.task_input["num_of_samples"]):
+                for _ in range(int(r.inputs["num_of_samples"])):
                     persona_traits = [
                         f"{var['description']}: {sample_variable(var)}".replace("'", "")
                         for var in parsed_vars
@@ -60,9 +59,7 @@ class RandomVars(WorkflowTemplate):
                     variables.append(
                         self.OutputSchema(
                             persona_traits=persona_traits,
-                            simulation_description=r.task_input[
-                                "simulation_description"
-                            ],
+                            simulation_description=r.inputs["simulation_description"],
                             model=r.model,
                         )
                     )

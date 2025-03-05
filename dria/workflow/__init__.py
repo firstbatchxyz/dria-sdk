@@ -1,5 +1,5 @@
-from dria.workflow import *
-from .template import WorkflowTemplate
+from .template import WorkflowTemplate as WorkflowTemplate
+
 
 __core_exports = [
     "Clair",

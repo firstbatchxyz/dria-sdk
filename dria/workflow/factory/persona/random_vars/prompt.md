@@ -137,6 +137,3 @@ of employees working for the merchant\",
 <simulation>
 {{simulation_description}}
 </simulation>
-
-<feedback>{{is_valid}}</feedback> Do not add comment like with //, only
-output. Each value must be at least one field. Do not return empty field.

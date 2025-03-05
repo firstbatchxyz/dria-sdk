@@ -50,9 +50,9 @@ class Answer(WorkflowTemplate):
             if entry is not None:
                 returns.append(
                     self.OutputSchema(
-                        question=r.task_input["question"],
+                        question=r.inputs["question"],
                         prediction=entry.strip(),
-                        context=r.task_input["context"],
+                        context=r.inputs["context"],
                         model=r.model,
                     )
                 )
