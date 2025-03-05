@@ -47,15 +47,15 @@ async def main():
     and executes it with the specified model.
     """
     dria = Dria()
-    print(await dria.generate(
+    return await dria.generate(
         inputs={
             "prompt": "Write a short story about a robot learning to paint"
         },
         workflow=SimpleWorkflow,
         models=Model.GEMINI
-    ))
+    )
 
 
 if __name__ == "__main__":
     import asyncio
-    asyncio.run(main())
+    print(asyncio.run(main()))
