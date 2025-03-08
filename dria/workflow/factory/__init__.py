@@ -47,13 +47,17 @@ __core_exports = [
 
 from .workflows.simple.task import Simple
 from .workflows.clair.task import Clair
-from .workflows.code_gen.task import GenerateCode
+from .workflows.code_gen.task import GenerateCode, IterateCode
 from .workflows.graph_builder.task import GenerateGraph
 from .workflows.magpie_instruct.task import MagPie
 from .workflows.self_instruct.task import SelfInstruct
 from .workflows.instruction_backtranslation.task import InstructionBacktranslation
 from .workflows.reasoning.task import Reasoning
+from .workflows.evol_instruct import EvolveInstruct
+from .workflows.model_as_a_judge import EvaluatePrediction
+from .workflows.evol_quality import EvolveQuality
 from .subtopic.task import GenerateSubtopics
 from .persona import PersonaBio
+
 
 __all__ = __core_exports

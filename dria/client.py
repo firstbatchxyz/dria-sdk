@@ -204,7 +204,10 @@ class Dria:
 
         # If multiple workflows, dataset is required
         if isinstance(workflow, list) and not dataset:
-            raise ValueError("Dataset is required when using multiple workflows")
+            raise ValueError(
+                "Dataset is required when using multiple workflows. For example: "
+                "dria.generate(inputs=data, workflow=[Workflow1, Workflow2], dataset=DriaDataset('my_dataset'))"
+            )
 
         if dataset:
             if workflow is None:

@@ -21,9 +21,7 @@ class Question(WorkflowTemplate):
         """
         Creates a workflow for generating questions based on context and backstory.
         """
-        self.add_step(prompt=get_abs_path("prompt.md"), outputs=["question"])
-
-        self.set_output("question")
+        self.add_step(prompt=get_abs_path("prompt.md"))
 
     def callback(self, result: List[TaskResult]) -> List[OutputSchema]:
         """

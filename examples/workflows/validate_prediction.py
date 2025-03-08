@@ -1,15 +1,13 @@
-from dria import DriaDataset, DatasetGenerator, Model
+from dria import DriaDataset, Model, Dria
 from dria.workflow.factory import ValidatePrediction
 import asyncio
 
 my_dataset = DriaDataset(
-    name="evalpred_test",
-    description="test",
-    schema=ValidatePrediction.OutputSchema,
+    collection="evalpred_test",
 )
 
-generator = DatasetGenerator(dataset=my_dataset)
-instructions = [
+dria = Dria()
+inputs = [
     {
         "prediction": "Task management capabilities include creating tasks, setting deadlines, organizing priorities, and tracking completion status",
         "correct_answer": "Task management capabilities include creating tasks, setting deadlines, organizing priorities, and monitoring progress",
@@ -17,9 +15,9 @@ instructions = [
 ]
 
 asyncio.run(
-    generator.generate(
-        instructions=instructions,
-        workflows=ValidatePrediction,
+    dria.generate(
+        inputs=inputs,
+        workflow=ValidatePrediction,
         models=Model.GPT4O,
     )
 )

@@ -28,17 +28,10 @@ class DialogueOutput(BaseModel):
 
 
 class MagPie(WorkflowTemplate):
-    # Input fields
-    instructor_persona: str = Field(..., description="Persona of the instructor")
-    responding_persona: str = Field(..., description="Persona of the responder")
-    num_turns: conint(ge=1) = Field(
-        default=1, description="Number of conversation turns"
-    )
-
     # Output schema
     OutputSchema = DialogueOutput
 
-    def build(self) -> Workflow:
+    def define_workflow(self):
         """
         Creates a workflow for generating dialogue between personas.
 
@@ -46,43 +39,14 @@ class MagPie(WorkflowTemplate):
             Workflow: The constructed workflow
         """
         # Initialize the workflow with variables
-        builder = WorkflowBuilder(
-            instructor_persona=self.instructor_persona,
-            responding_persona=self.responding_persona,
+
+        self.add_step(
+            prompt=get_abs_path("instruction.md"),
+            output="instruction"
         )
-
-        builder.generative_step(
-            path=get_abs_path("instruction.md"),
-            operator=Operator.GENERATION,
-            inputs=[GetAll.new("chat", required=False)],
-            outputs=[Push.new("instruction"), Push.new("chat")],
+        self.add_step(
+            prompt=get_abs_path("response.md"),
         )
-
-        builder.generative_step(
-            path=get_abs_path("response.md"),
-            operator=Operator.GENERATION,
-            inputs=[GetAll.new("chat", required=False)],
-            outputs=[Push.new("responses"), Push.new("chat")],
-        )
-
-        flow = [
-            Edge(source="0", target="1"),
-            Edge(
-                source="1",
-                target="_end",
-                condition=ConditionBuilder.build(
-                    expected=str(self.num_turns),
-                    expression=Expression.GREATER_THAN_OR_EQUAL,
-                    input=Size.new(key="responses", required=True),
-                    target_if_not="0",
-                ),
-            ),
-        ]
-        builder.flow(flow)
-
-        # Set the return value of the workflow
-        builder.set_return_value("chat")
-        return builder.build()
 
     def callback(self, result: List[TaskResult]) -> List[OutputSchema]:
         """

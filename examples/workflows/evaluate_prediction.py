@@ -1,15 +1,13 @@
-from dria import DriaDataset, DatasetGenerator, Model
-from dria.workflow.factory import EvaluatePrediction
 import asyncio
+
+from dria import DriaDataset, Model, Dria
+from dria.workflow.factory import EvaluatePrediction
 
 my_dataset = DriaDataset(
     collection="evalpred_test",
-    schema=EvaluatePrediction.OutputSchema,
 )
 
-generator = DatasetGenerator(dataset=my_dataset)
-
-instructions = [
+inputs = [
     {
         "prediction": "The AI assistant will help with task management by providing features like task creation, scheduling, prioritization, reminders, and progress tracking.",
         "question": "What capabilities will the AI assistant provide for task management?",
@@ -17,11 +15,14 @@ instructions = [
     }
 ]
 
+dria = Dria()
+
 asyncio.run(
-    generator.generate(
-        instructions=instructions,
-        workflows=EvaluatePrediction,
-        models=Model.GPT4O,
+    dria.generate(
+        inputs=inputs,
+        workflow=EvaluatePrediction,
+        models=Model.GEMINI,
+        dataset=my_dataset
     )
 )
 

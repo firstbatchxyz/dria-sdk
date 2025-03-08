@@ -1,15 +1,10 @@
 from typing import List
+
 from pydantic import BaseModel, Field
-from dria_workflows import (
-    Workflow,
-    WorkflowBuilder,
-    Operator,
-    Write,
-    Edge,
-)
-from dria.workflow.factory.utilities import get_abs_path
-from dria.workflow import WorkflowTemplate
+
 from dria.models import TaskResult
+from dria.workflow import WorkflowTemplate
+from dria.workflow.factory.utilities import get_abs_path
 
 
 class BacktranslationOutput(BaseModel):
@@ -21,37 +16,12 @@ class BacktranslationOutput(BaseModel):
 
 
 class InstructionBacktranslation(WorkflowTemplate):
-    # Input fields
-    instruction: str = Field(..., description="Original instruction")
-    generation: str = Field(..., description="Generated text to evaluate")
 
     # Output schema
     OutputSchema = BacktranslationOutput
 
-    def build(self) -> Workflow:
-        """
-        Creates a workflow for evaluating instruction-generation pairs.
-
-        Returns:
-            Workflow: The constructed workflow
-        """
-        # Initialize the workflow with variables
-        builder = WorkflowBuilder(
-            instruction=self.instruction, generation=self.generation
-        )
-
-        builder.generative_step(
-            path=get_abs_path("prompt.md"),
-            operator=Operator.GENERATION,
-            outputs=[Write.new("score")],
-        )
-
-        flow = [Edge(source="0", target="_end")]
-        builder.flow(flow)
-
-        # Set the return value of the workflow
-        builder.set_return_value("score")
-        return builder.build()
+    def define_workflow(self):
+        self.add_step(get_abs_path("prompt.md"))
 
     def callback(self, result: List[TaskResult]) -> List[OutputSchema]:
         """
@@ -74,8 +44,8 @@ class InstructionBacktranslation(WorkflowTemplate):
             self.OutputSchema(
                 reasoning=parse_result(r.result)[1],
                 score=parse_result(r.result)[0],
-                instruction=self.instruction,
-                generation=self.generation,
+                instruction=r.task_input["instruction"],
+                generation=r.task_input["generation"],
                 model=r.model,
             )
             for r in result

@@ -21,9 +21,7 @@ class ListExtender(WorkflowTemplate):
 
     def define_workflow(self) -> None:
         # Single generation step that extends the list
-        self.add_step(prompt=get_abs_path("prompt.md"), outputs=["extended_list"])
-
-        self.set_output("extended_list")
+        self.add_step(prompt=get_abs_path("prompt.md"))
 
     def callback(self, result: List[TaskResult]) -> List[OutputSchema]:
         """

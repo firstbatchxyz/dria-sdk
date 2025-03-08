@@ -33,8 +33,7 @@ class Clair(WorkflowTemplate):
         """
         # Initialize the workflow with variables
 
-        self.add_step(prompt=get_abs_path("prompt.md"), outputs=["response"])
-        self.set_output("response")
+        self.add_step(prompt=get_abs_path("prompt.md"))
 
     def callback(self, result: List[TaskResult]) -> List[OutputSchema]:
         """

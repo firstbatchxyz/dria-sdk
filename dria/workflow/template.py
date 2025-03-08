@@ -1,6 +1,6 @@
 import json
 from abc import ABC, abstractmethod
-from typing import List, Optional, Any, Type, ClassVar, Literal
+from typing import List, Optional, Any, Type, ClassVar, Literal, Union
 
 from dria_workflows import (
     WorkflowBuilder,
@@ -65,9 +65,7 @@ class WorkflowTemplate(ABC):
                 step1 = self.add_step(
                     "Generate a response to: {{prompt}}",
                     inputs=["prompt"],
-                    outputs=["response"]
                 )
-                self.set_output("response")
 
         # Client code
         workflow = MyWorkflow(prompt="Tell me a story")
@@ -96,6 +94,7 @@ class WorkflowTemplate(ABC):
         self._builder = WorkflowBuilder(self._memory)
         self._step_count = 0
         self._edges: List[Edge] = []
+        self._task_output_key: Union[str, None] = None
 
         # Apply configuration if set in class variables
         if self.max_tokens is not None:
@@ -126,6 +125,7 @@ class WorkflowTemplate(ABC):
             self._edges.append(Edge(source=str(self._step_count - 1), target="_end"))
 
         self._builder.flow(self._edges)
+        self._builder.set_return_value(self._task_output_key)
         return self._builder.build()
 
     def set_max_tokens(self, max_tokens: int) -> "WorkflowTemplate":
@@ -194,7 +194,7 @@ class WorkflowTemplate(ABC):
                 step1 = self.add_step(
                     "{{first_prompt}}",
                     inputs=["first_prompt"],
-                    outputs=["response"]
+                    output=["response"]
                 )
 
                 # Second step using another prompt
@@ -227,16 +227,16 @@ class WorkflowTemplate(ABC):
         return [self.OutputSchema(inputs=json.dumps(r.inputs), output=r.result, model=r.model) for r in result]
 
     def add_step(
-        self,
-        prompt: str,
-        operation: Operator = Operator.GENERATION,
-        inputs: Optional[List[str]] = None,
-        outputs: Optional[List[str]] = None,
-        schema: Optional[Type[BaseModel]] = None,
-        is_list: bool = False,
-        search_type: Literal["search", "news", "scholar"] = "search",
-        search_lang: Optional[str] = None,
-        search_n_results: Optional[int] = None,
+            self,
+            prompt: str,
+            operation: Operator = Operator.GENERATION,
+            inputs: Optional[List[str]] = None,
+            output: Optional[str] = None,
+            schema: Optional[Type[BaseModel]] = None,
+            is_list: bool = False,
+            search_type: Literal["search", "news", "scholar"] = "search",
+            search_lang: Optional[str] = None,
+            search_n_results: Optional[int] = None,
     ) -> str:
         """
         Add a step to the workflow with simplified parameters.
@@ -250,7 +250,7 @@ class WorkflowTemplate(ABC):
             prompt: The prompt template or file path
             operation: Operation type of compute (generation, classification, etc.)
             inputs: List of input variable names to read from memory
-            outputs: List of output variable names to write to memory
+            output: Output variable names to write to memory
             schema: Base class for structured outputs (Pydantic model)
             is_list: Whether the output should be treated as a list
             search_type: Type of search to perform (only used with search operation)
@@ -267,15 +267,13 @@ class WorkflowTemplate(ABC):
                     continue
                 step_inputs.append(Read.new(key=inp, required=True))
 
-        step_outputs = []
-        if outputs:
-            for out in outputs:
-                if is_list:
-                    step_outputs.append(Push.new(out))
-                else:
-                    step_outputs.append(Write.new(out))
+        if output:
+            if is_list:
+                step_output = Push.new(output)
+            else:
+                step_output = Write.new(output)
         else:
-            step_outputs = [Write.new("result")]
+            step_output = Write.new("result")
 
         if prompt.endswith((".txt", ".md", ".prompt")):
             try:
@@ -290,18 +288,19 @@ class WorkflowTemplate(ABC):
                 search_type=search_type,
                 lang=search_lang,
                 n_results=search_n_results,
-                outputs=step_outputs,
+                outputs=[step_output],
             )
         else:
             self._builder.generative_step(
                 operator=operation,
                 prompt=prompt,
                 inputs=step_inputs,
-                outputs=step_outputs,
+                outputs=[step_output],
                 schema=schema,
             )
 
         step_id = str(self._step_count)
+        self._task_output_key = step_output.key
         self._step_count += 1
         return step_id
 
@@ -331,7 +330,7 @@ class WorkflowTemplate(ABC):
         """
         self._edges.append(Edge(source=source, target=target))
 
-    def set_output(self, key: str) -> None:
+    def _set_output(self, key: str) -> None:
         """
         Set the final output key for the workflow.
 

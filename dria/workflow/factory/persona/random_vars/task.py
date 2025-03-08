@@ -31,10 +31,7 @@ class RandomVars(WorkflowTemplate):
         """
         self.add_step(
             prompt=get_abs_path("prompt.md"),
-            outputs=["random_vars"],
         )
-
-        self.set_output("random_vars")
 
     def callback(self, result: List[TaskResult]) -> List[OutputSchema]:
         """

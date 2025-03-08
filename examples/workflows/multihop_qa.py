@@ -1,7 +1,6 @@
 import asyncio
 from typing import List
 
-from dria_workflows import WorkflowBuilder, Operator, Write, Edge, Read
 from pydantic import BaseModel, Field
 
 from dria import Model, Dria, WorkflowTemplate
@@ -15,35 +14,16 @@ class SimpleClass(BaseModel):
 
 
 class SimpleWorkflow(WorkflowTemplate):
-    first_prompt: str
-    second_prompt: str
-
     OutputSchema = SimpleClass
 
-    def build(self):
-        builder = WorkflowBuilder(
-            {"first_prompt": self.first_prompt, "second_prompt": self.second_prompt}
+    def define_workflow(self):
+        self.add_step(
+            prompt="{{first_step}}",
+            output="response"
         )
-        builder.generative_step(
-            operator=Operator.GENERATION,  # Hard
-            inputs=[Read.new(key="first_prompt", required=True)],
-            prompt="{{first_prompt}}",
-            outputs=[Write.new("response")],  # Hard
-        )
-        builder.generative_step(
-            operator=Operator.GENERATION,
-            inputs=[
-                Read.new(key="second_prompt", required=True),
-                Read.new(key="response", required=True),
-            ],
+        self.add_step(
             prompt="{{second_prompt}} {{response}}",
-            outputs=[Write.new("result")],
         )
-        flow = [Edge(source="0", target="1"), Edge(source="1", target="_end")]  # End
-        builder.flow(flow)
-
-        builder.set_return_value("result")
-        return builder.build()
 
     def callback(self, result: List[TaskResult]) -> List[OutputSchema]:
         return [self.OutputSchema(**{"output": r.result}) for r in result]

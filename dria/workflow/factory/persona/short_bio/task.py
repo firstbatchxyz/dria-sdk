@@ -25,11 +25,7 @@ class ShortBio(WorkflowTemplate):
         self.add_step(
             prompt=get_abs_path("prompt.md"),
             inputs=["simulation_description", self.get_list("persona_traits")],
-            outputs=["backstory"],
         )
-
-        # Set return value
-        self.set_output("backstory")
 
     def callback(self, result: List[TaskResult]) -> List[OutputSchema]:
         """

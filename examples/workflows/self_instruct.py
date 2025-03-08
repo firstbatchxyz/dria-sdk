@@ -1,15 +1,12 @@
-from dria import DriaDataset, DatasetGenerator, Model
+from dria import DriaDataset, Model, Dria
 from dria.workflow.factory import SelfInstruct
 import asyncio
 
-my_dataset = DriaDataset(
-    collection="sinstruct_test",
-    schema=SelfInstruct.OutputSchema,
-)
+my_dataset = DriaDataset(collection="sinstruct_test")
 
-generator = DatasetGenerator(dataset=my_dataset)
+dria = Dria()
 
-instructions = [
+inputs = [
     {
         "num_instructions": 5,
         "criteria_for_query_generation": "Diverse queries related to task management",
@@ -19,9 +16,9 @@ instructions = [
 ]
 
 asyncio.run(
-    generator.generate(
-        instructions=instructions,
-        workflows=SelfInstruct,
+    dria.generate(
+        inputs=inputs,
+        workflow=SelfInstruct,
         models=Model.GPT4O,
     )
 )

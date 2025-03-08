@@ -1,13 +1,10 @@
-from dria import DriaDataset, DatasetGenerator, Model
+from dria import DriaDataset, Model, Dria
 from dria.workflow.factory import MagPie
 import asyncio
 
-my_dataset = DriaDataset(
-    collection="magpie_test",
-    schema=MagPie.OutputSchema,
-)
+my_dataset = DriaDataset(collection="magpie_test")
 
-generator = DatasetGenerator(dataset=my_dataset)
+dria = Dria()
 
 instructions = [
     {
@@ -19,9 +16,9 @@ instructions = [
 
 
 asyncio.run(
-    generator.generate(
-        instructions=instructions,
-        workflows=MagPie,
+    dria.generate(
+        inputs=instructions,
+        workflow=MagPie,
         models=Model.GPT4O,
     )
 )

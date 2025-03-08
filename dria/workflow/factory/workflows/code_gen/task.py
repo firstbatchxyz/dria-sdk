@@ -40,37 +40,20 @@ class IteratedCodeOutput(CodeOutput):
 
 
 class GenerateCode(WorkflowTemplate):
-    # Input fields
-    instruction: str = Field(..., description="The instruction to generate code for")
-    language: str = Field(
-        ..., description="The programming language to generate code for"
-    )
 
     # Output schema
     OutputSchema = CodeOutput
 
-    def build(self):
-        builder = WorkflowBuilder(instruction=self.instruction, language=self.language)
-        builder.set_max_tokens(750)
-
-        builder.generative_step(
-            prompt="You have been given the following instruction: "
-            "{{instruction}}. Write clean, commented and robust code in {{language}}. Code: ",
-            operator=Operator.GENERATION,
-            outputs=[Write.new("code")],
-        )
-
-        flow = [Edge(source="0", target="_end")]
-        builder.flow(flow)
-        builder.set_return_value("code")
-        return builder.build()
+    def define_workflow(self):
+        self.add_step("You have been given the following instruction: "
+                      "{{instruction}}. Write clean, commented and robust code in {{language}}. Code: ")
 
     def callback(self, result: List[TaskResult]) -> List[OutputSchema]:
         return [
             self.OutputSchema(
-                instruction=self.instruction,
-                language=self.language,
-                code=parser(r.result.strip(), self.language),
+                instruction=r.inputs["instruction"],
+                language=r.inputs["language"],
+                code=parser(r.result.strip(), r.inputs["language"]),
                 model=r.model,
             )
             for r in result
@@ -78,41 +61,23 @@ class GenerateCode(WorkflowTemplate):
 
 
 class IterateCode(WorkflowTemplate):
-    # Input fields
-    code: str = Field(..., description="The code to iterate over")
-    instruction: str = Field(..., description="The instruction to generate code for")
-    language: str = Field(
-        ..., description="The programming language to generate code for"
-    )
-
-    # Output schema
     OutputSchema = IteratedCodeOutput
+    max_tokens = 750
 
-    def build(self) -> Workflow:
-        builder = WorkflowBuilder(
-            instruction=self.instruction, code=self.code, language=self.language
-        )
-        builder.set_max_tokens(750)
+    def define_workflow(self) -> None:
 
-        builder.generative_step(
+        self.add_step(
             prompt="Here is you previous code: {{code}}.\n Iterate your previous code based on the instruction: "
             "{{instruction}}. Write clean, commented and robust code in {{language}}. Code: ",
-            operator=Operator.GENERATION,
-            outputs=[Write.new("code")],
         )
-
-        flow = [Edge(source="0", target="_end")]
-        builder.flow(flow)
-        builder.set_return_value("code")
-        return builder.build()
 
     def callback(self, result: List[TaskResult]) -> List[OutputSchema]:
         return [
             self.OutputSchema(
-                instruction=self.instruction,
-                language=self.language,
-                code=self.code,
-                iterated_code=parser(r.result.strip(), self.language),
+                instruction=r.inputs["instruction"],
+                language=r.inputs["language"],
+                code=r.inputs["code"],
+                iterated_code=parser(r.result.strip(), r.inputs["language"]),
                 model=r.model,
             )
             for r in result

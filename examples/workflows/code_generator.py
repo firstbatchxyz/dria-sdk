@@ -1,24 +1,24 @@
-from dria import DriaDataset, DatasetGenerator, Model
-from dria.workflow.factory import GenerateCode
 import asyncio
 
-my_dataset = DriaDataset(collection="code", schema=GenerateCode.OutputSchema)
+from dria import DriaDataset, Model, Dria
+from dria.workflow.factory import GenerateCode
 
-generator = DatasetGenerator(dataset=my_dataset)
+my_dataset = DriaDataset(collection="code")
 
-
-instructions = [
+inputs = [
     {
         "instruction": "Write a function to calculate the factorial of a number",
         "language": "python",
     },
 ]
 
+dria = Dria()
+
 asyncio.run(
-    generator.generate(
-        instructions=instructions,
-        workflows=GenerateCode,
-        models=Model.GPT4O,
+    dria.generate(
+        inputs=inputs,
+        workflow=GenerateCode,
+        models=Model.GEMINI,
     )
 )
 

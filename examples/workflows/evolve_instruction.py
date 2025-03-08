@@ -1,27 +1,25 @@
-from dria import DriaDataset, DatasetGenerator, Model
+from dria import DriaDataset, Model, Dria
 from dria.workflow.factory import EvolveInstruct
 import asyncio
 
+from dria.workflow.factory.workflows.evol_instruct.task import MUTATION_TEMPLATES
+
 my_dataset = DriaDataset(
     collection="evolve_i_test",
-    schema=EvolveInstruct.OutputSchema,
 )
 
-generator = DatasetGenerator(dataset=my_dataset)
+dria = Dria()
 
-instructions = [
-    {
+params = {
         "prompt": "Explain the concept of photosynthesis.",
         "mutation_type": "DEEPEN",
     }
-]
 
-asyncio.run(
-    generator.generate(
-        instructions=instructions,
-        workflows=EvolveInstruct,
-        models=Model.GPT4O,
+inputs = MUTATION_TEMPLATES[params["mutation_type"]].format("{{prompt}}", params["prompt"])
+print(asyncio.run(
+    dria.generate(
+        inputs=inputs,
+        workflow=EvolveInstruct,
+        models=Model.GEMINI
     )
-)
-
-print(my_dataset.get_entries(data_only=True))
+))

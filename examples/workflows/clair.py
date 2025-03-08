@@ -1,29 +1,25 @@
-from dria import DriaDataset, DatasetGenerator, Model
-from dria.workflow.factory import Clair
 import asyncio
 
-# Create a dataset object with a name, description, and schema
+from dria import DriaDataset, Model, Dria
+from dria.workflow.factory import Clair
+
 my_dataset = DriaDataset(
-    collection="clair_test",  # Title of the dataset
-    schema=Clair.OutputSchema,  # Schema defining the expected structure of dataset entries
+    collection="clair_test",
 )
 
-generator = DatasetGenerator(dataset=my_dataset)
+dria = Dria()
 
-# Provide a list of instructions to generate dataset entries
-instructions = [
-    {
-        "task": "Math",
-        "student_solution": "def factorial(n):\n    if n == 0:\n        return 1\n    else:\n        return n * factorial(n-1)",
-    },
-]
-
-# Run the generator asynchronously to populate the dataset using the instructions and Clair schema
 asyncio.run(
-    generator.generate(
-        instructions=instructions,  # The instructions for dataset generation
-        workflows=Clair,  # Use Clair as the singleton schema and utility provider
-        models=Model.GPT4O,  # Specify the model (e.g., GPT-4O) for generating outputs
+    dria.generate(
+        inputs=[
+            {
+                "task": "Math",
+                "student_solution": "def factorial(n):\n    if n == 0:\n        return 1\n    else:\n        return n * factorial(n-1)",
+            },
+        ],
+        workflow=Clair,
+        models=Model.GEMINI,
+        dataset=my_dataset
     )
 )
 

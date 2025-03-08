@@ -99,15 +99,10 @@ class ValidatePrediction(WorkflowTemplate):
 
 
 class EvaluatePrediction(WorkflowTemplate):
-    # Input fields
-    prediction: str = Field(..., description="The predicted answer to be evaluated")
-    question: str = Field(..., description="The question to compare against")
-    context: str = Field(..., description="The context to compare against")
-
     # Output schema
     OutputSchema = EvaluationOutput
 
-    def build(self) -> Workflow:
+    def define_workflow(self):
         """
         Generate a Task to determine if the predicted answer is contextually and semantically correct.
 
@@ -115,24 +110,9 @@ class EvaluatePrediction(WorkflowTemplate):
             Workflow: The constructed workflow
         """
         # Initialize the workflow with variables
-        builder = WorkflowBuilder(
-            prediction=self.prediction, question=self.question, context=self.context
+        self.add_step(
+            prompt=get_abs_path("evaluate.md")
         )
-
-        # Add a generative step using the prompt
-        builder.generative_step(
-            path=get_abs_path("evaluate.md"),
-            operator=Operator.GENERATION,
-            outputs=[Write.new("evaluation_result")],
-        )
-
-        # Define the flow of the workflow
-        flow = [Edge(source="0", target="_end")]
-        builder.flow(flow)
-
-        # Set the return value of the workflow
-        builder.set_return_value("evaluation_result")
-        return builder.build()
 
     def callback(self, result: List[TaskResult]) -> List[OutputSchema]:
         """
@@ -146,8 +126,8 @@ class EvaluatePrediction(WorkflowTemplate):
         """
         return [
             self.OutputSchema(
-                question=self.question,
-                prediction=self.prediction,
+                question=r.inputs["question"],
+                prediction=r.inputs["prediction"],
                 evaluation=r.result,
                 model=r.model,
             )

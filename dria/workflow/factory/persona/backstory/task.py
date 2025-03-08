@@ -24,10 +24,7 @@ class BackStory(WorkflowTemplate):
         self.add_step(
             prompt=get_abs_path("prompt.md"),
             inputs=["simulation_description", "persona_traits"],
-            outputs=["backstory"],
         )
-
-        self.set_output("backstory")
 
     def callback(self, result: List[TaskResult]) -> List[OutputSchema]:
         """

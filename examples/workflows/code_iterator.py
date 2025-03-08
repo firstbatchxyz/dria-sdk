@@ -1,15 +1,13 @@
-from dria import DriaDataset, DatasetGenerator, Model
-from dria.workflow.factory import IterateCode
 import asyncio
+
+from dria import DriaDataset, Model, Dria
+from dria.workflow.factory import IterateCode
 
 my_dataset = DriaDataset(
     collection="code_it_test",
-    schema=IterateCode.OutputSchema,
 )
 
-generator = DatasetGenerator(dataset=my_dataset)
-
-instructions = [
+inputs = [
     {
         "code": """
     def greet(name):
@@ -20,11 +18,14 @@ instructions = [
     }
 ]
 
+dria = Dria()
+
 asyncio.run(
-    generator.generate(
-        instructions=instructions,
-        workflows=IterateCode,
-        models=Model.GPT4O,
+    dria.generate(
+        inputs=inputs,
+        workflow=IterateCode,
+        models=Model.GEMINI,
+        dataset=my_dataset
     )
 )
 

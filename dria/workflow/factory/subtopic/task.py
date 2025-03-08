@@ -24,10 +24,7 @@ class GenerateSubtopics(WorkflowTemplate):
 
         self.add_step(
             prompt=get_abs_path("prompt.md"),
-            outputs=["subtopics"],
         )
-
-        self.set_output("subtopics")
 
     def callback(self, result: List[TaskResult]) -> List[OutputSchema]:
         """

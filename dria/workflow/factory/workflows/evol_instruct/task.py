@@ -51,37 +51,18 @@ class EvolveInstructOutput(BaseModel):
 
 
 class EvolveInstruct(WorkflowTemplate):
-    # Input fields
-    prompt: str = Field(..., description="The original prompt to be mutated")
-    mutation_type: MutationType = Field(
-        ..., description="The type of mutation to apply"
-    )
 
     # Output schema
     OutputSchema = EvolveInstructOutput
 
-    def build(self) -> Workflow:
+    def define_workflow(self):
         """
         Creates a workflow for mutating the given prompt using the specified mutation type.
 
         Returns:
             Workflow: The constructed workflow
         """
-        if self.mutation_type not in MUTATION_TEMPLATES:
-            raise ValueError(f"Invalid mutation type: {self.mutation_type}")
-
-        builder = WorkflowBuilder(prompt=self.prompt)
-
-        builder.generative_step(
-            prompt=MUTATION_TEMPLATES[self.mutation_type],
-            operator=Operator.GENERATION,
-            outputs=[Write.new("mutated_prompt")],
-        )
-
-        flow = [Edge(source="0", target="_end")]
-        builder.flow(flow)
-        builder.set_return_value("mutated_prompt")
-        return builder.build()
+        self.add_step("{{prompt}}")
 
     def callback(self, result: List[TaskResult]) -> List[OutputSchema]:
         """

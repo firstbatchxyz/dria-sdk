@@ -1,15 +1,14 @@
-from dria import DriaDataset, DatasetGenerator, Model
+from dria import DriaDataset, Model, Dria
 from dria.workflow.factory import InstructionBacktranslation
 import asyncio
 
 my_dataset = DriaDataset(
     collection="instruction_backtranslation_test",
-    schema=InstructionBacktranslation.OutputSchema,
 )
 
-generator = DatasetGenerator(dataset=my_dataset)
+dria = Dria()
 
-instructions = [
+inputs = [
     {
         "instruction": "What is 3 times 20?",
         "generation": "It's 60.",
@@ -17,9 +16,9 @@ instructions = [
 ]
 
 asyncio.run(
-    generator.generate(
-        instructions=instructions,
-        workflows=InstructionBacktranslation,
+    dria.generate(
+        inputs=inputs,
+        workflow=InstructionBacktranslation,
         models=Model.GPT4O,
     )
 )

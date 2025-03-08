@@ -1,16 +1,14 @@
 import json
 from typing import List
-from pydantic import BaseModel, Field
+
 from dria_workflows import (
     Workflow,
-    WorkflowBuilder,
-    Operator,
-    Write,
-    Edge,
 )
-from dria.workflow.factory.utilities import get_abs_path, parse_json
-from dria.workflow import WorkflowTemplate
+from pydantic import BaseModel, Field
+
 from dria.models import TaskResult
+from dria.workflow import WorkflowTemplate
+from dria.workflow.factory.utilities import get_abs_path, parse_json
 
 
 class GraphRelation(BaseModel):
@@ -25,15 +23,10 @@ class GraphOutput(BaseModel):
 
 
 class GenerateGraph(WorkflowTemplate):
-    # Input fields
-    context: str = Field(
-        ..., description="The context from which to extract the ontology of terms"
-    )
-
     # Output schema
     OutputSchema = GraphOutput
 
-    def build(self) -> Workflow:
+    def define_workflow(self) -> None:
         """
         Generate a Task to extract terms and their relations from the given context.
 
@@ -41,23 +34,9 @@ class GenerateGraph(WorkflowTemplate):
             Workflow: The constructed workflow
         """
         # Initialize the workflow with variables
-        builder = WorkflowBuilder(context=self.context)
-        builder.set_max_tokens(750)
-        builder.set_max_time(75)
-
-        # Add a generative step using the prompt
-        builder.generative_step(
-            path=get_abs_path("prompt.md"),
-            operator=Operator.GENERATION,
-            outputs=[Write.new("graph")],
+        self.add_step(
+            prompt=get_abs_path("prompt.md")
         )
-
-        flow = [Edge(source="0", target="_end")]
-        builder.flow(flow)
-
-        # Set the return value of the workflow
-        builder.set_return_value("graph")
-        return builder.build()
 
     def callback(self, result: List[TaskResult]) -> List[OutputSchema]:
         """
