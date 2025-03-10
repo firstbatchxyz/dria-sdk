@@ -27,16 +27,11 @@ class EvaluationOutput(BaseModel):
 
 
 class ValidatePrediction(WorkflowTemplate):
-    # Input fields
-    prediction: str = Field(..., description="The predicted answer to be evaluated")
-    correct_answer: str = Field(
-        ..., description="The correct answer to compare against"
-    )
 
     # Output schema
     OutputSchema = ValidationOutput
 
-    def build(self) -> Workflow:
+    def define_workflow(self):
         """
         Generate a Task to determine if the predicted answer is contextually and semantically correct.
 
@@ -44,24 +39,7 @@ class ValidatePrediction(WorkflowTemplate):
             Workflow: The constructed workflow
         """
         # Initialize the workflow with variables
-        builder = WorkflowBuilder(
-            prediction=self.prediction, correct_answer=self.correct_answer
-        )
-
-        # Add a generative step using the prompt
-        builder.generative_step(
-            path=get_abs_path("validate.md"),
-            operator=Operator.GENERATION,
-            outputs=[Write.new("validation_result")],
-        )
-
-        # Define the flow of the workflow
-        flow = [Edge(source="0", target="_end")]
-        builder.flow(flow)
-
-        # Set the return value of the workflow
-        builder.set_return_value("validation_result")
-        return builder.build()
+        self.add_step(get_abs_path("validate.md"))
 
     def callback(self, result: List[TaskResult]) -> List[OutputSchema]:
         """
@@ -78,8 +56,8 @@ class ValidatePrediction(WorkflowTemplate):
             if r.result.lower() == "true":
                 outputs.append(
                     self.OutputSchema(
-                        prediction=self.prediction,
-                        correct_answer=self.correct_answer,
+                        prediction=r.inputs["prediction"],
+                        correct_answer=r.inputs["correct_answer"],
                         validation=True,
                         model=r.model,
                     )
@@ -87,8 +65,8 @@ class ValidatePrediction(WorkflowTemplate):
             elif r.result.lower() == "false":
                 outputs.append(
                     self.OutputSchema(
-                        prediction=self.prediction,
-                        correct_answer=self.correct_answer,
+                        prediction=r.inputs["prediction"],
+                        correct_answer=r.inputs["correct_answer"],
                         validation=False,
                         model=r.model,
                     )

@@ -19,7 +19,8 @@ asyncio.run(
     dria.generate(
         inputs=inputs,
         workflow=InstructionBacktranslation,
-        models=Model.GPT4O,
+        models=Model.OPENROUTER,
+        dataset=my_dataset
     )
 )
 

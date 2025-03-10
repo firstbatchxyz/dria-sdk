@@ -201,7 +201,7 @@ class TaskExecutor:
                     results, failed_tasks = await self.poll(remaining_task_ids)
                     
                     if failed_tasks:
-                        logger.debug("Failed tasks are retrying...")
+                        logger.info("Some tasks are failed. Trying on the network again...")
                         progress.update(fetch_task_id, description=f"[yellow]Retrying {len(failed_tasks)} failed tasks[/yellow]")
                     
                     if results:
@@ -534,7 +534,6 @@ class TaskExecutor:
                 
                 # Fetch results
                 task_ids = [t.id for t in batch_tasks]
-                logger.info(f"Executing batch {batch_idx+1}")
                 outputs = await self.fetch(task_ids=task_ids)
                 
                 # Filter out None results

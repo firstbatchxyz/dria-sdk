@@ -54,7 +54,7 @@ from .workflows.self_instruct.task import SelfInstruct
 from .workflows.instruction_backtranslation.task import InstructionBacktranslation
 from .workflows.reasoning.task import Reasoning
 from .workflows.evol_instruct import EvolveInstruct
-from .workflows.model_as_a_judge import EvaluatePrediction
+from .workflows.model_as_a_judge import EvaluatePrediction, ValidatePrediction
 from .workflows.evol_quality import EvolveQuality
 from .subtopic.task import GenerateSubtopics
 from .persona import PersonaBio

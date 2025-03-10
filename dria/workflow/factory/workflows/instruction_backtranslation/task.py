@@ -44,8 +44,8 @@ class InstructionBacktranslation(WorkflowTemplate):
             self.OutputSchema(
                 reasoning=parse_result(r.result)[1],
                 score=parse_result(r.result)[0],
-                instruction=r.task_input["instruction"],
-                generation=r.task_input["generation"],
+                instruction=r.inputs["instruction"],
+                generation=r.inputs["generation"],
                 model=r.model,
             )
             for r in result

@@ -46,6 +46,7 @@ class MagPie(WorkflowTemplate):
         )
         self.add_step(
             prompt=get_abs_path("response.md"),
+            inputs=["instruction"]
         )
 
     def callback(self, result: List[TaskResult]) -> List[OutputSchema]:

@@ -18,7 +18,7 @@ asyncio.run(
     dria.generate(
         inputs=inputs,
         workflow=ValidatePrediction,
-        models=Model.GPT4O,
+        models=Model.GEMINI,
     )
 )
 

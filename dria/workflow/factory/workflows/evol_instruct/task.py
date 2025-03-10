@@ -85,9 +85,9 @@ class EvolveInstruct(WorkflowTemplate):
                 .replace("}", "")
                 .strip()
             )
-
+            original_prompt = r.inputs["prompt"].split("Given Prompt#:\n")[1].strip()
             output = self.OutputSchema(
-                mutated_prompt=new_prompt, original_prompt=self.prompt, model=r.model
+                mutated_prompt=new_prompt, original_prompt=original_prompt, model=r.model
             )
             outputs.append(output)
 

@@ -8,35 +8,27 @@ from dria.models import TaskResult
 
 dria = Dria()
 
-
-class SimpleClass(BaseModel):
-    output: str = Field(...)
-
-
 class SimpleWorkflow(WorkflowTemplate):
-    OutputSchema = SimpleClass
 
     def define_workflow(self):
-        self.add_step(
+        step1 = self.add_step(
             prompt="{{first_step}}",
             output="response"
         )
-        self.add_step(
-            prompt="{{second_prompt}} {{response}}",
+        step2 = self.add_step(
+            prompt="{{second_step}} {{response}}",
         )
-
-    def callback(self, result: List[TaskResult]) -> List[OutputSchema]:
-        return [self.OutputSchema(**{"output": r.result}) for r in result]
+        self.connect(step1, step2)
 
 
 async def main():
     return await dria.generate(
         {
-            "first_prompt": "Generate tweet about football",
-            "second_prompt": "Extend the tweet",
+            "first_step": "Generate tweet about football",
+            "second_step": "Extend the tweet",
         },
         workflow=SimpleWorkflow,
-        models=Model.GPT4O,
+        models=Model.GEMINI,
     )
 
 

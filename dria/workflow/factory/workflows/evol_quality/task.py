@@ -22,26 +22,10 @@ class Output(BaseModel):
 
 
 class EvolveQuality(WorkflowTemplate):
-
-    prompt: str
-    response: str
-    method: str
     OutputSchema = Output
 
-    def build(self) -> Workflow:
-
-        builder = WorkflowBuilder(
-            prompt=self.prompt, response=self.response, method=self.method
-        )
-        builder.generative_step(
-            path=get_abs_path("rewrite.md"),
-            operator=Operator.GENERATION,
-            outputs=[Write.new("rewritten_response")],
-        )
-        flow = [Edge(source="0", target="_end")]
-        builder.flow(flow)
-        builder.set_return_value("rewritten_response")
-        return builder.build()
+    def define_workflow(self):
+       self.add_step(get_abs_path("rewrite.md"))
 
     def callback(self, result: List[TaskResult]) -> List[OutputSchema]:
         """
@@ -53,9 +37,9 @@ class EvolveQuality(WorkflowTemplate):
         """
         return [
             self.OutputSchema(
-                response=self.response,
+                response=r.inputs["response"],
                 evolved_response=r.result.strip(),
-                method=self.method,
+                method=r.inputs["method"],
                 model=r.model,
             )
             for r in result

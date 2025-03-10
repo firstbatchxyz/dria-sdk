@@ -15,7 +15,7 @@ params = {
         "mutation_type": "DEEPEN",
     }
 
-inputs = MUTATION_TEMPLATES[params["mutation_type"]].format("{{prompt}}", params["prompt"])
+inputs = MUTATION_TEMPLATES[params["mutation_type"]].replace("{{prompt}}", params["prompt"])
 print(asyncio.run(
     dria.generate(
         inputs=inputs,

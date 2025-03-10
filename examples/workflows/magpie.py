@@ -10,7 +10,7 @@ instructions = [
     {
         "instructor_persona": "Researcher on quantum computing at @Google",
         "responding_persona": "An AI assistant",
-        "num_turns": 3,
+        "num_turns": "3",
     }
 ]
 
@@ -19,7 +19,8 @@ asyncio.run(
     dria.generate(
         inputs=instructions,
         workflow=MagPie,
-        models=Model.GPT4O,
+        models=Model.OPENROUTER,
+        dataset=my_dataset
     )
 )
 

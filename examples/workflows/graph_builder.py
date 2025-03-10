@@ -14,7 +14,8 @@ asyncio.run(
     dria.generate(
         inputs=inputs,
         workflow=GenerateGraph,
-        models=Model.GPT4O,
+        models=Model.GEMINI,
+        dataset=my_dataset
     )
 )
 
