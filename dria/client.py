@@ -1,7 +1,9 @@
+import asyncio
 import logging
 import os
 from typing import Dict, List, Type, Optional, Union, Any
 
+from dria.constants import PROVIDERS, MONITORING_INTERVAL
 from dria.db.mq import KeyValueQueue
 from dria.db.storage import Storage
 from dria.datasets.base import DriaDataset
@@ -13,6 +15,8 @@ from dria.request import RPCClient
 from dria.workflow import WorkflowTemplate
 from dria.workflow.factory import Simple
 
+from rich.console import Console
+from rich.table import Table
 
 class Dria:
     """
@@ -228,8 +232,7 @@ class Dria:
             return workflow().callback(results)
         except Exception as e:
             raise ValueError(f"Failed to create tasks: {str(e)}")
-
-    async def check_model_availability(self, models: Optional[Union[Model, List[Model]]] = None) -> Dict[Model, int]:
+    async def check_model_availability(self, models: Optional[Union[Model, List[Model]]] = None) -> None:
         """
         Check if models are available on the network.
         
@@ -238,7 +241,7 @@ class Dria:
                    If None, checks availability for all models.
             
         Returns:
-            Dictionary mapping model enum to number of available nodes.
+            None: Prints a table of available models and node counts
         """
         all_model_nodes = {}
         await self.executor.ping.run()
@@ -254,9 +257,24 @@ class Dria:
             nodes = await self.executor.task_manager.get_available_nodes(model.value)
             if nodes:
                 all_model_nodes[model] = len(nodes)
-                
+
+        if not all_model_nodes:
+            await asyncio.sleep(MONITORING_INTERVAL)
+            await self.executor.ping.run()
+
         # Sort model nodes by count (high to low)
-        return dict(sorted(all_model_nodes.items(), key=lambda item: item[1], reverse=True))
+        sorted_models = sorted(all_model_nodes.items(), key=lambda item: item[1], reverse=True)
+        
+        console = Console()
+        table = Table(title="Model Availability")
+        
+        table.add_column("Model", style="cyan")
+        table.add_column("Available Nodes", style="green")
+        
+        for model, count in sorted_models:
+            table.add_row(model.name if model.name not in PROVIDERS else model.name + " [all models on the provider]", str(count))
+            
+        console.print(table)
 
     @staticmethod
     def _create_tasks(
