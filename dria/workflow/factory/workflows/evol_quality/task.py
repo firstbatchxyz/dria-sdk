@@ -25,7 +25,7 @@ class EvolveQuality(WorkflowTemplate):
     OutputSchema = Output
 
     def define_workflow(self):
-       self.add_step(get_abs_path("rewrite.md"))
+        self.add_step(get_abs_path("rewrite.md"))
 
     def callback(self, result: List[TaskResult]) -> List[OutputSchema]:
         """

@@ -20,7 +20,7 @@ asyncio.run(
         inputs=instructions,
         workflow=MagPie,
         models=Model.OPENROUTER,
-        dataset=my_dataset
+        dataset=my_dataset,
     )
 )
 

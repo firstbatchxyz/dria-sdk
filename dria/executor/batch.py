@@ -51,16 +51,18 @@ class Batch:
             failed, description=self.workflow.__name__
         )
 
-    def load_instructions(self, inputs: List[Dict[str, Any]]):
+    def load_instructions(self, inputs: List[Dict[str, Any]],
+                          generate_all_models: bool = False):
         """
         Load input data and create corresponding tasks.
 
         Args:
             inputs: List of input dictionaries to process
+            generate_all_models: Boolean for generating all tasks to chosen models
         """
         for inp in inputs:
-            task = self._create_task(inp)
-            self.tasks.append(task)
+            tasks = self._create_task(inp, generate_all_models)
+            self.tasks.extend(tasks)
 
     def set_models(self, models: List[Model]):
         """
@@ -109,23 +111,31 @@ class Batch:
                 self.dataset.db.add_entries(self.failed_dataset_id, failed_data)
         return entry_ids, input_ids
 
-    def _create_task(self, data: Dict[str, Any]) -> Task:
+    def _create_task(self, data: Dict[str, Any], generate_all_models: bool = False) -> List[Task]:
         """
         Create a Task instance from input data.
 
         Args:
             data: Dictionary containing input data
+            generate_all_models: Boolean for generating all tasks to chosen models
 
         Returns:
-            Task instance configured with workflow data
+            Task list configured with workflow data
         """
         # Remove unnecessary fields from the input data
         workflow_data = self.workflow(**data).build()
-        return Task(
+        tasks = []
+        if generate_all_models:
+            tasks.extend([Task(
+                workflow=workflow_data,
+                models=[model],
+                dataset_id=self.dataset.collection,
+            ) for model in self.models])
+        return [Task(
             workflow=workflow_data,
             models=self.models,
             dataset_id=self.dataset.collection,
-        )
+        )]
 
     async def _align_results(
         self, results: List[TaskResult], tasks: List[Task]

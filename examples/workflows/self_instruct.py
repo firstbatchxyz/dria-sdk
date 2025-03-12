@@ -17,10 +17,7 @@ inputs = [
 
 asyncio.run(
     dria.generate(
-        inputs=inputs,
-        workflow=SelfInstruct,
-        models=Model.GEMINI,
-        dataset=my_dataset
+        inputs=inputs, workflow=SelfInstruct, models=Model.GEMINI, dataset=my_dataset
     )
 )
 

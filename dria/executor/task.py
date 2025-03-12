@@ -154,7 +154,7 @@ class TaskExecutor:
 
         except Exception as e:
             raise TaskPublishError(f"Failed to publish task: {e}") from e
-    
+
     async def fetch(
         self,
         task_ids: List[str],
@@ -174,7 +174,7 @@ class TaskExecutor:
         remaining_task_ids = task_ids.copy()
         retries = 0
         current_interval = fetch_interval
-        
+
         # Create progress display for fetching
         console = Console()
         progress = Progress(
@@ -184,26 +184,33 @@ class TaskExecutor:
             TextColumn("[bold white]•[/bold white] Remaining:"),
             TextColumn("{task.fields[remaining]}"),
             TimeElapsedColumn(),
-            console=console
+            console=console,
         )
-        
+
         fetch_task_id = None
-        
+
         try:
             with progress:
                 fetch_task_id = progress.add_task(
-                    f"[cyan]Executing {len(task_ids)} tasks[/cyan]", 
+                    f"[cyan]Executing {len(task_ids)} tasks[/cyan]",
                     total=len(task_ids),
-                    remaining=len(remaining_task_ids)
+                    remaining=len(remaining_task_ids),
                 )
-                
-                while remaining_task_ids and retries <= self.MAX_RETRIES_FOR_AVAILABILITY:
+
+                while (
+                    remaining_task_ids and retries <= self.MAX_RETRIES_FOR_AVAILABILITY
+                ):
                     results, failed_tasks = await self.poll(remaining_task_ids)
-                    
+
                     if failed_tasks:
-                        logger.info("Some tasks are failed. Trying on the network again...")
-                        progress.update(fetch_task_id, description=f"[yellow]Retrying {len(failed_tasks)} failed tasks[/yellow]")
-                    
+                        logger.info(
+                            "Some tasks are failed. Trying on the network again..."
+                        )
+                        progress.update(
+                            fetch_task_id,
+                            description=f"[yellow]Retrying {len(failed_tasks)} failed tasks[/yellow]",
+                        )
+
                     if results:
                         all_results.extend(results)
                         # Remove successfully fetched tasks from remaining list
@@ -213,59 +220,66 @@ class TaskExecutor:
                         ]
                         # Reset interval on successful fetch
                         current_interval = min(current_interval * 2, 30)
-                        
+
                         # Update progress
                         progress.update(
-                            fetch_task_id, 
+                            fetch_task_id,
                             completed=len(task_ids) - len(remaining_task_ids),
                             description=f"[green]Executed {len(results)} tasks[/green]",
-                            remaining=len(remaining_task_ids)
+                            remaining=len(remaining_task_ids),
                         )
                     else:
                         retries += 1
                         # Exponential backoff with maximum cap
                         current_interval = min(current_interval * 2, 30)
                         progress.update(
-                            fetch_task_id, 
+                            fetch_task_id,
                             description=f"[yellow]Executing tasks... [/yellow]",
-                            remaining=len(remaining_task_ids)
+                            remaining=len(remaining_task_ids),
                         )
-                    
-                    if remaining_task_ids and retries <= self.MAX_RETRIES_FOR_AVAILABILITY:
+
+                    if (
+                        remaining_task_ids
+                        and retries <= self.MAX_RETRIES_FOR_AVAILABILITY
+                    ):
                         await asyncio.sleep(current_interval)
-                
+
                 # Final update
                 if not remaining_task_ids:
                     progress.update(
                         fetch_task_id,
                         description=f"[bold green]Successfully executed all {len(task_ids)} tasks![/bold green]",
-                        completed=len(task_ids)
+                        completed=len(task_ids),
                     )
                 else:
                     progress.update(
                         fetch_task_id,
-                        description=f"[bold red]Successfully executed {len(task_ids)} tasks with {len(remaining_task_ids)} tasks unfulfilled[/bold red]"
+                        description=f"[bold red]Successfully executed {len(task_ids)} tasks with {len(remaining_task_ids)} tasks unfulfilled[/bold red]",
                     )
         except Exception as e:
             logger.error(f"Error during fetch: {str(e)}")
             if fetch_task_id is not None and progress:
-                progress.update(fetch_task_id, description=f"[bold red]Error: {str(e)}[/bold red]")
+                progress.update(
+                    fetch_task_id, description=f"[bold red]Error: {str(e)}[/bold red]"
+                )
             raise
-            
+
         # Display summary table
         table = Table(title="Execution Summary", box=box.ROUNDED)
         table.add_column("Metric", style="cyan")
         table.add_column("Count", style="magenta")
         table.add_column("Percentage", style="green")
-        
+
         total = len(task_ids)
         fetched = len(all_results)
         unfetched = total - fetched
-        
+
         table.add_row("Total Tasks", str(total), "100%")
-        table.add_row("Successfully Executed", str(fetched), f"{fetched/total*100:.1f}%")
+        table.add_row(
+            "Successfully Executed", str(fetched), f"{fetched/total*100:.1f}%"
+        )
         table.add_row("Failed Tasks", str(unfetched), f"{unfetched/total*100:.1f}%")
-        
+
         console.print(table)
 
         return all_results
@@ -510,48 +524,54 @@ class TaskExecutor:
 
         try:
             logger.info(f"Starting execution of {len(tasks)} tasks")
-            
+
             # Create deep copies to avoid modifying original tasks
             tasks_ = [t.__deepcopy__() for t in tasks]
-            
+
             # Split into batches for processing
             batched_tasks = [
                 tasks_[i : i + SCORING_BATCH_SIZE]
                 for i in range(0, len(tasks_), SCORING_BATCH_SIZE)
             ]
             logger.info(f"Tasks organized into {len(batched_tasks)} batches")
-            
+
             results = []
             for batch_idx, batch_tasks in enumerate(batched_tasks):
                 logger.info(f"Executing batch {batch_idx+1} of {len(batched_tasks)}")
-                
+
                 # Push tasks to execution queue
                 success = await self.push(batch_tasks)
-                
+
                 if not success:
                     logger.error("Failed to submit tasks for processing")
                     return None, None
-                
+
                 # Fetch results
                 task_ids = [t.id for t in batch_tasks]
                 outputs = await self.fetch(task_ids=task_ids)
-                
+
                 # Filter out None results
                 valid_results = [
                     output for output in outputs if output.result is not None
                 ]
                 invalid_count = len(outputs) - len(valid_results)
                 if invalid_count > 0:
-                    logger.warning(f"{invalid_count} tasks in batch {batch_idx+1} returned no results")
-                
+                    logger.warning(
+                        f"{invalid_count} tasks in batch {batch_idx+1} returned no results"
+                    )
+
                 results.extend(valid_results)
-                logger.info(f"Completed batch {batch_idx+1}: {len(valid_results)} of {len(batch_tasks)} tasks successful")
-                
+                logger.info(
+                    f"Completed batch {batch_idx+1}: {len(valid_results)} of {len(batch_tasks)} tasks successful"
+                )
+
                 # Update node performance statistics
                 self.stats = evaluate_nodes(self.metrics, self.stats)
                 self.metrics = []
-            
-            logger.info(f"All batches processed. Total successful tasks: {len(results)} of {len(tasks)}")
+
+            logger.info(
+                f"All batches processed. Total successful tasks: {len(results)} of {len(tasks)}"
+            )
             return results, batched_tasks
         except Exception as e:
             logger.error(f"Error during task execution: {str(e)}")

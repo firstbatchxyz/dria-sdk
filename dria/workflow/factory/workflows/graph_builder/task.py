@@ -34,9 +34,7 @@ class GenerateGraph(WorkflowTemplate):
             Workflow: The constructed workflow
         """
         # Initialize the workflow with variables
-        self.add_step(
-            prompt=get_abs_path("prompt.md")
-        )
+        self.add_step(prompt=get_abs_path("prompt.md"))
 
     def callback(self, result: List[TaskResult]) -> List[OutputSchema]:
         """

@@ -11,15 +11,15 @@ my_dataset = DriaDataset(
 dria = Dria()
 
 params = {
-        "prompt": "Explain the concept of photosynthesis.",
-        "mutation_type": "DEEPEN",
-    }
+    "prompt": "Explain the concept of photosynthesis.",
+    "mutation_type": "DEEPEN",
+}
 
-inputs = MUTATION_TEMPLATES[params["mutation_type"]].replace("{{prompt}}", params["prompt"])
-print(asyncio.run(
-    dria.generate(
-        inputs=inputs,
-        workflow=EvolveInstruct,
-        models=Model.GEMINI
+inputs = MUTATION_TEMPLATES[params["mutation_type"]].replace(
+    "{{prompt}}", params["prompt"]
+)
+print(
+    asyncio.run(
+        dria.generate(inputs=inputs, workflow=EvolveInstruct, models=Model.GEMINI)
     )
-))
+)

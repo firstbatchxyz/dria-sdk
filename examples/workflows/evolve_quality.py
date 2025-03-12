@@ -14,11 +14,12 @@ inputs = [
     }
 ]
 
-print(asyncio.run(
-    dria.generate(
-        inputs=inputs,
-        workflow=EvolveQuality,
-        models=Model.GEMINI,
+print(
+    asyncio.run(
+        dria.generate(
+            inputs=inputs,
+            workflow=EvolveQuality,
+            models=Model.GEMINI,
+        )
     )
-))
-
+)

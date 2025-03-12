@@ -21,6 +21,7 @@ from dria.models import TaskResult
 # Default output schema for WorkflowTemplate
 class TaskOutput(BaseModel):
     """Default output schema for WorkflowTemplate."""
+
     inputs: str = Field(..., description="The inputs used to generate the output")
     output: str = Field(..., description="The generated output")
     model: str = Field(..., description="The model used to generate the output")
@@ -224,19 +225,24 @@ class WorkflowTemplate(ABC):
             Processed output in the format defined by OutputSchema
         """
         # Default implementation that returns a list of DefaultOutput objects
-        return [self.OutputSchema(inputs=json.dumps(r.inputs), output=r.result, model=r.model) for r in result]
+        return [
+            self.OutputSchema(
+                inputs=json.dumps(r.inputs), output=r.result, model=r.model
+            )
+            for r in result
+        ]
 
     def add_step(
-            self,
-            prompt: str,
-            operation: Operator = Operator.GENERATION,
-            inputs: Optional[List[str]] = None,
-            output: Optional[str] = None,
-            schema: Optional[Type[BaseModel]] = None,
-            is_list: bool = False,
-            search_type: Literal["search", "news", "scholar"] = "search",
-            search_lang: Optional[str] = None,
-            search_n_results: Optional[int] = None,
+        self,
+        prompt: str,
+        operation: Operator = Operator.GENERATION,
+        inputs: Union[Optional[List[str]], list[GetAll]] = None,
+        output: Optional[str] = None,
+        schema: Optional[Type[BaseModel]] = None,
+        is_list: bool = False,
+        search_type: Literal["search", "news", "scholar"] = "search",
+        search_lang: Optional[str] = None,
+        search_n_results: Optional[int] = None,
     ) -> str:
         """
         Add a step to the workflow with simplified parameters.
@@ -264,8 +270,9 @@ class WorkflowTemplate(ABC):
         if inputs:
             for inp in inputs:
                 if isinstance(inp, Input):
-                    continue
-                step_inputs.append(Read.new(key=inp, required=True))
+                    step_inputs.append(inp)
+                else:
+                    step_inputs.append(Read.new(key=inp, required=True))
 
         if output:
             if is_list:

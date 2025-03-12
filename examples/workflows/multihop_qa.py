@@ -1,20 +1,14 @@
 import asyncio
-from typing import List
-
-from pydantic import BaseModel, Field
 
 from dria import Model, Dria, WorkflowTemplate
-from dria.models import TaskResult
 
 dria = Dria()
+
 
 class SimpleWorkflow(WorkflowTemplate):
 
     def define_workflow(self):
-        step1 = self.add_step(
-            prompt="{{first_step}}",
-            output="response"
-        )
+        step1 = self.add_step(prompt="{{first_step}}", output="response")
         step2 = self.add_step(
             prompt="{{second_step}} {{response}}",
         )

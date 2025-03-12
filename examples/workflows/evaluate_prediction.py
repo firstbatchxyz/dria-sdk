@@ -22,7 +22,7 @@ asyncio.run(
         inputs=inputs,
         workflow=EvaluatePrediction,
         models=Model.GEMINI,
-        dataset=my_dataset
+        dataset=my_dataset,
     )
 )
 

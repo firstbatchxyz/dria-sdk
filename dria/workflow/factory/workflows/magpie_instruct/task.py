@@ -40,14 +40,8 @@ class MagPie(WorkflowTemplate):
         """
         # Initialize the workflow with variables
 
-        self.add_step(
-            prompt=get_abs_path("instruction.md"),
-            output="instruction"
-        )
-        self.add_step(
-            prompt=get_abs_path("response.md"),
-            inputs=["instruction"]
-        )
+        self.add_step(prompt=get_abs_path("instruction.md"), output="instruction")
+        self.add_step(prompt=get_abs_path("response.md"), inputs=["instruction"])
 
     def callback(self, result: List[TaskResult]) -> List[OutputSchema]:
         """

@@ -29,7 +29,7 @@ class SearchWeb(WorkflowTemplate):
             operation=Operator.SEARCH,
             prompt="{{query}}",
             search_lang="en",
-            search_n_results=5
+            search_n_results=5,
         )
 
     def callback(self, result: List[TaskResult]) -> List[OutputSchema]:

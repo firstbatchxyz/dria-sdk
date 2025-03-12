@@ -45,8 +45,10 @@ class GenerateCode(WorkflowTemplate):
     OutputSchema = CodeOutput
 
     def define_workflow(self):
-        self.add_step("You have been given the following instruction: "
-                      "{{instruction}}. Write clean, commented and robust code in {{language}}. Code: ")
+        self.add_step(
+            "You have been given the following instruction: "
+            "{{instruction}}. Write clean, commented and robust code in {{language}}. Code: "
+        )
 
     def callback(self, result: List[TaskResult]) -> List[OutputSchema]:
         return [

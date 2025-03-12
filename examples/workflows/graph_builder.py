@@ -12,10 +12,7 @@ inputs = [{"context": "The advantage of using AI on the healthcare"}]
 
 asyncio.run(
     dria.generate(
-        inputs=inputs,
-        workflow=GenerateGraph,
-        models=Model.GEMINI,
-        dataset=my_dataset
+        inputs=inputs, workflow=GenerateGraph, models=Model.GEMINI, dataset=my_dataset
     )
 )
 

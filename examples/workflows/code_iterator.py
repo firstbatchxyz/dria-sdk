@@ -22,10 +22,7 @@ dria = Dria()
 
 asyncio.run(
     dria.generate(
-        inputs=inputs,
-        workflow=IterateCode,
-        models=Model.GEMINI,
-        dataset=my_dataset
+        inputs=inputs, workflow=IterateCode, models=Model.GEMINI, dataset=my_dataset
     )
 )
 

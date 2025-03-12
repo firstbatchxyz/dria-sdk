@@ -10,10 +10,10 @@ instructions = [
     "Write a tweet about Decentralized synthetic data",
 ]
 
-asyncio.run(dria.generate(
-    inputs="Write a tweet about {{topic}}",
-    models=Model.OPENAI,
-    dataset=dataset)
+asyncio.run(
+    dria.generate(
+        inputs="Write a tweet about {{topic}}", models=Model.OPENAI, dataset=dataset
+    )
 )
 
 print(dataset.to_pandas())

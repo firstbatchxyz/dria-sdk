@@ -8,6 +8,7 @@ my_dataset = DriaDataset(
 
 dria = Dria()
 
+
 async def main():
     await dria.check_model_availability()
     inputs = [
@@ -23,7 +24,5 @@ async def main():
     )
 
 
-asyncio.run(
-    main()
-)
+asyncio.run(main())
 print(my_dataset.get_entries(data_only=True))

@@ -18,6 +18,7 @@ from dria.workflow.factory import Simple
 from rich.console import Console
 from rich.table import Table
 
+
 class Dria:
     """
     Client SDK for interacting with the Dria distributed AI system.
@@ -122,10 +123,10 @@ class Dria:
     ) -> Union[List[Dict[str, Any]], Dict[str, Any]]:
         """
         Normalize input data to dictionary format.
-        
+
         Args:
             inputs: Input data in various formats
-            
+
         Returns:
             Normalized input data as dictionary or list of dictionaries
         """
@@ -141,10 +142,10 @@ class Dria:
     ) -> List[Model]:
         """
         Normalize models to list format.
-        
+
         Args:
             models: Model(s) in various formats
-            
+
         Returns:
             Normalized list of models
         """
@@ -166,6 +167,7 @@ class Dria:
         max_tokens: Optional[int] = None,
         max_steps: Optional[int] = None,
         max_time: Optional[int] = None,
+            generate_all_models: bool = False
     ) -> Union[List[TaskResult], None]:
         """
         Generate tasks from inputs and execute workflows.
@@ -186,6 +188,7 @@ class Dria:
             max_tokens: Optional maximum number of tokens to generate.
             max_steps: Optional maximum number of steps to execute.
             max_time: Optional maximum execution time in seconds.
+            generate_all_models: Boolean for generating all tasks to chosen models
 
         Returns:
             List[TaskResult] for direct generation, None for dataset generation
@@ -223,36 +226,40 @@ class Dria:
                 workflows=workflow,
                 models=models,
                 batch_size=batch_size,
+                generate_all_models=generate_all_models
             )
             return None
 
         try:
-            tasks = self._create_tasks(inputs, workflow, models)
+            tasks = self._create_tasks(inputs, workflow, models, generate_all_models)
             results, tasks = await self.executor.execute(tasks)
             return workflow().callback(results)
         except Exception as e:
             raise ValueError(f"Failed to create tasks: {str(e)}")
-    async def check_model_availability(self, models: Optional[Union[Model, List[Model]]] = None) -> None:
+
+    async def check_model_availability(
+        self, models: Optional[Union[Model, List[Model]]] = None
+    ) -> None:
         """
         Check if models are available on the network.
-        
+
         Args:
             models: A single model or list of models to check availability for.
                    If None, checks availability for all models.
-            
+
         Returns:
             None: Prints a table of available models and node counts
         """
         all_model_nodes = {}
         await self.executor.ping.run()
-        
+
         if models is None:
             # Check all models if none specified
             models = list(Model)
-        
+
         if not isinstance(models, list):
             models = [models]
-        
+
         for model in models:
             nodes = await self.executor.task_manager.get_available_nodes(model.value)
             if nodes:
@@ -263,17 +270,26 @@ class Dria:
             await self.executor.ping.run()
 
         # Sort model nodes by count (high to low)
-        sorted_models = sorted(all_model_nodes.items(), key=lambda item: item[1], reverse=True)
-        
+        sorted_models = sorted(
+            all_model_nodes.items(), key=lambda item: item[1], reverse=True
+        )
+
         console = Console()
         table = Table(title="Model Availability")
-        
+
         table.add_column("Model", style="cyan")
         table.add_column("Available Nodes", style="green")
-        
+
         for model, count in sorted_models:
-            table.add_row(model.name if model.name not in PROVIDERS else model.name + " [all models on the provider]", str(count))
-            
+            table.add_row(
+                (
+                    model.name
+                    if model.name not in PROVIDERS
+                    else model.name + " [all models on the provider]"
+                ),
+                str(count),
+            )
+
         console.print(table)
 
     @staticmethod
@@ -281,19 +297,27 @@ class Dria:
         inputs: List[Dict[str, Any]],
         workflow: Type[WorkflowTemplate],
         models: List[Model],
+        generate_all_models: bool = False
     ) -> List[Task]:
         """
         Create task instances from inputs.
-        
+
         Args:
             inputs: List of input dictionaries
             workflow: Workflow template class
             models: List of models to use
-            
+            generate_all_models: Boolean for generating all tasks to chosen models
+
         Returns:
             List of Task objects
         """
-        return [Task(workflow=workflow(**i).build(), models=models) for i in inputs]
+        tasks = []
+        if generate_all_models:
+            for model in models:
+                tasks.extend([Task(workflow=workflow(**i).build(), models=[model]) for i in inputs])
+        else:
+            tasks = [Task(workflow=workflow(**i).build(), models=models) for i in inputs]
+        return tasks
 
     async def _with_workflows(
         self,
@@ -302,6 +326,7 @@ class Dria:
         workflows: Union[Type[WorkflowTemplate], List[Type[WorkflowTemplate]]],
         models: Union[Model, List[Model], List[List[Model]]],
         batch_size: Optional[int] = 50,
+        generate_all_models: bool = False
     ) -> None:
         """
         Generate data using Dria workflow.
@@ -312,10 +337,16 @@ class Dria:
             workflows: Single workflow or list of workflows to execute
             models: Model(s) to use for generation
             batch_size: Optional batch size for parallel execution.
-            
+            generate_all_models: Boolean for generating all tasks to chosen models
+
         Raises:
             ValueError: If model and workflow configurations are incompatible
         """
+        if isinstance(workflows, list) and generate_all_models:
+            raise ValueError(
+                f"generate_all_models parameter is not supported on multiple workflow."
+                f" Use for loop on models instead."
+            )
         workflows = [workflows] if not isinstance(workflows, list) else workflows
         models = [models] if not isinstance(models, list) else models
 
@@ -330,7 +361,7 @@ class Dria:
 
         self._validate_workflows(workflows)
         _ = await self._execute_workflow_chain(
-            dataset, inputs, workflows, models, batch_size
+            dataset, inputs, workflows, models, batch_size, generate_all_models
         )
 
         # Finalize dataset
@@ -343,17 +374,19 @@ class Dria:
         workflows: List[Type[WorkflowTemplate]],
         models: List[List[Model]],
         batch_size: int,
+        generate_all_models: bool = False
     ) -> List[List[Dict[str, Any]]]:
         """
         Execute chain of workflows sequentially.
-        
+
         Args:
             dataset: Target dataset to store results
             initial_inputs: Initial inputs for the first workflow
             workflows: List of workflow templates to execute
             models: List of model lists for each workflow
             batch_size: Batch size for parallel execution
-            
+            generate_all_models: Boolean for generating all tasks to chosen models
+
         Returns:
             List of step mappings between entry IDs and input IDs
         """
@@ -363,7 +396,7 @@ class Dria:
         for i, (workflow, model_set) in enumerate(zip(workflows, models)):
             executor = Batch(self.executor, workflow, dataset, batch_size)
             executor.set_models(model_set)
-            executor.load_instructions(current_inputs)
+            executor.load_instructions(current_inputs, generate_all_models)
 
             entry_ids, input_ids = await executor.run()
             step_map.append(
@@ -388,7 +421,7 @@ class Dria:
     ) -> None:
         """
         Finalize dataset by copying final results to main collection.
-        
+
         Args:
             dataset: Target dataset to finalize
             workflows: List of workflow templates that were executed

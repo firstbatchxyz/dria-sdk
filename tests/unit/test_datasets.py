@@ -55,9 +55,7 @@ def test_from_json(tmp_path):
     with open(json_path, "w") as f:
         json.dump(test_data, f)
 
-    dataset = DriaDataset.from_json(
-        f"test_json_{uuid.uuid4()}", str(json_path)
-    )
+    dataset = DriaDataset.from_json(f"test_json_{uuid.uuid4()}", str(json_path))
 
     entries = dataset.get_entries(data_only=True)
     assert len(entries) == 2

@@ -88,9 +88,7 @@ class EvaluatePrediction(WorkflowTemplate):
             Workflow: The constructed workflow
         """
         # Initialize the workflow with variables
-        self.add_step(
-            prompt=get_abs_path("evaluate.md")
-        )
+        self.add_step(prompt=get_abs_path("evaluate.md"))
 
     def callback(self, result: List[TaskResult]) -> List[OutputSchema]:
         """

@@ -19,7 +19,7 @@ asyncio.run(
         ],
         workflow=Clair,
         models=Model.GEMINI,
-        dataset=my_dataset
+        dataset=my_dataset,
     )
 )
 
