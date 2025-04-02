@@ -1,5 +1,6 @@
 import asyncio
 import base64
+import datetime
 import json
 import logging
 import os
@@ -297,7 +298,7 @@ class Dria:
                             for task_id in unresponsive_tasks
                         }
 
-                        if response_times and len(response_times) > 0.8 * min_outputs:
+                        if response_times and len(response_times) > 0.4 * min_outputs:
                             avg_response_time = sum(response_times.values()) / len(
                                 response_times
                             )
@@ -547,7 +548,6 @@ class Dria:
                 await self._process_results(list(set(topic_results)))
         except Exception as e:
             raise Exception(f"Error fetching content topic: {e}")
-
     async def _process_results(self, topic_results: List[str]) -> None:
         """
         Process results from output content topic.
@@ -609,26 +609,36 @@ class Dria:
                         logger.debug(
                             f"ID: {identifier} {result['error']}. Task retrying.."
                         )
-                    if "stats" in result.keys():
+                    if "stats" in result:
                         current_ns = time.time_ns()
+                        stats = result["stats"]
                         metric_log = {
                             "node_address": address,
                             "model": result["model"],
-                            "publish_latency": (
-                                current_ns - result["stats"]["publishedAt"]
-                            )
-                            / 1e9,
-                            "execution_time": (
-                                result["stats"]["executionEndedAt"]
-                                - result["stats"]["executionStartedAt"]
-                            ),
-                            "receive_latency": (
-                                result["stats"]["receivedAt"] - task_data["created_ts"]
-                            )
-                            / 1e9,
-                            "roundtrip": (current_ns - task_data["created_ts"]) / 1e9,
                             "error": True,
                         }
+                        
+                        # Parse timestamps from ISO format strings
+                        if "publishedAt" in stats:
+                            published_dt = datetime.datetime.fromisoformat(stats["publishedAt"].replace('Z', '+00:00'))
+                            published_ns = int(published_dt.timestamp() * 1e9)
+                            metric_log["publish_latency"] = (current_ns - published_ns) / 1e9
+                            
+                        if "executionStartedAt" in stats and "executionEndedAt" in stats:
+                            start_dt = datetime.datetime.fromisoformat(stats["executionStartedAt"].replace('Z', '+00:00'))
+                            end_dt = datetime.datetime.fromisoformat(stats["executionEndedAt"].replace('Z', '+00:00'))
+                            metric_log["execution_time"] = (end_dt - start_dt).total_seconds()
+                            
+                        if "receivedAt" in stats:
+                            received_dt = datetime.datetime.fromisoformat(stats["receivedAt"].replace('Z', '+00:00'))
+                            received_ns = int(received_dt.timestamp() * 1e9)
+                            created_ts = task_data["created_ts"]
+                            if isinstance(created_ts, str):
+                                created_dt = datetime.datetime.fromisoformat(created_ts.replace('Z', '+00:00'))
+                                created_ns = int(created_dt.timestamp() * 1e9)
+                                metric_log["receive_latency"] = (received_ns - created_ns) / 1e9
+                                metric_log["roundtrip"] = (current_ns - created_ns) / 1e9
+                            
                         logger.debug(f"Metrics: {metric_log}")
                         self.metrics.append(metric_log)
                     if "Invalid prompt" in result["error"]:
@@ -662,28 +672,38 @@ class Dria:
                         continue
 
                     pipeline_id = task.pipeline_id or ""
-                    if "stats" in result.keys():
+                    if "stats" in result:
                         current_ns = time.time_ns()
+                        stats = result["stats"]
                         metric_log = {
                             "node_address": address,
                             "model": result["model"],
-                            "publish_latency": (
-                                current_ns - result["stats"]["publishedAt"]
-                            )
-                            / 1e9,
-                            "execution_time": (
-                                result["stats"]["executionEndedAt"]
-                                - result["stats"]["executionStartedAt"]
-                            )
-                            / 1e9,
-                            "receive_latency": (
-                                result["stats"]["receivedAt"] - task_data["created_ts"]
-                            )
-                            / 1e9,
-                            "roundtrip": (current_ns - task_data["created_ts"]) / 1e9,
                         }
+                        
+                        # Parse timestamps from ISO format strings
+                        if "publishedAt" in stats:
+                            published_dt = datetime.datetime.fromisoformat(stats["publishedAt"].replace('Z', '+00:00'))
+                            published_ns = int(published_dt.timestamp() * 1e9)
+                            metric_log["publish_latency"] = (current_ns - published_ns) / 1e9
+                            
+                        if "executionStartedAt" in stats and "executionEndedAt" in stats:
+                            start_dt = datetime.datetime.fromisoformat(stats["executionStartedAt"].replace('Z', '+00:00'))
+                            end_dt = datetime.datetime.fromisoformat(stats["executionEndedAt"].replace('Z', '+00:00'))
+                            metric_log["execution_time"] = (end_dt - start_dt).total_seconds()
+                            
+                        if "receivedAt" in stats:
+                            received_dt = datetime.datetime.fromisoformat(stats["receivedAt"].replace('Z', '+00:00'))
+                            received_ns = int(received_dt.timestamp() * 1e9)
+                            created_ts = task_data["created_ts"]
+                            if isinstance(created_ts, str):
+                                created_dt = datetime.datetime.fromisoformat(created_ts.replace('Z', '+00:00'))
+                                created_ns = int(created_dt.timestamp() * 1e9)
+                                metric_log["receive_latency"] = (received_ns - created_ns) / 1e9
+                                metric_log["roundtrip"] = (current_ns - created_ns) / 1e9
+                        
                         if "error" in result:
                             metric_log["error"] = True
+                            
                         logger.debug(f"Task id: {identifier}, Metrics: {metric_log}")
                         self.metrics.append(metric_log)
                     await self.kv.push(
@@ -762,10 +782,22 @@ class Dria:
         Returns:
             bool: True if valid
         """
-        task_deadline = int(task.deadline)
+        task_deadline = task.deadline
         if task_deadline == 0:
             logger.debug(f"Task {task.id} has no deadline. Skipping.")
             return False
+        
+        # Convert ISO format string to timestamp if needed
+        if isinstance(task_deadline, str):
+            try:
+                # Parse ISO format datetime string to datetime object
+                dt = datetime.datetime.fromisoformat(task_deadline.replace('Z', '+00:00'))
+                # Convert to timestamp
+                task_deadline = int(dt.timestamp())
+            except (ValueError, TypeError):
+                logger.error(f"Invalid deadline format for task {task.id}: {task_deadline}")
+                return False
+                
         if (current_time - task_deadline) > RETURN_DEADLINE:
             logger.debug(f"Task {task.id} deadline exceeded. Skipping.")
             return False

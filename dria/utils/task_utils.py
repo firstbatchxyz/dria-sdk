@@ -1,4 +1,5 @@
 import copy
+import datetime
 import hashlib
 import json
 import random
@@ -150,13 +151,20 @@ class TaskManager:
         # Generate unique ID for this task
         task.id = self.generate_random_string()
 
-        # Calculate deadline (in nanoseconds)
-        deadline_ns = int(time.time_ns() + TASK_DEADLINE * 1e9)
-        task.deadline = deadline_ns
+        # Calculate deadline (in seconds since epoch)
+        # Get the current time in UTC
+        now_utc = datetime.datetime.now(datetime.timezone.utc)
 
-        # Store creation timestamp (in nanoseconds)
-        task.created_ts = int(time.time_ns())
+        # Calculate deadline time in UTC
+        deadline_dt = now_utc + datetime.timedelta(seconds=TASK_DEADLINE)
 
+        # Format timestamps as RFC 3339 strings with 'Z' for UTC
+        # isoformat() produces compatible output (e.g., 2023-10-27T15:30:00.123456+00:00)
+        # Adding .replace('+00:00', 'Z') makes it identical to chrono's typical output,
+        # though '+00:00' is also valid RFC 3339 and parsed correctly by chrono.
+        # Using isoformat() directly is generally robust enough.
+        task.created_ts = now_utc.isoformat() # Directly using isoformat is fine
+        task.deadline = deadline_dt.isoformat()
         return task
 
     async def save_workflow(self, task: Task) -> None:
@@ -209,7 +217,6 @@ class TaskManager:
         # Create TaskModel data structure
         task_model = TaskModel(
             taskId=task.id,
-            filter=task.filter,
             input=TaskInputModel(
                 workflow=task.workflow, model=selected_model
             ).model_dump(),

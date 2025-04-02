@@ -48,6 +48,9 @@ class Model(str, Enum):
     QWEN2_5_CODER_7B_FP16 = "qwen2.5-coder:7b-instruct-fp16"
     DEEPSEEK_CODER_6_7B = "deepseek-coder:6.7b"
     MIXTRAL_8_7B = "mixtral:8x7b"
+    TINY_AGENT_0_5B = "driaforall/tiny-agent-a:0.5b"
+    TINY_AGENT_1_5B = "driaforall/tiny-agent-a:1.5b"
+    TINY_AGENT_3B = "driaforall/tiny-agent-a:3b"
 
     DEEPSEEK_CHAT_OR = "deepseek/deepseek-chat"
     LLAMA_3_1_8B_OR = "meta-llama/llama-3.1-8b-instruct"
@@ -76,7 +79,7 @@ class Model(str, Enum):
     # Gemini models
     GEMINI_15_PRO = "gemini-1.5-pro"
     GEMINI_15_FLASH = "gemini-1.5-flash"
-    GEMINI_20_FLASH = "gemini-2.0-flash-exp"
+    GEMINI_20_FLASH = "gemini-2.0-flash"
     GEMINI_10_PRO = "gemini-1.0-pro"
     GEMMA_2_2B_IT = "gemma-2-2b-it"
     GEMMA_2_9B_IT = "gemma-2-9b-it"

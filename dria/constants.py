@@ -25,8 +25,7 @@ RPC_BASE_URL_COMMUNITY: Final[str] = "https://community.rpc.dria.co"
 SCORING_BATCH_SIZE = 50
 COMPUTE_NODE_BATCH_SIZE = 5
 
-HEARTBEAT_TOPIC: Final[str] = "ping"
-HEARTBEAT_OUTPUT_TOPIC: Final[str] = "pong"
+HEARTBEAT_OUTPUT_TOPIC: Final[str] = "get_alive_peers"
 
 JINA_TOKEN: Final[str | None] = os.getenv("JINA_TOKEN")
 
@@ -37,7 +36,6 @@ if not all(
         INPUT_CONTENT_TOPIC,
         OUTPUT_CONTENT_TOPIC,
         RPC_BASE_URL,
-        HEARTBEAT_TOPIC,
         HEARTBEAT_OUTPUT_TOPIC,
         RPC_BASE_URL_COMMUNITY,
     ]

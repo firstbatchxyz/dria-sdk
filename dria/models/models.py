@@ -26,10 +26,9 @@ class TaskInputModel(BaseModel):
 
 class TaskModel(BaseModel):
     taskId: str
-    filter: Dict[str, Any]
     input: Dict[str, Any]
     pickedNodes: List
-    deadline: int
+    deadline: str
     publicKey: str
     datasetId: str
     privateKey: str
@@ -44,8 +43,8 @@ class Task(BaseModel):
     dataset_id: Optional[str] = None
     public_key: Optional[str] = None
     private_key: Optional[str] = None
-    deadline: int = 0
-    created_ts: int = 0
+    deadline: str = ""
+    created_ts: str = ""
     filter: Dict = {}
     nodes: List[str] = []
     step_name: str = ""

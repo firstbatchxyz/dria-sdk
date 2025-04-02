@@ -11,7 +11,7 @@ from dria.constants import (
 )
 from dria.db.mq import KeyValueQueue
 from dria.db.storage import Storage
-from dria.models import NodeModel
+from dria.models import NodeModel, OllamaModels
 from dria.request import RPCClient
 from dria.utils import (
     recover_public_key,
@@ -150,14 +150,14 @@ class Monitor:
                 if not models or "pending_tasks" not in payload:
                     continue
 
-                for model_id, model_name in models:
-                    max_queue = (
-                        MAX_OLLAMA_QUEUE if model_id == "ollama" else MAX_API_QUEUE
-                    )
+                for model_name in models:
+                    if model_name in [model.value for model in OllamaModels]:
+                        max_queue = MAX_OLLAMA_QUEUE
+                    else:
+                        max_queue = MAX_API_QUEUE
                     if payload["pending_tasks"][0] > max_queue:
                         continue
                     node_addresses[model_name].append(address)
-                    node_addresses[model_id].append(address)
 
             except Exception as exc:
                 logger.error("Failed to decrypt node response: %s", exc, exc_info=True)
