@@ -620,24 +620,82 @@ class Dria:
                         
                         # Parse timestamps from ISO format strings
                         if "publishedAt" in stats:
-                            published_dt = datetime.datetime.fromisoformat(stats["publishedAt"].replace('Z', '+00:00'))
-                            published_ns = int(published_dt.timestamp() * 1e9)
-                            metric_log["publish_latency"] = (current_ns - published_ns) / 1e9
+                            try:
+                                # Remove microseconds beyond 6 digits and handle Z timezone
+                                timestamp = stats["publishedAt"]
+                                if 'Z' in timestamp:
+                                    # Split by Z and handle the microseconds part
+                                    date_part, _ = timestamp.split('Z')
+                                    if '.' in date_part:
+                                        # Limit microseconds to 6 digits
+                                        main_part, micro_part = date_part.split('.')
+                                        micro_part = micro_part[:6]
+                                        date_part = f"{main_part}.{micro_part}"
+                                    timestamp = f"{date_part}+00:00"
+                                published_dt = datetime.datetime.fromisoformat(timestamp)
+                                published_ns = int(published_dt.timestamp() * 1e9)
+                                metric_log["publish_latency"] = (current_ns - published_ns) / 1e9
+                            except ValueError as e:
+                                logger.debug(f"Error parsing publishedAt timestamp: {e}")
                             
                         if "executionStartedAt" in stats and "executionEndedAt" in stats:
-                            start_dt = datetime.datetime.fromisoformat(stats["executionStartedAt"].replace('Z', '+00:00'))
-                            end_dt = datetime.datetime.fromisoformat(stats["executionEndedAt"].replace('Z', '+00:00'))
-                            metric_log["execution_time"] = (end_dt - start_dt).total_seconds()
+                            try:
+                                # Process start time
+                                start_timestamp = stats["executionStartedAt"]
+                                if 'Z' in start_timestamp:
+                                    date_part, _ = start_timestamp.split('Z')
+                                    if '.' in date_part:
+                                        main_part, micro_part = date_part.split('.')
+                                        micro_part = micro_part[:6]
+                                        date_part = f"{main_part}.{micro_part}"
+                                    start_timestamp = f"{date_part}+00:00"
+                                start_dt = datetime.datetime.fromisoformat(start_timestamp)
+                                
+                                # Process end time
+                                end_timestamp = stats["executionEndedAt"]
+                                if 'Z' in end_timestamp:
+                                    date_part, _ = end_timestamp.split('Z')
+                                    if '.' in date_part:
+                                        main_part, micro_part = date_part.split('.')
+                                        micro_part = micro_part[:6]
+                                        date_part = f"{main_part}.{micro_part}"
+                                    end_timestamp = f"{date_part}+00:00"
+                                end_dt = datetime.datetime.fromisoformat(end_timestamp)
+                                
+                                metric_log["execution_time"] = (end_dt - start_dt).total_seconds()
+                            except ValueError as e:
+                                logger.debug(f"Error parsing execution timestamps: {e}")
                             
                         if "receivedAt" in stats:
-                            received_dt = datetime.datetime.fromisoformat(stats["receivedAt"].replace('Z', '+00:00'))
-                            received_ns = int(received_dt.timestamp() * 1e9)
-                            created_ts = task_data["created_ts"]
-                            if isinstance(created_ts, str):
-                                created_dt = datetime.datetime.fromisoformat(created_ts.replace('Z', '+00:00'))
-                                created_ns = int(created_dt.timestamp() * 1e9)
-                                metric_log["receive_latency"] = (received_ns - created_ns) / 1e9
-                                metric_log["roundtrip"] = (current_ns - created_ns) / 1e9
+                            try:
+                                # Process received time
+                                received_timestamp = stats["receivedAt"]
+                                if 'Z' in received_timestamp:
+                                    date_part, _ = received_timestamp.split('Z')
+                                    if '.' in date_part:
+                                        main_part, micro_part = date_part.split('.')
+                                        micro_part = micro_part[:6]
+                                        date_part = f"{main_part}.{micro_part}"
+                                    received_timestamp = f"{date_part}+00:00"
+                                received_dt = datetime.datetime.fromisoformat(received_timestamp)
+                                received_ns = int(received_dt.timestamp() * 1e9)
+                                
+                                created_ts = task_data["created_ts"]
+                                if isinstance(created_ts, str):
+                                    # Process created time
+                                    if 'Z' in created_ts:
+                                        date_part, _ = created_ts.split('Z')
+                                        if '.' in date_part:
+                                            main_part, micro_part = date_part.split('.')
+                                            micro_part = micro_part[:6]
+                                            date_part = f"{main_part}.{micro_part}"
+                                        created_ts = f"{date_part}+00:00"
+                                    created_dt = datetime.datetime.fromisoformat(created_ts)
+                                    created_ns = int(created_dt.timestamp() * 1e9)
+                                    metric_log["receive_latency"] = (received_ns - created_ns) / 1e9
+                                    metric_log["roundtrip"] = (current_ns - created_ns) / 1e9
+                            except ValueError as e:
+                                logger.debug(f"Error parsing receivedAt timestamp: {e}")
                             
                         logger.debug(f"Metrics: {metric_log}")
                         self.metrics.append(metric_log)
@@ -682,24 +740,82 @@ class Dria:
                         
                         # Parse timestamps from ISO format strings
                         if "publishedAt" in stats:
-                            published_dt = datetime.datetime.fromisoformat(stats["publishedAt"].replace('Z', '+00:00'))
-                            published_ns = int(published_dt.timestamp() * 1e9)
-                            metric_log["publish_latency"] = (current_ns - published_ns) / 1e9
+                            try:
+                                # Remove microseconds beyond 6 digits and handle Z timezone
+                                timestamp = stats["publishedAt"]
+                                if 'Z' in timestamp:
+                                    # Split by Z and handle the microseconds part
+                                    date_part, _ = timestamp.split('Z')
+                                    if '.' in date_part:
+                                        # Limit microseconds to 6 digits
+                                        main_part, micro_part = date_part.split('.')
+                                        micro_part = micro_part[:6]
+                                        date_part = f"{main_part}.{micro_part}"
+                                    timestamp = f"{date_part}+00:00"
+                                published_dt = datetime.datetime.fromisoformat(timestamp)
+                                published_ns = int(published_dt.timestamp() * 1e9)
+                                metric_log["publish_latency"] = (current_ns - published_ns) / 1e9
+                            except ValueError as e:
+                                logger.debug(f"Error parsing publishedAt timestamp: {e}")
                             
                         if "executionStartedAt" in stats and "executionEndedAt" in stats:
-                            start_dt = datetime.datetime.fromisoformat(stats["executionStartedAt"].replace('Z', '+00:00'))
-                            end_dt = datetime.datetime.fromisoformat(stats["executionEndedAt"].replace('Z', '+00:00'))
-                            metric_log["execution_time"] = (end_dt - start_dt).total_seconds()
+                            try:
+                                # Process start time
+                                start_timestamp = stats["executionStartedAt"]
+                                if 'Z' in start_timestamp:
+                                    date_part, _ = start_timestamp.split('Z')
+                                    if '.' in date_part:
+                                        main_part, micro_part = date_part.split('.')
+                                        micro_part = micro_part[:6]
+                                        date_part = f"{main_part}.{micro_part}"
+                                    start_timestamp = f"{date_part}+00:00"
+                                start_dt = datetime.datetime.fromisoformat(start_timestamp)
+                                
+                                # Process end time
+                                end_timestamp = stats["executionEndedAt"]
+                                if 'Z' in end_timestamp:
+                                    date_part, _ = end_timestamp.split('Z')
+                                    if '.' in date_part:
+                                        main_part, micro_part = date_part.split('.')
+                                        micro_part = micro_part[:6]
+                                        date_part = f"{main_part}.{micro_part}"
+                                    end_timestamp = f"{date_part}+00:00"
+                                end_dt = datetime.datetime.fromisoformat(end_timestamp)
+                                
+                                metric_log["execution_time"] = (end_dt - start_dt).total_seconds()
+                            except ValueError as e:
+                                logger.debug(f"Error parsing execution timestamps: {e}")
                             
                         if "receivedAt" in stats:
-                            received_dt = datetime.datetime.fromisoformat(stats["receivedAt"].replace('Z', '+00:00'))
-                            received_ns = int(received_dt.timestamp() * 1e9)
-                            created_ts = task_data["created_ts"]
-                            if isinstance(created_ts, str):
-                                created_dt = datetime.datetime.fromisoformat(created_ts.replace('Z', '+00:00'))
-                                created_ns = int(created_dt.timestamp() * 1e9)
-                                metric_log["receive_latency"] = (received_ns - created_ns) / 1e9
-                                metric_log["roundtrip"] = (current_ns - created_ns) / 1e9
+                            try:
+                                # Process received time
+                                received_timestamp = stats["receivedAt"]
+                                if 'Z' in received_timestamp:
+                                    date_part, _ = received_timestamp.split('Z')
+                                    if '.' in date_part:
+                                        main_part, micro_part = date_part.split('.')
+                                        micro_part = micro_part[:6]
+                                        date_part = f"{main_part}.{micro_part}"
+                                    received_timestamp = f"{date_part}+00:00"
+                                received_dt = datetime.datetime.fromisoformat(received_timestamp)
+                                received_ns = int(received_dt.timestamp() * 1e9)
+                                
+                                created_ts = task_data["created_ts"]
+                                if isinstance(created_ts, str):
+                                    # Process created time
+                                    if 'Z' in created_ts:
+                                        date_part, _ = created_ts.split('Z')
+                                        if '.' in date_part:
+                                            main_part, micro_part = date_part.split('.')
+                                            micro_part = micro_part[:6]
+                                            date_part = f"{main_part}.{micro_part}"
+                                        created_ts = f"{date_part}+00:00"
+                                    created_dt = datetime.datetime.fromisoformat(created_ts)
+                                    created_ns = int(created_dt.timestamp() * 1e9)
+                                    metric_log["receive_latency"] = (received_ns - created_ns) / 1e9
+                                    metric_log["roundtrip"] = (current_ns - created_ns) / 1e9
+                            except ValueError as e:
+                                logger.debug(f"Error parsing receivedAt timestamp: {e}")
                         
                         if "error" in result:
                             metric_log["error"] = True
